@@ -46,8 +46,10 @@ const validRecord: DomainDnsRecordForm = {
 const validCertificate: DomainCertificateForm = {
   certName: 'example.com',
   domainIds: ['domain-1'],
+  requestedIdentifiers: [],
   certificateScope: 'SINGLE_DOMAIN',
   validationMethod: 'AUTO',
+  presentationMode: 'MANAGED',
   caProfile: 'LETS_ENCRYPT_PRODUCTION',
   preferredKeyAlgorithm: 'RSA',
   autoRenew: true,
@@ -203,9 +205,10 @@ describe('form validation', () => {
       certificateScope: 'WILDCARD',
       validationMethod: 'HTTP_01',
       domainIds: [],
+      requestedIdentifiers: [],
     });
     expect(errors.validationMethod).toBe('admin.domainCenter.validation.wildcardRequiresDns01');
-    expect(errors.domainIds).toBe('admin.domainCenter.validation.identifiersRequired');
+    expect(errors.requestedIdentifiers).toBe('admin.domainCenter.validation.identifiersRequired');
   });
 
   it('carries the certificate defaults into the request', () => {
@@ -214,6 +217,7 @@ describe('form validation', () => {
       domainIds: ['domain-1'],
       certificateScope: 'SINGLE_DOMAIN',
       validationMethod: 'AUTO',
+      challengePresentation: 'MANAGED',
       caProfile: 'LETS_ENCRYPT_PRODUCTION',
       preferredKeyAlgorithm: 'RSA',
       autoRenew: true,

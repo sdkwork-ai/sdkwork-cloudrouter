@@ -20,6 +20,10 @@ import type {
   DomainVerificationFilePlatform,
 } from './domainTypes';
 import {
+  isValidCertificateIdentifier,
+  normalizeCertificateIdentifier,
+} from './domainCertificateIssuance';
+import {
   DOMAIN_VERIFICATION_PLATFORMS,
   isServableVerificationFileName,
   platformAcceptsExtension,
@@ -320,14 +324,51 @@ export function toDnsRecordInput(form: DomainDnsRecordForm): CreateDomainDnsReco
 
 export interface DomainCertificateForm {
   certName: string;
+  /** Verified hostnames picked from the zone inventory (legacy submission shape). */
   domainIds: readonly string[];
+  /**
+   * Hostnames the operator typed. Sent as `requestedIdentifiers`, which the
+   * control plane canonicalizes and requires to be verified hostnames of the
+   * tenant. Exactly one of this and `domainIds` may be non-empty.
+   */
+  requestedIdentifiers: readonly string[];
   certificateScope: 'SINGLE_DOMAIN' | 'WILDCARD';
   validationMethod: 'AUTO' | 'HTTP_01' | 'DNS_01';
+  /** `MANAGED` writes DNS-01 through a cloud account; `MANUAL` asks the operator to paste it. */
+  presentationMode: 'MANAGED' | 'MANUAL';
   caProfile: 'LETS_ENCRYPT_STAGING' | 'LETS_ENCRYPT_PRODUCTION';
   preferredKeyAlgorithm: 'RSA' | 'ECDSA';
   autoRenew: boolean;
   renewBeforeDays: string;
   providerAccountId: string;
+}
+
+/**
+ * Field keys in the order focus should visit them: the first error in this order
+ * receives focus, so the operator lands on the field nearest the top instead of
+ * on whichever object key happened to be written first.
+ */
+export const CERTIFICATE_FORM_FIELD_ORDER: readonly (keyof DomainCertificateForm)[] = [
+  'certName',
+  'requestedIdentifiers',
+  'domainIds',
+  'presentationMode',
+  'certificateScope',
+  'validationMethod',
+  'caProfile',
+  'preferredKeyAlgorithm',
+  'providerAccountId',
+  'renewBeforeDays',
+  'autoRenew',
+];
+
+export function firstDomainFieldError(errors: DomainFieldErrors, order: readonly string[]): string | undefined {
+  for (const field of order) {
+    if (errors[field] !== undefined) {
+      return field;
+    }
+  }
+  return Object.keys(errors)[0];
 }
 
 export function validateCertificateForm(form: DomainCertificateForm): DomainFieldErrors {
@@ -337,11 +378,28 @@ export function validateCertificateForm(form: DomainCertificateForm): DomainFiel
   } else if (form.certName.trim().length > 128) {
     errors.certName = validationKey('tooLong');
   }
-  if (form.domainIds.length === 0) {
-    errors.domainIds = validationKey('identifiersRequired');
+  if (form.domainIds.length === 0 && form.requestedIdentifiers.length === 0) {
+    // The typed list is the primary input now, so the message names it; the
+    // verified-hostname picker fills the same slot.
+    errors.requestedIdentifiers = validationKey('identifiersRequired');
+  } else if (form.domainIds.length > 0 && form.requestedIdentifiers.length > 0) {
+    errors.requestedIdentifiers = validationKey('identifiersAmbiguous');
+  }
+  const invalidIdentifier = form.requestedIdentifiers.find(
+    (identifier) => !isValidCertificateIdentifier(identifier),
+  );
+  if (invalidIdentifier !== undefined) {
+    errors.requestedIdentifiers = validationKey('invalidCertificateIdentifier');
+  }
+  const duplicate = duplicatedCertificateIdentifier(form.requestedIdentifiers);
+  if (duplicate !== undefined) {
+    errors.requestedIdentifiers = validationKey('duplicateCertificateIdentifier');
   }
   if (form.certificateScope === 'WILDCARD' && form.validationMethod === 'HTTP_01') {
     errors.validationMethod = validationKey('wildcardRequiresDns01');
+  }
+  if (form.presentationMode === 'MANUAL' && form.validationMethod === 'HTTP_01') {
+    errors.validationMethod = validationKey('manualRequiresDns01');
   }
   const renewBefore = form.renewBeforeDays.trim();
   if (renewBefore.length > 0) {
@@ -353,24 +411,53 @@ export function validateCertificateForm(form: DomainCertificateForm): DomainFiel
   return errors;
 }
 
-export function toCreateCertificateInput(form: DomainCertificateForm): CreateDomainCertificateInput {
-  const input: CreateDomainCertificateInput = {
+function duplicatedCertificateIdentifier(
+  identifiers: readonly string[],
+): string | undefined {
+  const seen = new Set<string>();
+  for (const identifier of identifiers) {
+    const key = normalizeCertificateIdentifier(identifier);
+    if (seen.has(key)) {
+      return identifier;
+    }
+    seen.add(key);
+  }
+  return undefined;
+}
+
+/**
+ * Create request body.
+ *
+ * `requestedIdentifiers` and `challengePresentation` are part of the
+ * deployments contract but not yet of the applied
+ * `@sdkwork/deployments-app-sdk`; the payload is therefore shaped as
+ * "generated request plus the pending contract fields" until the SDK is
+ * regenerated. No cast is involved: every extra key is typed here.
+ */
+export interface CreateDomainCertificatePayload extends CreateDomainCertificateInput {
+  requestedIdentifiers?: string[];
+  challengePresentation?: 'MANAGED' | 'MANUAL';
+}
+
+export function toCreateCertificateInput(form: DomainCertificateForm): CreateDomainCertificatePayload {
+  const typed = form.requestedIdentifiers.map((identifier) => normalizeCertificateIdentifier(identifier));
+  return {
     certName: form.certName.trim(),
-    domainIds: [...form.domainIds],
+    // The two identifier shapes are exclusive in the contract: sending both is
+    // an error, so the typed list wins when it is the one the operator used.
+    domainIds: typed.length === 0 ? [...form.domainIds] : [],
+    ...(typed.length === 0 ? {} : { requestedIdentifiers: typed }),
     certificateScope: form.certificateScope,
     validationMethod: form.validationMethod,
+    challengePresentation: form.presentationMode,
     caProfile: form.caProfile,
     preferredKeyAlgorithm: form.preferredKeyAlgorithm,
     autoRenew: form.autoRenew,
+    ...(form.renewBeforeDays.trim().length > 0
+      ? { renewBeforeDays: Number(form.renewBeforeDays.trim()) }
+      : {}),
+    ...(isBlank(form.providerAccountId) ? {} : { providerAccountId: form.providerAccountId.trim() }),
   };
-  const renewBefore = form.renewBeforeDays.trim();
-  if (renewBefore.length > 0) {
-    input.renewBeforeDays = Number(renewBefore);
-  }
-  if (!isBlank(form.providerAccountId)) {
-    input.providerAccountId = form.providerAccountId.trim();
-  }
-  return input;
 }
 
 export interface DomainCloudAccountForm {

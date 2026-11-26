@@ -57,6 +57,8 @@ function certificate(overrides: Partial<DomainCertificate> = {}): DomainCertific
     caProfile: 'LETS_ENCRYPT_PRODUCTION',
     certificateScope: 'SINGLE_DOMAIN',
     validationMethod: 'HTTP_01',
+    presentationMode: 'MANAGED',
+    archiveStatus: 'SKIPPED',
     preferredKeyAlgorithm: 'RSA',
     identifiers: ['example.com', 'www.example.com'],
     autoRenew: true,
