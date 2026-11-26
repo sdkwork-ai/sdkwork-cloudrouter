@@ -199,6 +199,9 @@ importers:
 
   ../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-admin-accounts:
     dependencies:
+      '@sdkwork/account-pc-core':
+        specifier: workspace:*
+        version: link:../sdkwork-account-pc-core
       lucide-react:
         specifier: 'catalog:'
         version: 1.31.0(react@19.2.8)
