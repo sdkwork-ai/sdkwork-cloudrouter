@@ -197,6 +197,28 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-admin-accounts:
+    dependencies:
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   ../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-core:
     dependencies:
       '@sdkwork/account-service':
@@ -6092,9 +6114,15 @@ importers:
       '@radix-ui/react-slot':
         specifier: 'catalog:'
         version: 1.3.0(@types/react@19.2.14)(react@19.2.8)
+      '@sdkwork/account-pc-admin-accounts':
+        specifier: workspace:*
+        version: link:../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-admin-accounts
       '@sdkwork/account-pc-wallet':
         specifier: workspace:*
         version: link:../../../sdkwork-account/apps/sdkwork-account-pc/packages/sdkwork-account-pc-wallet
+      '@sdkwork/account-service':
+        specifier: workspace:*
+        version: link:../../../sdkwork-account/apps/sdkwork-account-common/packages/sdkwork-account-service
       '@sdkwork/agents-app-sdk':
         specifier: workspace:*
         version: link:../../../sdkwork-agents/sdks/sdkwork-agents-app-sdk/sdkwork-agents-app-sdk-typescript

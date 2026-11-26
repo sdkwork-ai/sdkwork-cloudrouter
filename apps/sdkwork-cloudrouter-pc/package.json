@@ -178,6 +178,8 @@
     "@sdkwork/cloudrouter-pc-admin-payments": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-memory": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-plugin": "workspace:*",
+    "@sdkwork/account-pc-admin-accounts": "workspace:*",
+    "@sdkwork/account-service": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-billing": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-pricing": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-product": "workspace:*",

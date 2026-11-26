@@ -1,6 +1,7 @@
 import { lazy, useEffect, useMemo, useState, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
 import { Navigate, Route, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { DomainCenterAdminProps, DomainCenterSectionId } from '@sdkwork/cloudrouter-pc-admin-domain';
+import { ACCOUNTS_ADMIN_ROUTE_RECORDS } from '@sdkwork/account-pc-admin-accounts/contribution';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
 import { RTC_ADMIN_ROUTE_ELEMENTS } from '@sdkwork/cloudrouter-pc-admin-rtc';
@@ -9,6 +10,7 @@ import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notif
 import { HARDWARE_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
 import { PRODUCT_CENTER_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-product/contribution';
 import { ENTERPRISE_ADMIN_ROUTE_RECORDS } from '@sdkwork/company-pc-admin-enterprise/contribution';
+import { ACCOUNT_ADMIN_ROUTE_ELEMENTS } from './accountAdminHostElement.tsx';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 import { EnterpriseCenterHostElement } from './enterpriseCenterHostElement.tsx';
 import { DocumentsAdminRuntimeProvider } from '@sdkwork/documents-pc-admin-documents';
@@ -16,7 +18,7 @@ import { createCloudRouterDocumentsAdminClient } from '@sdkwork/cloudroutes-pc-c
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-memory'| 'sdkwork-aiot' | 'sdkwork-shop' | 'sdkwork-inventory' | 'sdkwork-company';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course' | 'sdkwork-skills' | 'sdkwork-mcp' | 'sdkwork-agents' | 'sdkwork-plugins' | 'sdkwork-documents' | 'sdkwork-memory'| 'sdkwork-aiot' | 'sdkwork-shop' | 'sdkwork-inventory' | 'sdkwork-company' | 'sdkwork-account';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -519,6 +521,16 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
         : PRODUCT_CENTER_ADMIN_ROUTE_ELEMENTS[record.screen]!,
     );
   }),
+  ...ACCOUNTS_ADMIN_ROUTE_RECORDS.map((record) =>
+    route(
+      record.path,
+      'sdkwork-account',
+      '@sdkwork/account-pc-admin-accounts',
+      ['account-backend-sdk'],
+      record.requiredPermission,
+      ACCOUNT_ADMIN_ROUTE_ELEMENTS[record.screen as keyof typeof ACCOUNT_ADMIN_ROUTE_ELEMENTS]!,
+    ),
+  ),
 ];
 
 function AdminSectionRoute({ component: Component }: { component: ComponentType<{ sectionId?: string }> }) {
