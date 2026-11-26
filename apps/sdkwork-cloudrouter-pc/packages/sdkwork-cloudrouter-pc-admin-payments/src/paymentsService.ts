@@ -25,6 +25,9 @@ import type {
   RetryRefundCommand,
   SandboxTriggerCommand,
   TestPayment,
+  TestPaymentActionResult,
+  TestPaymentCancelCommand,
+  TestPaymentSettleCommand,
   UpdatePaymentChannelCommand,
   UpdatePaymentDomainSettingRequest,
   UpdatePaymentMethodCommand,
@@ -265,6 +268,35 @@ export async function backendPaymentDevCheckAttemptStatus(body: CheckAttemptStat
   return getSdkworkPaymentBackendSdkClient().payments.dev.checkAttemptStatus(
     body,
     createIdempotencyParams('check-attempt-status'),
+  );
+}
+
+/**
+ * Settles a one-cent test payment whose product cannot be completed from an
+ * admin browser (the local sandbox and wallet payload products). The backend
+ * ingests the event through the PSP webhook pipeline, so the attempt status,
+ * webhook event record, and refund eligibility match a real callback.
+ */
+export async function backendPaymentDevSettleTestPayment(
+  body: TestPaymentSettleCommand,
+): Promise<TestPaymentActionResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.settleTestPayment(
+    body,
+    createIdempotencyParams('settle-test-payment'),
+  );
+}
+
+/**
+ * Closes a one-cent test payment's provider trade and closes the local attempt,
+ * so an abandoned QR code, an unapproved hosted checkout, or a launcher that
+ * cannot complete leaves nothing open on either side.
+ */
+export async function backendPaymentDevCancelTestPayment(
+  body: TestPaymentCancelCommand,
+): Promise<TestPaymentActionResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.cancelTestPayment(
+    body,
+    createIdempotencyParams('cancel-test-payment'),
   );
 }
 
