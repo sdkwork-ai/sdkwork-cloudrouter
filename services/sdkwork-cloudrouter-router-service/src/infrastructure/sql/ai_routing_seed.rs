@@ -3576,21 +3576,37 @@ async fn import_postgres_default_vendor_upstream_accounts(
                 -- endpoint, auth method or status here would clobber admin
                 -- configuration and can violate the credential foreign key.
                 --
-                -- Exception: a row this seed itself created (recognised by the
-                -- vendor-account seed marker in its existing `metadata`) only
-                -- ever drifted because the install environment changed, so its
-                -- status is converged to the environment's intent. Without
-                -- this, flipping an install from production to development
-                -- left every bundled vendor account disabled forever and
-                -- re-seeding could never repair it.
+                -- The exception below keeps re-seeding convergent in exactly
+                -- ONE direction: the seed may *enable* a bundled account that
+                -- is still carrying the seed's own "left disabled by an earlier
+                -- install" state, and never disables anything.
                 --
-                -- This is safe because the vendor path is now the *only* writer
-                -- of these account rows: the legacy admin topology path seeds
-                -- none. An operator who edits an account replaces `metadata`,
-                -- which drops the marker and preserves their status.
+                -- Why the asymmetry is required (re-deploy defect, 2026-11):
+                -- the status was first converged to `EXCLUDED.status`
+                -- unconditionally for every seed-marked row. The gateway's
+                -- `ensure_bootstrap_data` reports `UpgradeRequired` for many
+                -- reasons (catalog drift, a missing group member, the media
+                -- gateway key), and its repair path re-imports this seed with
+                -- the *install* environment. A deployment whose runtime
+                -- environment is production-like while its lifecycle is
+                -- dev-like therefore re-wrote every operator-switched-on account
+                -- back to `DISABLED_STATUS` on each redeploy, and the operator
+                -- saw the accounts "turn off again" with no request of their
+                -- own. Converging only `disabled -> enabled` still repairs a
+                -- database seeded while the environment was mis-read (the
+                -- original defect this CASE was added for), because those rows
+                -- are precisely the ones carrying `initialAccountStatus:
+                -- disabled`. A row whose marker says it was seeded *enabled* was
+                -- disabled afterwards, which only an operator can do, so that
+                -- decision is preserved here and is reported by
+                -- `postgres_default_vendor_upstream_accounts_complete` instead
+                -- of being silently reversed by a re-deploy.
                 status = CASE
                     WHEN ai_upstream_account.metadata ->> 'itemType'
                         = 'default_vendor_upstream_account'
+                      AND ai_upstream_account.status <> EXCLUDED.status
+                      AND ai_upstream_account.metadata ->> 'initialAccountStatus'
+                        = 'disabled'
                     THEN EXCLUDED.status
                     ELSE ai_upstream_account.status
                 END,
@@ -4268,9 +4284,18 @@ async fn import_postgres_default_relay_upstream_accounts(
                 'prepay', 1.000000000000
             )
             ON CONFLICT (tenant_id, organization_id, account_code) DO UPDATE SET
+                -- Same one-way convergence as the vendor path above: the seed
+                -- repairs a row it left disabled on an earlier install, but
+                -- never reverses an operator's decision to switch an account
+                -- on. Converging to `EXCLUDED.status` unconditionally turned
+                -- every redeploy that re-ran the seed into a silent "turn the
+                -- accounts back off" for production-like runtime environments.
                 status = CASE
                     WHEN ai_upstream_account.metadata ->> 'itemType'
                         = 'default_relay_upstream_account'
+                      AND ai_upstream_account.status <> EXCLUDED.status
+                      AND ai_upstream_account.metadata ->> 'initialAccountStatus'
+                        = 'disabled'
                     THEN EXCLUDED.status
                     ELSE ai_upstream_account.status
                 END,
@@ -6392,6 +6417,73 @@ mod tests {
             item_type(&vendor_account_marker),
             "default_vendor_upstream_account"
         );
+    }
+
+    /// The bundled account upsert must converge account status in exactly one
+    /// direction, and the redeploy defect it fixes must not come back.
+    ///
+    /// `ensure_bootstrap_data` re-imports this seed on every startup that does not
+    /// consider the database `Installed`, and it imports with the resolved
+    /// *install* environment. A gateway redeployed with a production-like install
+    /// environment therefore used to rewrite every operator-enabled bundled
+    /// account back to `DISABLED_STATUS`; the operator saw the model-group
+    /// accounts "switch themselves off" after a redeploy.
+    ///
+    /// The SQL text is asserted here because the behaviour needs a PostgreSQL
+    /// schema (`tests/ai_routing_seed_idempotency.rs::
+    /// reseeding_never_disables_an_operator_enabled_account` covers the runtime
+    /// side). The guard must (a) still repair a row carrying the
+    /// `initialAccountStatus: disabled` marker and (b) never apply a disable.
+    #[test]
+    fn bundled_account_upsert_only_ever_enables() {
+        let source = include_str!("ai_routing_seed.rs");
+        // Every status-converging CASE in the account upserts. The admin topology
+        // writer (INSERT ... ON CONFLICT on the same key) sets no `status` at all
+        // in its UPDATE branch, which is the strictest form of "never reverses an
+        // operator decision", so it carries no CASE and needs no guard.
+        let mut guards = 0usize;
+        for item_type in [
+            "default_vendor_upstream_account",
+            "default_relay_upstream_account",
+        ] {
+            // Anchor on the guarded CASE inside the upsert: the occurrence that
+            // adopts the incoming status AND carries the `initialAccountStatus`
+            // marker. An unguarded `= '{item_type}' THEN EXCLUDED.status` (the
+            // redeploy defect) has no marker and is therefore never found.
+            let needle = "status = CASE";
+            let mut guard_condition: Option<&str> = None;
+            for (offset, _) in source.match_indices(needle) {
+                let body = &source[offset..];
+                let Some(body) = body.strip_prefix(&needle) else {
+                    continue;
+                };
+                let condition = body
+                    .split("ELSE ai_upstream_account.status")
+                    .next()
+                    .unwrap_or(body);
+                if condition.contains(&format!("= '{item_type}'"))
+                    && condition.contains("THEN EXCLUDED.status")
+                {
+                    guard_condition = Some(condition);
+                    break;
+                }
+            }
+            let condition = guard_condition.unwrap_or_else(|| {
+                panic!("the {item_type} upsert no longer has a status CASE that converges; a re-seed either reversed the operator decision or stopped converging at all")
+            });
+            assert!(
+                condition.contains("initialAccountStatus") && condition.contains("'disabled'"),
+                "the {item_type} status guard must be limited to rows the seed itself left \
+                 disabled (`initialAccountStatus: disabled`); otherwise a redeploy reverses an \
+                 operator's decision again"
+            );
+            assert!(
+                condition.contains("ai_upstream_account.status <> EXCLUDED.status"),
+                "the {item_type} guard must only fire when the row actually differs from the seed's intent"
+            );
+            guards += 1;
+        }
+        assert_eq!(guards, 2, "both the vendor and relay writers must be guarded");
     }
 
     /// Every generic api_endpoint the model-catalog import can bind a model to

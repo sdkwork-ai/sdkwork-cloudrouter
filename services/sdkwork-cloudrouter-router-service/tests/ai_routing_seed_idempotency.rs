@@ -553,3 +553,105 @@ async fn ai_routing_seed_attaches_a_member_created_by_a_later_pass() {
 
     context.cleanup().await;
 }
+
+/// Re-deploying the gateway must not switch an operator-enabled account back
+/// off.
+///
+/// `ensure_bootstrap_data` re-imports the seed whenever the database is not
+/// `Installed`, and it imports with the *install* environment. When that
+/// environment was production-like while the operator had switched the bundled
+/// accounts on, the unconditional `status = EXCLUDED.status` upsert rewrote every
+/// seed-marked row back to disabled — so an account enabled by an operator was
+/// disabled again by the next redeploy, with no operator action involved.
+///
+/// The seed now converges in one direction only: `disabled -> enabled` repairs a
+/// row it left disabled (the `initialAccountStatus: disabled` marker), and
+/// `enabled -> disabled` is never applied by the seed.
+#[tokio::test]
+async fn reseeding_never_disables_an_operator_enabled_account() {
+    let Some(context) = SeedTestContext::new("one-way-status").await else {
+        return;
+    };
+
+    // Seed as a dev-like install: every bundled account lands enabled.
+    seed(&context).await.expect("seed import");
+
+    // Simulate a deployment whose later re-deploy resolves a production-like
+    // install environment. The seed now leaves the enabled rows alone.
+    let codec = credential_codec();
+    import_postgres_ai_routing_seed(&context.pool, Some("production"), Some(codec.as_ref()))
+        .await
+        .map_err(|error| describe(&error))
+        .expect("re-import with a production-like install environment");
+
+    let disabled = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT COUNT(*)::bigint
+        FROM ai_upstream_account
+        WHERE metadata ->> 'itemType' IN (
+            'default_vendor_upstream_account', 'default_relay_upstream_account')
+          AND deleted_at IS NULL
+          AND status <> 1
+        "#,
+    )
+    .fetch_one(&context.pool)
+    .await
+    .expect("count disabled bundled accounts");
+    assert_eq!(
+        disabled, 0,
+        "re-seeding a production-like install disabled {disabled} bundled account(s) that an \
+         operator would have switched on; a redeploy must never reverse that decision"
+    );
+
+    // The opposite direction must still converge: a row the seed left disabled on
+    // an earlier install is repaired by a dev-like import, which is the original
+    // defect this convergence rule exists for.
+    sqlx::query(
+        r#"
+        UPDATE ai_upstream_account
+        SET status = 0
+        WHERE metadata ->> 'itemType' IN (
+            'default_vendor_upstream_account', 'default_relay_upstream_account')
+          AND deleted_at IS NULL
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .expect("disable the bundled accounts");
+    // The marker records the state the seed itself wrote; a row it left disabled
+    // carries `initialAccountStatus: disabled`.
+    sqlx::query(
+        r#"
+        UPDATE ai_upstream_account
+        SET metadata = jsonb_set(metadata, '{initialAccountStatus}', '"disabled"')
+        WHERE metadata ->> 'itemType' IN (
+            'default_vendor_upstream_account', 'default_relay_upstream_account')
+          AND deleted_at IS NULL
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .expect("mark the bundled accounts as seeded disabled");
+
+    seed(&context).await.expect("dev-like re-seed");
+
+    let still_disabled = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT COUNT(*)::bigint
+        FROM ai_upstream_account
+        WHERE metadata ->> 'itemType' IN (
+            'default_vendor_upstream_account', 'default_relay_upstream_account')
+          AND deleted_at IS NULL
+          AND status <> 1
+        "#,
+    )
+    .fetch_one(&context.pool)
+    .await
+    .expect("count disabled bundled accounts");
+    assert_eq!(
+        still_disabled, 0,
+        "a row the seed itself left disabled was not repaired by a dev-like re-seed"
+    );
+
+    context.cleanup().await;
+}

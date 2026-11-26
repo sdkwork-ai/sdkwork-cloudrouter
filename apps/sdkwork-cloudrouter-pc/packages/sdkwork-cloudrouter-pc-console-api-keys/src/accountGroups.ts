@@ -46,7 +46,26 @@ export function toGroupPickerOptions(groups: AccountGroup[]): GroupPickerOption[
 
 const GROUP_TAG_KEYS = ['stable', 'hot', 'recommended', 'promotion', 'new', 'premium', 'high_value', 'official', 'beta', 'limited'] as const;
 
-/** 构建分组标签显示翻译映射（key 为标签 code） */
+/** 标签 code 的可读化回退：`high_value` → `High value` */
+function humanizeTagCode(code: string): string {
+  const text = code.replace(/[-_]+/g, ' ').trim();
+  return text.length === 0 ? code : text[0].toUpperCase() + text.slice(1);
+}
+
+/**
+ * 构建分组标签显示翻译映射（key 为标签 code）。
+ *
+ * 词条取自本页自带的 `console.apiKeys.groupTag.*`：本页会在管理端词条未注册的宿主
+ * 中单独渲染（控制台 API Key 页、BirdCoder 的嵌入弹窗），跨页面引用
+ * `admin.upstream.accountGroup.tag.*` 时 `t` 会把 key 原样返回，界面就会显示原始
+ * key。缺失词条一律回退可读化 code，界面上永不出现 i18n key。
+ */
 export function buildTagLabels(t: (key: string) => string): Record<string, string> {
-  return Object.fromEntries(GROUP_TAG_KEYS.map((tag) => [tag, t(`admin.upstream.accountGroup.tag.${tag}`)]));
+  return Object.fromEntries(
+    GROUP_TAG_KEYS.map((tag) => {
+      const key = `console.apiKeys.groupTag.${tag}`;
+      const label = t(key);
+      return [tag, label === key ? humanizeTagCode(tag) : label];
+    }),
+  );
 }
