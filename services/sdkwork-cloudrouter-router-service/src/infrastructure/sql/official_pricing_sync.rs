@@ -1278,16 +1278,16 @@ async fn ensure_rate(
             meter_display_name, quantity_kind, unit_code, vendor_code,
             provider_code, account_id, region_code, resource_type, resource_code,
             catalog_key, api_format, endpoint_code, billability, charge_timing,
-            calculation_mode, quantity_aggregation, unit_size, unit_price,
+            calculation_mode, metering_mode, quantity_aggregation, unit_size, unit_price,
             minimum_quantity, quantity_step, currency_code, conditions, tiers,
             formula, priority, rate_variant, schedule, effective_from, effective_to, source_url,
             source_observed_at)
            VALUES ($1, $2, 0, 0, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
                    $13, $14, $15, $16, $17, NULL, $18, 'model', $19, $20, $21,
-                   $22, $23, $24, $25, $26, $27::numeric, $28::numeric,
-                   $29::numeric, $30::numeric, $31, $32::jsonb, $33::jsonb,
-                   $34::jsonb, $35, $36, $37::jsonb, $38::timestamptz,
-                   $39::timestamptz, $40, $41::timestamptz)"#,
+                   $22, $23, $24, $25, $26, $27, $28::numeric, $29::numeric,
+                   $30::numeric, $31::numeric, $32, $33::jsonb, $34::jsonb,
+                   $35::jsonb, $36, $37, $38::jsonb, $39::timestamptz,
+                   $40::timestamptz, $41, $42::timestamptz)"#,
     )
     .bind(id)
     .bind(stable_uuid(
@@ -1323,6 +1323,7 @@ async fn ensure_rate(
     .bind(&rate.billability)
     .bind(&rate.charge_timing)
     .bind(&rate.calculation_mode)
+    .bind(projected_metering_mode(rate))
     .bind(&rate.quantity_aggregation)
     .bind(&rate.unit_size)
     .bind(&rate.unit_price)
@@ -1342,6 +1343,32 @@ async fn ensure_rate(
     .execute(&mut **transaction)
     .await?;
     Ok(id)
+}
+
+/// Charge model declared for a catalog rate.
+///
+/// `pricing_rate.metering_mode` (migration 0012) must agree with the payload
+/// the row carries, but a catalog price row does not publish the column. The
+/// value is projected from the payload exactly the way 0012 backfilled the
+/// historical rows: a formula is `formula`, a tier scale is `volume` or
+/// `graduated`, a flat rate is `flat`, everything else is `per_quantity`.
+/// `pricing_sync_calculation_mode()` then projects `calculation_mode` from it
+/// inside the database, so the two declarations cannot diverge.
+fn projected_metering_mode(rate: &RateProjection) -> &'static str {
+    if rate.formula.is_some() {
+        return "formula";
+    }
+    if !rate.tiers.is_empty() {
+        return if rate.calculation_mode == "volume" {
+            "volume"
+        } else {
+            "graduated"
+        };
+    }
+    if rate.calculation_mode == "flat" {
+        return "flat";
+    }
+    "per_quantity"
 }
 
 fn json_string<T: Serialize>(value: &T, label: &str) -> Result<String, OfficialPricingSyncError> {
