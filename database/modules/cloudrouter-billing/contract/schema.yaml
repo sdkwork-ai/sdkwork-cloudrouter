@@ -247,6 +247,187 @@ tables:
     lifecycle: null
     semantic_contracts: null
     frontend_routes: []
+  - name: cloudrouter_catalog_generation
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: cloudrouter-rating-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      config_scope:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      partition_key:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL DEFAULT ''
+      generation:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      changed_by:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      changed_reason:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+    constraints:
+      - name: pk_cloudrouter_catalog_generation
+        type: primary_key
+        columns:
+          - id
+      - name: ck_cloudrouter_catalog_generation_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_cloudrouter_catalog_generation
+        type: unique
+        columns: &id005
+          - config_scope
+          - partition_key
+        where: null
+      - name: uk_cloudrouter_catalog_generation_uuid
+        type: unique
+        columns: &id006
+          - uuid
+        where: null
+      - name: ck_cloudrouter_catalog_generation_scope
+        type: check
+        columns: []
+        expression: BTRIM(config_scope) <> ''
+      - name: ck_cloudrouter_catalog_generation_non_negative
+        type: check
+        columns: []
+        expression: generation >= 0
+    indexes:
+      - name: uk_cloudrouter_catalog_generation
+        columns: *id005
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_cloudrouter_catalog_generation_uuid
+        columns: *id006
+        unique: true
+        where: deleted_at IS NULL
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 7y
+        grace_period: 24h
+      cleanup:
+        owner: cloudrouter-billing-retention-service
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: cloudrouter-billing-retention-service
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+    frontend_routes: []
   - name: cloudrouter_charge_line
     domain: commerce
     profile: ledger_source_fact
@@ -429,21 +610,21 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_cloudrouter_charge_line_scope_id
         type: unique
-        columns: &id005
+        columns: &id007
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_cloudrouter_charge_line_idempotency
         type: unique
-        columns: &id006
+        columns: &id008
           - tenant_id
           - organization_id
           - idempotency_key
         where: null
       - name: uk_cloudrouter_charge_line_decision
         type: unique
-        columns: &id007
+        columns: &id009
           - tenant_id
           - organization_id
           - rating_decision_id
@@ -478,15 +659,15 @@ tables:
         expression: (settlement_id IS NULL AND settled_at IS NULL) OR (settlement_id IS NOT NULL AND settled_at IS NOT NULL)
     indexes:
       - name: uk_cloudrouter_charge_line_scope_id
-        columns: *id005
+        columns: *id007
         unique: true
         where: null
       - name: uk_cloudrouter_charge_line_idempotency
-        columns: *id006
+        columns: *id008
         unique: true
         where: null
       - name: uk_cloudrouter_charge_line_decision
-        columns: *id007
+        columns: *id009
         unique: true
         where: null
       - name: idx_cloudrouter_charge_line_dashboard
@@ -512,6 +693,299 @@ tables:
       - name: idx_cloudrouter_charge_line_retention
         columns:
           - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 12mo
+        archive_retention: 7y
+        grace_period: 24h
+      cleanup:
+        owner: cloudrouter-billing-retention-service
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: cloudrouter-billing-retention-service
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+    frontend_routes: []
+  - name: cloudrouter_group_resource_price
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: cloudrouter-rating-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      account_group_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      account_group_code_snapshot:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      resource_type:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      catalog_key:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      operation_code:
+        type: string(160)
+        required: true
+        postgres_type: VARCHAR(160)
+        constraints: NOT NULL
+      meter_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      region_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      provider_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT ''
+      price_mode:
+        type: string(24)
+        required: true
+        postgres_type: VARCHAR(24)
+        constraints: NOT NULL
+      multiplier:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL DEFAULT 1
+      markup_amount:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL DEFAULT 0
+      unit_price_override:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      currency_code:
+        type: string(10)
+        required: true
+        postgres_type: VARCHAR(10)
+        constraints: NOT NULL
+      effective_from:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_cloudrouter_group_resource_price
+        type: primary_key
+        columns:
+          - id
+      - name: ck_cloudrouter_group_resource_price_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_cloudrouter_group_resource_price_uuid
+        type: unique
+        columns: &id010
+          - uuid
+        where: null
+      - name: uk_cloudrouter_group_resource_price_scope_id
+        type: unique
+        columns: &id011
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_cloudrouter_group_resource_price_target
+        type: unique
+        columns: &id012
+          - tenant_id
+          - organization_id
+          - account_group_id
+          - catalog_key
+          - operation_code
+          - meter_code
+          - region_code
+          - provider_code
+        where: null
+      - name: fk_cloudrouter_group_resource_price_group
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - account_group_id
+        references_table: ai_upstream_account_group
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_cloudrouter_group_resource_price_resource_type
+        type: check
+        columns: []
+        expression: resource_type IN ('model', 'image', 'video', 'api', 'audio', 'other')
+      - name: ck_cloudrouter_group_resource_price_mode
+        type: check
+        columns: []
+        expression: price_mode IN ('multiplier', 'markup', 'unit_price', 'free')
+      - name: ck_cloudrouter_group_resource_price_payload
+        type: check
+        columns: []
+        expression: (price_mode = 'multiplier' AND multiplier > 0 AND markup_amount = 0 AND unit_price_override IS NULL) OR
+          (price_mode = 'markup' AND multiplier = 1 AND markup_amount >= 0 AND unit_price_override IS NULL) OR (price_mode
+          = 'unit_price' AND multiplier = 1 AND markup_amount = 0 AND unit_price_override > 0) OR (price_mode = 'free' AND
+          multiplier = 1 AND markup_amount = 0 AND unit_price_override = 0)
+      - name: ck_cloudrouter_group_resource_price_interval
+        type: check
+        columns: []
+        expression: effective_to IS NULL OR effective_to > effective_from
+      - name: ck_cloudrouter_group_resource_price_currency
+        type: check
+        columns: []
+        expression: currency_code ~ '^[A-Z]{3}$'
+      - name: ck_cloudrouter_group_resource_price_target
+        type: check
+        columns: []
+        expression: BTRIM(catalog_key) <> '' AND BTRIM(operation_code) <> '' AND BTRIM(meter_code) <> '' AND BTRIM(region_code)
+          <> '' AND BTRIM(account_group_code_snapshot) <> ''
+    indexes:
+      - name: uk_cloudrouter_group_resource_price_uuid
+        columns: *id010
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_cloudrouter_group_resource_price_scope_id
+        columns: *id011
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_cloudrouter_group_resource_price_target
+        columns: *id012
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_cloudrouter_group_resource_price_resolve
+        columns:
+          - tenant_id
+          - organization_id
+          - account_group_id
+          - resource_type
+          - catalog_key
+          - meter_code
+          - status
+          - effective_from
           - id
         unique: false
         where: null
@@ -690,19 +1164,19 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_cloudrouter_pricing_plan_uuid
         type: unique
-        columns: &id008
+        columns: &id013
           - uuid
         where: null
       - name: uk_cloudrouter_pricing_plan_scope_id
         type: unique
-        columns: &id009
+        columns: &id014
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_cloudrouter_pricing_plan_code
         type: unique
-        columns: &id010
+        columns: &id015
           - tenant_id
           - organization_id
           - plan_code
@@ -733,15 +1207,15 @@ tables:
         expression: currency_code ~ '^[A-Z]{3}$'
     indexes:
       - name: uk_cloudrouter_pricing_plan_uuid
-        columns: *id008
+        columns: *id013
         unique: true
         where: deleted_at IS NULL
       - name: uk_cloudrouter_pricing_plan_scope_id
-        columns: *id009
+        columns: *id014
         unique: true
         where: deleted_at IS NULL
       - name: uk_cloudrouter_pricing_plan_code
-        columns: *id010
+        columns: *id015
         unique: true
         where: deleted_at IS NULL
       - name: uq_cloudrouter_pricing_plan_scope_reference
@@ -924,25 +1398,25 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_cloudrouter_pricing_rule_uuid
         type: unique
-        columns: &id011
+        columns: &id016
           - uuid
         where: null
       - name: uk_cloudrouter_pricing_rule_scope_id
         type: unique
-        columns: &id012
+        columns: &id017
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_cloudrouter_pricing_rule_plan_id
         type: unique
-        columns: &id013
+        columns: &id018
           - id
           - pricing_plan_id
         where: null
       - name: uk_cloudrouter_pricing_rule_code
         type: unique
-        columns: &id014
+        columns: &id019
           - tenant_id
           - organization_id
           - pricing_plan_id
@@ -983,19 +1457,19 @@ tables:
         expression: effective_to IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_cloudrouter_pricing_rule_uuid
-        columns: *id011
+        columns: *id016
         unique: true
         where: deleted_at IS NULL
       - name: uk_cloudrouter_pricing_rule_scope_id
-        columns: *id012
+        columns: *id017
         unique: true
         where: deleted_at IS NULL
       - name: uk_cloudrouter_pricing_rule_plan_id
-        columns: *id013
+        columns: *id018
         unique: true
         where: deleted_at IS NULL
       - name: uk_cloudrouter_pricing_rule_code
-        columns: *id014
+        columns: *id019
         unique: true
         where: deleted_at IS NULL
       - name: uq_cloudrouter_pricing_rule_plan_reference
@@ -1272,6 +1746,11 @@ tables:
         required: true
         postgres_type: JSONB
         constraints: NOT NULL
+      pricing_layer:
+        type: string(32)
+        required: false
+        postgres_type: VARCHAR(32)
+        constraints: ''
       decided_at:
         type: instant
         required: true
@@ -1290,21 +1769,21 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_cloudrouter_rating_decision_scope_id
         type: unique
-        columns: &id015
+        columns: &id020
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_cloudrouter_rating_decision_idempotency
         type: unique
-        columns: &id016
+        columns: &id021
           - tenant_id
           - organization_id
           - idempotency_key
         where: null
       - name: uk_cloudrouter_rating_decision_measurement
         type: unique
-        columns: &id017
+        columns: &id022
           - tenant_id
           - organization_id
           - measurement_id
@@ -1424,6 +1903,10 @@ tables:
         expression: (pricing_plan_tenant_id IS NULL AND pricing_plan_organization_id IS NULL AND pricing_plan_id IS NULL AND
           pricing_rule_id IS NULL) OR (pricing_plan_tenant_id IS NOT NULL AND pricing_plan_organization_id IS NOT NULL AND
           pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT NULL)
+      - name: ck_cloudrouter_rating_decision_layer
+        type: check
+        columns: []
+        expression: pricing_layer IS NULL OR pricing_layer IN ('plan_reference', 'plan_rule', 'group_resource', 'group_multiplier')
       - name: ck_cloudrouter_rating_decision_amount
         type: check
         columns: []
@@ -1431,26 +1914,26 @@ tables:
           >= 0 AND (cost_unit_price IS NULL OR cost_unit_price >= 0) AND unit_price IS NOT NULL AND unit_price >= 0 AND reference_amount
           IS NOT NULL AND reference_amount >= 0 AND (cost_amount IS NULL OR cost_amount >= 0) AND amount IS NOT NULL AND amount
           >= 0 AND currency_code IS NOT NULL AND unit_size > 0 AND strategy_code IS NOT NULL AND calculation_mode IS NOT NULL
-          AND price_book_id IS NOT NULL AND rate_id IS NOT NULL AND account_rate_card_id IS NOT NULL AND pricing_plan_id IS
-          NOT NULL AND pricing_rule_id IS NOT NULL) OR (decision_status = 'non_chargeable' AND billability IN ('free', 'not_applicable')
-          AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL AND price_book_id
-          IS NOT NULL AND rate_id IS NOT NULL) OR (decision_status = 'unrated' AND billability IN ('chargeable', 'unknown')
-          AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL)
+          AND price_book_id IS NOT NULL AND rate_id IS NOT NULL AND pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT
+          NULL) OR (decision_status = 'non_chargeable' AND billability IN ('free', 'not_applicable') AND reference_amount
+          IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL AND price_book_id IS NOT NULL AND rate_id
+          IS NOT NULL) OR (decision_status = 'unrated' AND billability IN ('chargeable', 'unknown') AND reference_amount IS
+          NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL)
       - name: ck_cloudrouter_rating_decision_currency
         type: check
         columns: []
         expression: currency_code IS NULL OR currency_code ~ '^[A-Z]{3}$'
     indexes:
       - name: uk_cloudrouter_rating_decision_scope_id
-        columns: *id015
+        columns: *id020
         unique: true
         where: null
       - name: uk_cloudrouter_rating_decision_idempotency
-        columns: *id016
+        columns: *id021
         unique: true
         where: null
       - name: uk_cloudrouter_rating_decision_measurement
-        columns: *id017
+        columns: *id022
         unique: true
         where: null
       - name: uq_cloudrouter_rating_decision_scope_reference
@@ -1696,21 +2179,21 @@ tables:
         expression: tenant_id > 0 AND organization_id >= 0
       - name: uk_cloudrouter_usage_measurement_scope_id
         type: unique
-        columns: &id018
+        columns: &id023
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_cloudrouter_usage_measurement_idempotency
         type: unique
-        columns: &id019
+        columns: &id024
           - tenant_id
           - organization_id
           - idempotency_key
         where: null
       - name: uk_cloudrouter_usage_measurement_line
         type: unique
-        columns: &id020
+        columns: &id025
           - tenant_id
           - organization_id
           - invocation_id
@@ -1722,15 +2205,15 @@ tables:
         expression: quantity >= 0
     indexes:
       - name: uk_cloudrouter_usage_measurement_scope_id
-        columns: *id018
+        columns: *id023
         unique: true
         where: null
       - name: uk_cloudrouter_usage_measurement_idempotency
-        columns: *id019
+        columns: *id024
         unique: true
         where: null
       - name: uk_cloudrouter_usage_measurement_line
-        columns: *id020
+        columns: *id025
         unique: true
         where: null
       - name: idx_cloudrouter_usage_measurement_rating

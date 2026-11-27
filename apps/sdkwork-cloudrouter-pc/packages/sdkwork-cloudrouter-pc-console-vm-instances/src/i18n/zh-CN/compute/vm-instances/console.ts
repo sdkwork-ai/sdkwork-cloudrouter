@@ -29,6 +29,7 @@ export const vmInstancesConsoleMessagesZh: Record<string, string> = {
   // ------------------------------------------------------------------ columns
   'console.vmInstances.column.name': '名称',
   'console.vmInstances.column.state': '状态',
+  'console.vmInstances.column.runtimeKind': '运行时',
   'console.vmInstances.column.profile': '规格档',
   'console.vmInstances.column.resources': '资源',
   'console.vmInstances.column.capabilities': '所需能力',
@@ -51,6 +52,13 @@ export const vmInstancesConsoleMessagesZh: Record<string, string> = {
   'console.vmInstances.assurance.user_space_kernel': '用户态内核级',
   'console.vmInstances.assurance.micro_vm': '微型虚拟机级',
   'console.vmInstances.assurance.dedicated_vm': '独占虚拟机级',
+
+  'console.vmInstances.runtimeKind.sandbox': '沙箱（进程级）',
+  'console.vmInstances.runtimeKind.docker': 'Docker 容器',
+  'console.vmInstances.runtimeKind.gvisor': 'gVisor（用户态内核）',
+  'console.vmInstances.runtimeKind.kata': 'Kata Containers',
+  'console.vmInstances.runtimeKind.firecracker': 'Firecracker 微型虚拟机',
+  'console.vmInstances.runtimeKind.qemu': 'QEMU 完整虚拟机',
 
   'console.vmInstances.capability.terminal': '终端',
   'console.vmInstances.capability.filesystem': '文件系统',
@@ -110,6 +118,7 @@ export const vmInstancesConsoleMessagesZh: Record<string, string> = {
   'console.vmInstances.field.memory': '内存（MiB）',
   'console.vmInstances.field.disk': '磁盘（MiB）',
   'console.vmInstances.field.assurance': '最低隔离等级',
+  'console.vmInstances.field.runtimeKind': '运行时引擎',
   'console.vmInstances.field.capabilities': '所需能力',
   'console.vmInstances.field.autoStart': '自动启动',
   'console.vmInstances.field.expiresAt': '到期时间',
@@ -123,6 +132,8 @@ export const vmInstancesConsoleMessagesZh: Record<string, string> = {
   'console.vmInstances.hint.memory': '{{profile}}型为 {{min}}–{{max}} MiB。',
   'console.vmInstances.hint.disk': '{{profile}}型为 {{min}}–{{max}} MiB。',
   'console.vmInstances.hint.assurance': '隔离等级弱于该要求的主机无法承载此实例。',
+  'console.vmInstances.hint.runtimeKind': '决定实际运行方式。Docker 共享宿主内核，QEMU 为完整虚拟机；可选隔离等级随之收敛。',
+  'console.vmInstances.hint.runtimeKindImmutable': '实例创建后运行时引擎即固定，保存时不会提交该字段。',
   'console.vmInstances.hint.capabilities': '最多 {{max}} 项。全部不勾选即按规格档默认。',
   'console.vmInstances.hint.autoStart': '开通完成后立即启动运行时。',
   'console.vmInstances.hint.expiresAt': '留空表示永不过期。此处按本地时区填写，存储为 UTC。',
@@ -144,6 +155,7 @@ export const vmInstancesConsoleMessagesZh: Record<string, string> = {
   'console.vmInstances.validate.diskNotNumber': '请输入整数 MiB 数量。',
   'console.vmInstances.validate.diskOutOfProfile': '{{profile}}型的磁盘需在 {{min}}–{{max}} MiB 之间。',
   'console.vmInstances.validate.expiresAtInvalid': '请输入有效的日期与时间。',
+  'console.vmInstances.validate.insufficientAssurance': '所选运行时引擎无法提供该隔离等级，请提高引擎或降低要求。',
 
   // ------------------------------------------------------------------- delete
   'console.vmInstances.dialog.deleteTitle': '删除虚拟机实例？',

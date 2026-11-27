@@ -132,9 +132,7 @@ impl MetricsInterceptor {
             .dispatch
             .response
             .as_ref()
-            .and_then(|response| {
-                super::effective_dispatch_status_code(invocation, response)
-            })
+            .and_then(|response| super::effective_dispatch_status_code(invocation, response))
             .unwrap_or(500)
     }
 
@@ -308,10 +306,8 @@ mod tests {
     #[test]
     fn normalized_response_status_wins_over_the_transport_status() {
         let mut invocation = invocation();
-        invocation.dispatch.response = Some(InvocationDispatchResponse::json(
-            500,
-            serde_json::json!({}),
-        ));
+        invocation.dispatch.response =
+            Some(InvocationDispatchResponse::json(500, serde_json::json!({})));
         invocation.telemetry.normalized_response = Some(InvocationNormalizedResponse {
             status_code: 200,
             body: Some(serde_json::json!({"id": "ok"})),

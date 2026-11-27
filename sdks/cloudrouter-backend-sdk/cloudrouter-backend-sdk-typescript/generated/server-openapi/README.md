@@ -56,8 +56,6 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.billing` - billing API
-- `client.mcp` - mcp API
-- `client.memory` - memory API
 - `client.payments` - payments API
 - `client.pricing` - pricing API
 - `client.recharges` - recharges API
@@ -82,20 +80,6 @@ const params = {
   page_size: 2,
 };
 const result = await client.billing.rechargeRecords.list(params);
-```
-
-### mcp
-
-```typescript
-// List admin categories
-const result = await client.mcp.categories.list();
-```
-
-### memory
-
-```typescript
-// List memory records
-const result = await client.memory.memoryAdmin.records.list();
 ```
 
 ### payments

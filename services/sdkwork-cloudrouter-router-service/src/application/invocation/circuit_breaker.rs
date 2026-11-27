@@ -1858,7 +1858,10 @@ mod tests {
     #[test]
     fn redis_scripts_keep_the_rate_limit_contract() {
         let acquire = RedisCircuitBreakerStore::lua_allow_call();
-        assert!(acquire.contains("'open_for'"), "acquire must honour open_for");
+        assert!(
+            acquire.contains("'open_for'"),
+            "acquire must honour open_for"
+        );
         assert!(acquire.contains("open_for = open_duration"));
 
         let failure = RedisCircuitBreakerStore::lua_record_failure();
@@ -1888,8 +1891,7 @@ mod tests {
         };
         let config = CircuitBreakerConfig::default();
         let prefix = format!("cr-cb-rate-limit-{}", std::process::id());
-        let store =
-            RedisCircuitBreakerStore::try_new(&url, &prefix, &config).expect("redis store");
+        let store = RedisCircuitBreakerStore::try_new(&url, &prefix, &config).expect("redis store");
         let account = 9_001;
 
         store.reset(account).await;

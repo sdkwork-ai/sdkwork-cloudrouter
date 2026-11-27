@@ -9,7 +9,7 @@
 --   refresh soft-delete) fails validation. Backfill holidayDates and
 --   holidayOnly in place; the new values satisfy the same trigger.
 -- reversible: true
--- rollback: forward-fix
+-- rollback: down-migration
 -- transactional: true
 -- lock: table
 -- lock_timeout: 5s

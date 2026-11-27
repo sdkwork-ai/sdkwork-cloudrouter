@@ -41,10 +41,12 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 6,
+  "materializedTableCount": 8,
   "materializedTables": [
     "cloudrouter_account_rate_card",
+    "cloudrouter_catalog_generation",
     "cloudrouter_charge_line",
+    "cloudrouter_group_resource_price",
     "cloudrouter_pricing_plan",
     "cloudrouter_pricing_rule",
     "cloudrouter_rating_decision",

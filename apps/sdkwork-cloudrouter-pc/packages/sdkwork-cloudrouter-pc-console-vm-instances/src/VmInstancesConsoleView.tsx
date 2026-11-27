@@ -333,6 +333,7 @@ export function VmInstancesConsoleView({ client }: VmInstancesConsoleViewProps =
             <tr>
               <th className="px-4 py-3" scope="col">{t('console.vmInstances.column.name')}</th>
               <th className="px-4 py-3" scope="col">{t('console.vmInstances.column.state')}</th>
+              <th className="px-4 py-3" scope="col">{t('console.vmInstances.column.runtimeKind')}</th>
               <th className="px-4 py-3" scope="col">{t('console.vmInstances.column.profile')}</th>
               <th className="px-4 py-3" scope="col">{t('console.vmInstances.column.resources')}</th>
               <th className="px-4 py-3" scope="col">{t('console.vmInstances.column.capabilities')}</th>
@@ -374,6 +375,14 @@ export function VmInstancesConsoleView({ client }: VmInstancesConsoleViewProps =
                       >
                         {t(`console.vmInstances.state.${instance.sandboxInstanceState}`)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-slate-700 dark:text-slate-200">
+                        {t(`console.vmInstances.runtimeKind.${instance.sandboxInstanceRuntimeKind}`)}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                        {t(`console.vmInstances.assurance.${instance.sandboxInstanceMinimumAssurance}`)}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
                       {t(`console.vmInstances.profile.${instance.sandboxInstanceProfile}`)}

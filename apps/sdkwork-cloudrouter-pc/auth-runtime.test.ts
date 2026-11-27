@@ -2253,6 +2253,62 @@ test("generated SDK auth errors redirect from local protected pages when redirec
   }
 });
 
+test("dependency backend failures on an admin page never end the operator session", async () => {
+  // Regression: /admin/applications/analytics fans one page out across the
+  // deployments and appstore backends. A 404 (route not deployed), a 403
+  // (permission missing) or a 5xx (dependency offline) — even one whose detail
+  // merely looked auth-shaped — used to be classified as an expired session,
+  // which cleared the stored session and redirected to the login page.
+  const {
+    handleCloudRouterSdkSessionAuthError,
+    isCloudRouterSdkSessionAuthError,
+    resetCloudRouterSdkSessionAuthRedirectState,
+  } = await loadSdkSessionAuthRuntime();
+  const redirects: string[] = [];
+  const restoreWindow = installPortalAuthRedirectWindow({
+    hash: "",
+    hostname: "portal.example.com",
+    pathname: "/admin/applications/analytics",
+    replace: (to) => redirects.push(to),
+    search: "",
+  });
+
+  try {
+    resetCloudRouterSdkSessionAuthRedirectState();
+    storeAppSessionFromResult({
+      code: "200",
+      data: {
+        accessToken: "access-token",
+        authToken: "auth-token",
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      },
+    });
+
+    const dependencyFailures = [
+      { code: "NOT_FOUND", detail: "no matching route", httpStatus: 404, message: "no matching route" },
+      { code: "FORBIDDEN", httpStatus: 403, message: "permission denied" },
+      { code: "BAD_GATEWAY", httpStatus: 502, message: "HTTP Error 502" },
+      // Auth-shaped prose on a non-401 status is the exact defect.
+      { code: "NOT_FOUND", httpStatus: 404, message: "invalid token" },
+      { code: "FORBIDDEN", httpStatus: 403, message: "not logged in" },
+      { detail: "invalid or expired iam session", status: 500 },
+    ];
+
+    for (const failure of dependencyFailures) {
+      assert.equal(isCloudRouterSdkSessionAuthError(failure), false, JSON.stringify(failure));
+      assert.equal(handleCloudRouterSdkSessionAuthError(failure), false, JSON.stringify(failure));
+    }
+
+    assert.deepEqual(redirects, []);
+    // The operator stays signed in: no dependency failure may clear the session.
+    assert.notEqual(loadStoredAppSessionToken(), null);
+  } finally {
+    clearStoredAppSessionToken();
+    resetCloudRouterSdkSessionAuthRedirectState();
+    restoreWindow();
+  }
+});
+
 test("generated SDK unauthorized errors redirect once and skip auth pages", async () => {
   const {
     handleCloudRouterSdkSessionAuthError,

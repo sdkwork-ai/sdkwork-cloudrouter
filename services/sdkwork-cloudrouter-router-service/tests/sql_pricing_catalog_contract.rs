@@ -27,10 +27,8 @@ const CANONICAL_UPSTREAM_TABLES: [&str; 10] = [
 
 /// Tables that must appear across the whole snapshot query set but are not
 /// referenced by the single `load_upstream_account_routes` query.
-const SNAPSHOT_SET_EXTRA_TABLES: [&str; 2] = [
-    "ai_model_access_policy",
-    "ai_user_account_group_route",
-];
+const SNAPSHOT_SET_EXTRA_TABLES: [&str; 2] =
+    ["ai_model_access_policy", "ai_user_account_group_route"];
 
 const RETIRED_UPSTREAM_TABLES: [&str; 16] = [
     "ai_provider",

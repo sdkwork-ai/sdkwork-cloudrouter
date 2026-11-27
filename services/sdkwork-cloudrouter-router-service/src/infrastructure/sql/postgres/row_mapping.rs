@@ -296,6 +296,52 @@ pub async fn load_pricing_rules(
     .await
 }
 
+pub async fn load_group_resource_prices(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<crate::infrastructure::sql::rows::GroupResourcePriceRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        let currency: String = row.try_get("currency_code")?;
+        let price_mode_code: String = row.try_get("price_mode")?;
+        let price_mode =
+            crate::domain::GroupPriceMode::from_code(&price_mode_code).ok_or_else(|| {
+                decode_error(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("invalid group resource price mode {price_mode_code}"),
+                ))
+            })?;
+        let override_price = row
+            .try_get::<Option<String>, _>("unit_price_override")?
+            .as_deref()
+            .map(|value| Money::new(&currency, value))
+            .transpose()
+            .map_err(decode_error)?;
+        Ok(crate::infrastructure::sql::rows::GroupResourcePriceRow {
+            tenant_id: row.try_get("tenant_id")?,
+            organization_id: row.try_get("organization_id")?,
+            value: crate::domain::GroupResourcePrice {
+                account_group_id: row.try_get("account_group_id")?,
+                resource_type: row.try_get("resource_type")?,
+                catalog_key: row.try_get("catalog_key")?,
+                operation_code: row.try_get("operation_code")?,
+                meter_code: row.try_get("meter_code")?,
+                region_code: row.try_get("region_code")?,
+                provider_code: row.try_get("provider_code")?,
+                price_mode,
+                multiplier: DecimalValue::parse(&row.try_get::<String, _>("multiplier")?)
+                    .map_err(decode_error)?,
+                markup_amount: Money::new(&currency, &row.try_get::<String, _>("markup_amount")?)
+                    .map_err(decode_error)?,
+                unit_price_override: override_price,
+                effective_from: row.try_get("effective_from")?,
+                effective_to: row.try_get("effective_to")?,
+            },
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
 pub async fn load_account_rate_cards(
     executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     sql: &'static str,

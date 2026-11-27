@@ -6,9 +6,14 @@ import type {
   SandboxInstanceState,
   SandboxIsolationAssurance,
   SandboxRuntimeCapability,
+  SandboxRuntimeKind,
   UpdateSandboxInstanceInput,
 } from '@sdkwork/cloudroutes-pc-commons/sandbox-instances-client';
-import { SANDBOX_INSTANCE_PROFILES } from '@sdkwork/cloudroutes-pc-commons/sandbox-instances-client';
+import {
+  SANDBOX_INSTANCE_PROFILES,
+  SANDBOX_RUNTIME_KIND_ASSURANCE,
+  SANDBOX_RUNTIME_KINDS,
+} from '@sdkwork/cloudroutes-pc-commons/sandbox-instances-client';
 
 /**
  * Pure VM instance console logic.
@@ -64,6 +69,35 @@ export const VM_INSTANCE_LIMITS = {
 export const VM_INSTANCE_DEFAULT_PROFILE: SandboxInstanceProfile = 'standard';
 export const VM_INSTANCE_DEFAULT_ASSURANCE: SandboxIsolationAssurance = 'container';
 export const VM_INSTANCE_DEFAULT_BASE_IMAGE = 'sdkwork/sandbox-runtime:latest';
+
+/**
+ * Default engine: `docker`. It is the engine that matches the default `container`
+ * assurance above, so a draft is internally consistent before the operator
+ * touches anything — the server rejects an engine that cannot provide the
+ * requested assurance.
+ */
+export const VM_INSTANCE_DEFAULT_RUNTIME_KIND: SandboxRuntimeKind = 'docker';
+
+/** Canonical order of the engine picker (weakest boundary first). */
+export const VM_INSTANCE_RUNTIME_KIND_ORDER: readonly SandboxRuntimeKind[] = SANDBOX_RUNTIME_KINDS;
+
+/**
+ * The isolation ladder, weakest first — the same declaration order the server
+ * documents as its security semantics. The rank is derived from this array so
+ * the page cannot drift from it by editing a number.
+ */
+export const VM_INSTANCE_ASSURANCE_ORDER: readonly SandboxIsolationAssurance[] = [
+  'host_user',
+  'container',
+  'user_space_kernel',
+  'micro_vm',
+  'dedicated_vm',
+];
+
+const VM_INSTANCE_ASSURANCE_RANK: Readonly<Record<SandboxIsolationAssurance, number>> =
+  Object.fromEntries(
+    VM_INSTANCE_ASSURANCE_ORDER.map((assurance, index) => [assurance, index]),
+  ) as Record<SandboxIsolationAssurance, number>;
 
 /** Page sizes offered by the listing. The server clamps `page_size` to 1..200. */
 export const VM_INSTANCE_PAGE_SIZES = [20, 50, 100] as const;
@@ -158,6 +192,7 @@ export interface VmInstanceDraft {
   profile: SandboxInstanceProfile;
   requiredCapabilities: readonly SandboxRuntimeCapability[];
   assurance: SandboxIsolationAssurance;
+  runtimeKind: SandboxRuntimeKind;
   autoStart: boolean;
   vcpuCount: string;
   workspaceId: string;
@@ -173,6 +208,7 @@ export function createVmInstanceDraft(overrides: Partial<VmInstanceDraft> = {}):
     profile: VM_INSTANCE_DEFAULT_PROFILE,
     requiredCapabilities: [],
     assurance: VM_INSTANCE_DEFAULT_ASSURANCE,
+    runtimeKind: VM_INSTANCE_DEFAULT_RUNTIME_KIND,
     autoStart: false,
     vcpuCount: '2',
     workspaceId: '',
@@ -191,6 +227,7 @@ export function vmInstanceDraftFromInstance(instance: SandboxInstance): VmInstan
     profile: instance.sandboxInstanceProfile,
     requiredCapabilities: [...instance.sandboxInstanceRequiredCapabilities],
     assurance: instance.sandboxInstanceMinimumAssurance,
+    runtimeKind: instance.sandboxInstanceRuntimeKind,
     autoStart: instance.sandboxInstanceAutoStart,
     vcpuCount: String(instance.sandboxInstanceVcpuCount),
     workspaceId: instance.sandboxWorkspaceId ?? '',
@@ -204,7 +241,8 @@ export type VmInstanceDraftField =
   | 'expiresAtLocal'
   | 'memoryMb'
   | 'name'
-  | 'vcpuCount';
+  | 'vcpuCount'
+  | 'runtimeKind';
 
 /** Bare validation codes; the view maps each to a localized message. */
 export type VmInstanceValidationCode =
@@ -217,6 +255,7 @@ export type VmInstanceValidationCode =
   | 'memory.outOfProfile'
   | 'name.required'
   | 'name.tooLong'
+  | 'runtimeKind.insufficientAssurance'
   | 'vcpu.notANumber'
   | 'vcpu.outOfProfile';
 
@@ -282,7 +321,42 @@ export function validateVmInstanceDraft(
     errors.expiresAtLocal = 'expiresAt.invalid';
   }
 
+  if (!vmInstanceRuntimeKindSatisfies(draft.runtimeKind, draft.assurance)) {
+    errors.runtimeKind = 'runtimeKind.insufficientAssurance';
+  }
+
   return errors;
+}
+
+/**
+ * True when `runtimeKind` can provide `assurance`.
+ *
+ * Mirrors the service's own check (`validate_runtime_kind_meets_assurance`) so
+ * the page fails before a round trip instead of surfacing a server 400 for a
+ * combination the operator could see was wrong. The server remains the
+ * authority.
+ */
+export function vmInstanceRuntimeKindSatisfies(
+  runtimeKind: SandboxRuntimeKind,
+  assurance: SandboxIsolationAssurance,
+): boolean {
+  return VM_INSTANCE_ASSURANCE_RANK[SANDBOX_RUNTIME_KIND_ASSURANCE[runtimeKind]]
+    >= VM_INSTANCE_ASSURANCE_RANK[assurance];
+}
+
+/**
+ * The assurance tiers a given engine can serve, weakest first.
+ *
+ * The form renders only these options, so selecting an engine cannot leave a
+ * stale assurance value behind that the server would reject.
+ */
+export function vmInstanceAssurancesForRuntimeKind(
+  runtimeKind: SandboxRuntimeKind,
+): readonly SandboxIsolationAssurance[] {
+  const engineRank = VM_INSTANCE_ASSURANCE_RANK[SANDBOX_RUNTIME_KIND_ASSURANCE[runtimeKind]];
+  return VM_INSTANCE_ASSURANCE_ORDER.filter(
+    (assurance) => VM_INSTANCE_ASSURANCE_RANK[assurance] <= engineRank,
+  );
 }
 
 /** The three numeric fields, or a throw if the draft was submitted unvalidated. */
@@ -323,6 +397,7 @@ export function toCreateSandboxInstanceInput(draft: VmInstanceDraft): CreateSand
     sandboxInstanceName: draft.name.trim(),
     sandboxInstanceProfile: draft.profile,
     sandboxInstanceRequiredCapabilities: [...draft.requiredCapabilities],
+    sandboxInstanceRuntimeKind: draft.runtimeKind,
     sandboxInstanceVcpuCount: vcpuCount,
     ...(workspaceId ? { sandboxWorkspaceId: workspaceId } : {}),
   };

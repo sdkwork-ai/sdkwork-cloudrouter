@@ -5,6 +5,7 @@ import type {
   CreateSandboxInstanceInput,
   SandboxInstance,
   SandboxIsolationAssurance,
+  SandboxRuntimeKind,
   UpdateSandboxInstanceInput,
 } from '@sdkwork/cloudroutes-pc-commons/sandbox-instances-client';
 import { SANDBOX_ISOLATION_ASSURANCES } from '@sdkwork/cloudroutes-pc-commons/sandbox-instances-client';
@@ -13,11 +14,13 @@ import {
   VM_INSTANCE_CAPABILITY_ORDER,
   VM_INSTANCE_LIMITS,
   VM_INSTANCE_PROFILE_ORDER,
+  VM_INSTANCE_RUNTIME_KIND_ORDER,
   createVmInstanceDraft,
   toCreateSandboxInstanceInput,
   toUpdateSandboxInstanceInput,
   toggleVmInstanceCapability,
   validateVmInstanceDraft,
+  vmInstanceAssurancesForRuntimeKind,
   vmInstanceDraftFromInstance,
   vmInstanceProfileBounds,
   type VmInstanceDraft,
@@ -50,6 +53,7 @@ const VALIDATION_MESSAGE_KEYS: Readonly<Record<VmInstanceValidationCode, string>
   'memory.outOfProfile': 'console.vmInstances.validate.memoryOutOfProfile',
   'name.required': 'console.vmInstances.validate.nameRequired',
   'name.tooLong': 'console.vmInstances.validate.nameTooLong',
+  'runtimeKind.insufficientAssurance': 'console.vmInstances.validate.insufficientAssurance',
   'vcpu.notANumber': 'console.vmInstances.validate.vcpuNotNumber',
   'vcpu.outOfProfile': 'console.vmInstances.validate.vcpuOutOfProfile',
 };
@@ -349,6 +353,49 @@ export function VmInstanceForm({ busy, instance, onCancel, onSubmit }: VmInstanc
           </legend>
           <div className="mt-2 grid gap-4 sm:grid-cols-2">
             <Field
+              error={messageFor(errors.runtimeKind)}
+              hint={
+                isEdit
+                  ? t('console.vmInstances.hint.runtimeKindImmutable')
+                  : t('console.vmInstances.hint.runtimeKind')
+              }
+              htmlFor="vm-instance-runtime-kind"
+              label={t('console.vmInstances.field.runtimeKind')}
+            >
+              <select
+                aria-describedby={
+                  errors.runtimeKind ? 'vm-instance-runtime-kind-error' : undefined
+                }
+                aria-invalid={errors.runtimeKind ? true : undefined}
+                className={INPUT_CLASS}
+                disabled={busy || isEdit}
+                id="vm-instance-runtime-kind"
+                onChange={(event) => {
+                  const runtimeKind = event.target.value as SandboxRuntimeKind;
+                  // Selecting an engine can invalidate the current assurance
+                  // (e.g. `docker` cannot serve `micro_vm`). Snap the assurance
+                  // down to the engine's own boundary instead of leaving the
+                  // form in a state the server will reject.
+                  const allowed = vmInstanceAssurancesForRuntimeKind(runtimeKind);
+                  patch({
+                    runtimeKind,
+                    assurance: allowed.includes(draft.assurance)
+                      ? draft.assurance
+                      : allowed[allowed.length - 1],
+                  });
+                }}
+                value={draft.runtimeKind}
+              >
+                {VM_INSTANCE_RUNTIME_KIND_ORDER.map((runtimeKind) => (
+                  <option key={runtimeKind} value={runtimeKind}>
+                    {t(`console.vmInstances.runtimeKind.${runtimeKind}`)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              error={messageFor(errors.runtimeKind)}
               hint={t('console.vmInstances.hint.assurance')}
               htmlFor="vm-instance-assurance"
               label={t('console.vmInstances.field.assurance')}
@@ -362,7 +409,9 @@ export function VmInstanceForm({ busy, instance, onCancel, onSubmit }: VmInstanc
                 }
                 value={draft.assurance}
               >
-                {SANDBOX_ISOLATION_ASSURANCES.map((assurance) => (
+                {SANDBOX_ISOLATION_ASSURANCES.filter((assurance) =>
+                  vmInstanceAssurancesForRuntimeKind(draft.runtimeKind).includes(assurance),
+                ).map((assurance) => (
                   <option key={assurance} value={assurance}>
                     {t(`console.vmInstances.assurance.${assurance}`)}
                   </option>

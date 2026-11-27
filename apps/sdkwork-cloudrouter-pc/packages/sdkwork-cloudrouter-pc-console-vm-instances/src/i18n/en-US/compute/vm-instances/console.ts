@@ -36,6 +36,7 @@ export const vmInstancesConsoleMessagesEn: Record<string, string> = {
   // ------------------------------------------------------------------ columns
   'console.vmInstances.column.name': 'Name',
   'console.vmInstances.column.state': 'State',
+  'console.vmInstances.column.runtimeKind': 'Runtime',
   'console.vmInstances.column.profile': 'Profile',
   'console.vmInstances.column.resources': 'Resources',
   'console.vmInstances.column.capabilities': 'Required capabilities',
@@ -58,6 +59,13 @@ export const vmInstancesConsoleMessagesEn: Record<string, string> = {
   'console.vmInstances.assurance.user_space_kernel': 'User-space kernel',
   'console.vmInstances.assurance.micro_vm': 'Micro VM',
   'console.vmInstances.assurance.dedicated_vm': 'Dedicated VM',
+
+  'console.vmInstances.runtimeKind.sandbox': 'Sandbox (process)',
+  'console.vmInstances.runtimeKind.docker': 'Docker container',
+  'console.vmInstances.runtimeKind.gvisor': 'gVisor (user-space kernel)',
+  'console.vmInstances.runtimeKind.kata': 'Kata Containers',
+  'console.vmInstances.runtimeKind.firecracker': 'Firecracker microVM',
+  'console.vmInstances.runtimeKind.qemu': 'QEMU full VM',
 
   'console.vmInstances.capability.terminal': 'Terminal',
   'console.vmInstances.capability.filesystem': 'Filesystem',
@@ -120,6 +128,7 @@ export const vmInstancesConsoleMessagesEn: Record<string, string> = {
   'console.vmInstances.field.memory': 'Memory (MiB)',
   'console.vmInstances.field.disk': 'Disk (MiB)',
   'console.vmInstances.field.assurance': 'Minimum isolation assurance',
+  'console.vmInstances.field.runtimeKind': 'Runtime engine',
   'console.vmInstances.field.capabilities': 'Required capabilities',
   'console.vmInstances.field.autoStart': 'Start automatically',
   'console.vmInstances.field.expiresAt': 'Expires at',
@@ -134,6 +143,8 @@ export const vmInstancesConsoleMessagesEn: Record<string, string> = {
   'console.vmInstances.hint.memory': '{{min}}–{{max}} MiB for the {{profile}} profile.',
   'console.vmInstances.hint.disk': '{{min}}–{{max}} MiB for the {{profile}} profile.',
   'console.vmInstances.hint.assurance': 'A host whose isolation is weaker than this cannot run the instance.',
+  'console.vmInstances.hint.runtimeKind': 'Determines how the workload actually runs. Docker shares the host kernel; QEMU is a full VM. The available assurance tiers follow the engine.',
+  'console.vmInstances.hint.runtimeKindImmutable': 'The runtime engine is fixed once the instance exists and is not submitted on save.',
   'console.vmInstances.hint.capabilities':
     'Up to {{max}} entries. Leave all unchecked to request the profile default.',
   'console.vmInstances.hint.autoStart': 'Bring the runtime up as soon as provisioning completes.',
@@ -160,6 +171,7 @@ export const vmInstancesConsoleMessagesEn: Record<string, string> = {
   'console.vmInstances.validate.diskOutOfProfile':
     'Disk must be between {{min}} and {{max}} MiB for the {{profile}} profile.',
   'console.vmInstances.validate.expiresAtInvalid': 'Enter a valid date and time.',
+  'console.vmInstances.validate.insufficientAssurance': 'The selected runtime engine cannot provide this isolation tier. Choose a stronger engine or lower the requirement.',
 
   // ------------------------------------------------------------------- delete
   'console.vmInstances.dialog.deleteTitle': 'Delete VM instance?',

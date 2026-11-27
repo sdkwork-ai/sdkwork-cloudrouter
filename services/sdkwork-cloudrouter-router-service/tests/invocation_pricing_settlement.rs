@@ -709,10 +709,7 @@ async fn deepseek_statutory_holiday_uses_offpeak_window_all_day() {
     offpeak_schedule.exclude_dates.clear();
 
     let mut catalog = catalog_with_chat_prices();
-    for (price, metadata) in [
-        ("0.500000", peak),
-        ("0.200000", offpeak),
-    ] {
+    for (price, metadata) in [("0.500000", peak), ("0.200000", offpeak)] {
         catalog.add_price(
             ModelPrice::new_for_catalog_key(
                 "openai/gpt-4o-mini",

@@ -2,13 +2,14 @@ use crate::application::is_token_meter;
 use crate::domain::{
     ensure_canonical_model_catalog_key, AccountRateCard, AiModel, AiModelPublicMetadata,
     BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
-    GatewayApiKeyAccountGroupBinding, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule,
-    ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
-    PricingPlan, PricingRateMetadata, PricingRule, ProviderRetryPolicy, QuotaPolicy,
+    GatewayApiKeyAccountGroupBinding, GatewayRiskRule, GroupResourcePrice, ModelMappingBindingType,
+    ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money,
+    PriceSide, PricingPlan, PricingRateMetadata, PricingRule, ProviderRetryPolicy, QuotaPolicy,
     UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot,
     UpstreamAccountRoute, UpstreamResourceEntitlement,
 };
 
+#[derive(Clone)]
 pub struct ModelVendorRow {
     pub vendor_code: String,
     pub display_name: String,
@@ -75,6 +76,7 @@ impl ModelVendorRow {
     }
 }
 
+#[derive(Clone)]
 pub struct AiModelRow {
     pub catalog_key: String,
     pub model: String,
@@ -884,6 +886,17 @@ pub struct AccountRateCardRow {
     pub value: AccountRateCard,
 }
 
+/// One per-resource price an account group defines (
+/// cloudrouter_group_resource_price). Scoped by tenant and organization so
+/// the loader can filter the whole layer in one pass.
+#[derive(Clone)]
+pub struct GroupResourcePriceRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub value: GroupResourcePrice,
+}
+
+#[derive(Clone)]
 pub struct ModelPriceRow {
     pub tenant_id: i64,
     pub organization_id: i64,

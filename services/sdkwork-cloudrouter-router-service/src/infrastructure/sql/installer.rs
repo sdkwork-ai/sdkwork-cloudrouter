@@ -1290,8 +1290,9 @@ mod tests {
             .split_once("let mut causes")
             .expect("the diagnostic block is present")
             .1;
-        let diagnostic_section = &diagnostic_section
-            [..diagnostic_section.find("catalog/seed bootstrap did not reach").unwrap_or(diagnostic_section.len())];
+        let diagnostic_section = &diagnostic_section[..diagnostic_section
+            .find("catalog/seed bootstrap did not reach")
+            .unwrap_or(diagnostic_section.len())];
 
         for probe in [
             // model-catalog projection

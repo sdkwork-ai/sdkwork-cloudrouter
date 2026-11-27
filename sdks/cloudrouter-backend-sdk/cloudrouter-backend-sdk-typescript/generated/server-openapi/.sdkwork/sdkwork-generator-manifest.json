@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "f1f2b4d27586e0927d3c5096c683ab838077dd03cee8c01f6918fa7090f16537"
+      "sha256": "23def00bff1ab72f5ffc298f3fa20e984621573b9bdda7e34a030fe8e9606ea8"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "9ca42c8a551d2ee2b13b909fb109f9f05e572cef295fb40d2369c895d3dd83d6"
+      "sha256": "5e41d056c74ece27ff719539f0f51bd7e1c7bdfd7cef6338ffbf590e194df753"
     },
     {
       "path": "src/api/base.ts",
@@ -64,15 +64,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "fd2524dfb21c594b9c47ae8ba8cf593e546ca272fbc328ffcde4e15fdb5c6049"
-    },
-    {
-      "path": "src/api/mcp.ts",
-      "sha256": "f67af79a1bf40bc62736b6ce72920cdfa2e271604a5bcf0a69a383a0ebf8af78"
-    },
-    {
-      "path": "src/api/memory.ts",
-      "sha256": "a2ccf4b20c7e9ee8230cf7886b7509fb17fa02544fa74c871246549b162f91ca"
+      "sha256": "5373cdced6828478e8604f5e39c4efdbebd6b625960040d8350a80ecaf64f5bd"
     },
     {
       "path": "src/api/paths.ts",
@@ -116,7 +108,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "6338497a678ac9e57623f4a6612df67a6211a4b4f386f7fd957a0e73a4b05f0a"
+      "sha256": "24458d72e337ef7f63dc331697cf14a197c24e367461fe4b3e113f50bd064488"
     },
     {
       "path": "src/types/admin-analytics-insight.ts",
@@ -472,7 +464,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "96a6a0641b21bef56d9bd63a3fc64235f528791c3062271f382f7e0eefdd5a92"
+      "sha256": "7d8f111db0ab61574fa044bd3ce3de1e285fac8aa825960189608f1d25eb04f8"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -683,6 +675,10 @@
       "sha256": "e3a9eed09f8bb6172973cc6d5ba3b27f8c255c80768f413b0812c0de3484662f"
     },
     {
+      "path": "src/types/replace-upstream-account-group-resource-prices-request.ts",
+      "sha256": "2a47b8ce8f4a869d7a23871e5afcac13c42a9aca7fbad927ac851bc4094ae482"
+    },
+    {
       "path": "src/types/replace-upstream-account-group-resources-request.ts",
       "sha256": "4b1c10aa45814942b30310cd62e526ea314695c402bb0a48fb4352c180bcb17a"
     },
@@ -821,6 +817,18 @@
     {
       "path": "src/types/upstream-account-group-resource-list-response.ts",
       "sha256": "18d4c3ad1d8e6fd953e2ee7f8fb51a2c4536236d872f8f247cbf30c521c783cd"
+    },
+    {
+      "path": "src/types/upstream-account-group-resource-price-collection.ts",
+      "sha256": "445f13b39b2a310e5269bdce4ee282b53c9bbbf9416346e67247a52c9df2282e"
+    },
+    {
+      "path": "src/types/upstream-account-group-resource-price-input.ts",
+      "sha256": "7352a744f674ac8b2b23779ff7e4c60d846c3b4ce95ac8ddf8d94fa83af082f4"
+    },
+    {
+      "path": "src/types/upstream-account-group-resource-price.ts",
+      "sha256": "592531c3e470198a670accaf0d3cad2cdb380406073a1a7aa16f692ef37acf39"
     },
     {
       "path": "src/types/upstream-account-group-route-explanation-response.ts",

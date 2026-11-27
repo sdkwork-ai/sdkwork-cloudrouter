@@ -194,12 +194,13 @@ fn merge_app_sdk_reference_router(router: Router) -> Router {
 fn with_models_profile_catalog_routers(
     router: Router,
 ) -> Result<Router, ProductCatalogRouterError> {
-    sdkwork_routes_models_catalog_app_api::merge_profile_catalog_routers_from_env(router)
-        .map_err(|error| {
+    sdkwork_routes_models_catalog_app_api::merge_profile_catalog_routers_from_env(router).map_err(
+        |error| {
             ProductCatalogRouterError::Config(format!(
                 "mount the models voice/video profile app routers failed: {error}"
             ))
-        })
+        },
+    )
 }
 
 pub fn router() -> Router {
@@ -1468,18 +1469,34 @@ fn spawn_postgres_app_runtime_catalog_refresh_worker(
 ) -> tokio::task::JoinHandle<()> {
     let pool = pool.clone();
     tokio::spawn(async move {
+        // The catalog generation probe decides whether a reload is needed. The
+        // edge-runtime has always refreshed on a generation change; this worker
+        // used to rebuild the whole snapshot every interval regardless, so the
+        // same price change became visible to the gateway and to the app surface
+        // on two different schedules. Both surfaces now share one rule: reload
+        // when the generation moved, otherwise keep the snapshot. A probe failure
+        // falls back to reloading, which is always safe because a reload is
+        // idempotent.
+        let mut last_generation: Option<i64> = None;
         loop {
             sleep(interval).await;
-            match PostgresPricingCatalogLoader::with_credential_secret_codec(
+            let loader = PostgresPricingCatalogLoader::with_credential_secret_codec(
                 pool.clone(),
                 credential_secret_codec.clone(),
-            )
-            .load_snapshot()
-            .await
-            {
+            );
+            let generation = loader
+                .load_pricing_catalog_generation("")
+                .await
+                .ok()
+                .flatten();
+            if generation.is_some() && generation == last_generation {
+                continue;
+            }
+            match loader.load_snapshot().await {
                 Ok(snapshot) => {
                     let summary = snapshot.summary();
                     catalog.replace_snapshot(snapshot);
+                    last_generation = generation;
                     log_app_runtime_catalog_snapshot_summary("postgres", "refresh", summary);
                 }
                 Err(error) => {

@@ -531,7 +531,10 @@ fn same_candidate_target(
     left.supplier_code == right.supplier_code
         && left.account_id == right.account_id
         && left.credential_id == right.credential_id
-        && left.region_code.trim().eq_ignore_ascii_case(right.region_code.trim())
+        && left
+            .region_code
+            .trim()
+            .eq_ignore_ascii_case(right.region_code.trim())
 }
 
 fn mapped_model_candidate<C>(

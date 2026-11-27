@@ -105,7 +105,6 @@ export type { MediaChecksum } from './media-checksum';
 export type { MediaKind } from './media-kind';
 export type { MediaResource } from './media-resource';
 export type { MediaSource } from './media-source';
-
 export type { ModelLimitRuleItem } from './model-limit-rule-item';
 export type { ModelLimitRulePage } from './model-limit-rule-page';
 export type { MonitorAlertPage } from './monitor-alert-page';
@@ -232,3 +231,8 @@ export type { UpstreamSupplierResourceListResponse } from './upstream-supplier-r
 
 export type { VerifyUpstreamAccountRequest } from './verify-upstream-account-request';
 export type { AdminBillingDecision } from './admin-billing-decision';
+
+export type { UpstreamAccountGroupResourcePriceInput } from './upstream-account-group-resource-price-input';
+export type { UpstreamAccountGroupResourcePrice } from './upstream-account-group-resource-price';
+export type { UpstreamAccountGroupResourcePriceCollection } from './upstream-account-group-resource-price-collection';
+export type { ReplaceUpstreamAccountGroupResourcePricesRequest } from './replace-upstream-account-group-resource-prices-request';

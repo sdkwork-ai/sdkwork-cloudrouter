@@ -12,8 +12,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     CreatedGatewayApiKey, DeleteGatewayApiKeyCommand, DeleteGatewayApiKeyForOrganizationCommand,
     EnsureDefaultUpstreamAccountGroupCommand, GatewayApiKeyCommandStore, GatewayApiKeyListPage,
     GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
-    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome,
-    UpdateGatewayApiKeyCommand, UpdatedGatewayApiKey,
+    RevealGatewayApiKeySecretCommand, RevealGatewayApiKeySecretOutcome, UpdateGatewayApiKeyCommand,
+    UpdatedGatewayApiKey,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -177,10 +177,7 @@ async fn app_api_key_reveal_returns_plaintext_only_on_explicit_request() {
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("sk-test-secret-raw", payload["data"]["rawKey"]);
     assert!(payload["data"]["item"].get("rawKey").is_none());
-    assert_eq!(
-        "sk-test********CRET",
-        payload["data"]["item"]["maskedKey"]
-    );
+    assert_eq!("sk-test********CRET", payload["data"]["item"]["maskedKey"]);
 }
 
 #[tokio::test]

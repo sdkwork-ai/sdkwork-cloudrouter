@@ -20,6 +20,7 @@ impl PricingCatalogSql {
             Self::load_gateway_risk_rules(),
             Self::load_upstream_account_group_metric_snapshots(),
             Self::load_prices(),
+            Self::load_group_resource_prices(),
             Self::load_pricing_default_regions(),
         ]
     }
@@ -1704,6 +1705,37 @@ WHERE deleted_at IS NULL
   AND (effective_to IS NULL OR effective_to > CURRENT_TIMESTAMP)
   AND BTRIM(default_region_code) <> ''
 ORDER BY catalog_key ASC, id ASC
+"#
+    }
+    /// Loads every per-resource price an account group defines.
+    ///
+    /// The layer is loaded whole instead of joined per request: a gateway
+    /// prices each request several times (official, customer, procurement) and
+    /// the rows are grouped by group id in the snapshot index, so one pass over
+    /// a small table replaces a query per priced request.
+    pub fn load_group_resource_prices() -> &'static str {
+        r#"
+SELECT
+    tenant_id,
+    organization_id,
+    account_group_id,
+    resource_type,
+    catalog_key,
+    operation_code,
+    meter_code,
+    region_code,
+    BTRIM(provider_code) AS provider_code,
+    price_mode,
+    multiplier::text AS multiplier,
+    markup_amount::text AS markup_amount,
+    unit_price_override::text AS unit_price_override,
+    currency_code,
+    effective_from,
+    effective_to
+FROM cloudrouter_group_resource_price
+WHERE status = 1
+  AND deleted_at IS NULL
+ORDER BY account_group_id ASC, effective_from DESC, id DESC
 "#
     }
 }

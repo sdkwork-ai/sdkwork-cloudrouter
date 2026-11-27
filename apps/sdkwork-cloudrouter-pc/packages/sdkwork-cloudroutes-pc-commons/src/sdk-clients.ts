@@ -2283,10 +2283,40 @@ export function resetCloudRouterSdkSessionAuthRedirectState(): void {
 }
 
 export function isCloudRouterSdkSessionAuthError(error: unknown): boolean {
-  return isSdkworkSdkSessionAuthError(error);
+  return isDefinitiveSessionAuthFailure(error) && isSdkworkSdkSessionAuthError(error);
+}
+
+/**
+ * Whether the failure is positively a session-auth failure.
+ *
+ * The shared classifier is structural, but this portal fans a single page out
+ * across several dependency backends (`deployments`, `appstore`). A response
+ * that carries an explicit non-401 HTTP status — a 404 for a route that is not
+ * deployed, a 403 for a permission the operator lacks, a 5xx from an offline
+ * dependency — is a dependency failure and must degrade one card, never end the
+ * operator's session. Only 401 (or an error carrying no HTTP status at all, such
+ * as an envelope `code: "4010"`) can escalate.
+ */
+function isDefinitiveSessionAuthFailure(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || Array.isArray(error)) {
+    return true;
+  }
+  const record = error as Record<string, unknown>;
+  const rawStatus = record.httpStatus ?? record.status ?? record.statusCode;
+  if (rawStatus === undefined || rawStatus === null || rawStatus === '') {
+    return true;
+  }
+  const status = typeof rawStatus === 'number' ? rawStatus : Number.parseInt(String(rawStatus), 10);
+  if (!Number.isFinite(status)) {
+    return true;
+  }
+  return Math.trunc(status) === 401;
 }
 
 export function handleCloudRouterSdkSessionAuthError(error: unknown): boolean {
+  if (!isDefinitiveSessionAuthFailure(error)) {
+    return false;
+  }
   return handleSdkworkSessionAuthUnauthorizedError(error, resolveCloudRouterSessionAuthHandlerOptions());
 }
 

@@ -6,9 +6,9 @@ use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
-    AdminUpstreamAccountGroupMemberItem, AdminUpstreamResourceInput,
-    SaveAdminUpstreamAccountGroupCommand,
+    AdminGroupResourcePriceInput, AdminGroupResourcePriceItem, AdminUpstreamAccountGroupItem,
+    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
+    AdminUpstreamResourceInput, SaveAdminUpstreamAccountGroupCommand,
 };
 use sdkwork_utils_rust::SdkWorkResultCode;
 use serde::{Deserialize, Serialize};
@@ -108,6 +108,31 @@ struct MemberRequestItem {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PriceReplaceRequest {
+    items: Vec<PriceRequestItem>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PriceRequestItem {
+    id: Option<String>,
+    resource_type: Option<String>,
+    catalog_key: Option<String>,
+    operation_code: Option<String>,
+    meter_code: Option<String>,
+    region_code: Option<String>,
+    provider_code: Option<String>,
+    price_mode: Option<String>,
+    multiplier: Option<String>,
+    markup_amount: Option<String>,
+    unit_price_override: Option<String>,
+    currency_code: Option<String>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ResourceReplaceRequest {
     items: Vec<ResourceRequestItem>,
 }
@@ -120,6 +145,54 @@ struct ResourceRequestItem {
     grant_type: Option<String>,
     priority: Option<i32>,
     status: Option<i32>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PriceResponse {
+    id: String,
+    uuid: String,
+    account_group_id: String,
+    account_group_code_snapshot: String,
+    resource_type: String,
+    catalog_key: String,
+    operation_code: String,
+    meter_code: String,
+    region_code: String,
+    provider_code: String,
+    price_mode: String,
+    multiplier: String,
+    markup_amount: String,
+    unit_price_override: Option<String>,
+    currency_code: String,
+    effective_from: String,
+    effective_to: Option<String>,
+    status: i32,
+}
+
+impl From<AdminGroupResourcePriceItem> for PriceResponse {
+    fn from(item: AdminGroupResourcePriceItem) -> Self {
+        Self {
+            id: item.id.to_string(),
+            uuid: item.uuid,
+            account_group_id: item.account_group_id.to_string(),
+            account_group_code_snapshot: item.account_group_code_snapshot,
+            resource_type: item.resource_type,
+            catalog_key: item.catalog_key,
+            operation_code: item.operation_code,
+            meter_code: item.meter_code,
+            region_code: item.region_code,
+            provider_code: item.provider_code,
+            price_mode: item.price_mode,
+            multiplier: item.multiplier,
+            markup_amount: item.markup_amount,
+            unit_price_override: item.unit_price_override,
+            currency_code: item.currency_code,
+            effective_from: item.effective_from,
+            effective_to: item.effective_to,
+            status: item.status,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -180,6 +253,10 @@ pub(super) fn routes() -> Router<UpstreamState> {
         .route(
             "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources",
             get(list_resources).put(replace_resources),
+        )
+        .route(
+            "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices",
+            get(list_prices).put(replace_prices),
         )
 }
 
@@ -430,6 +507,128 @@ async fn replace_resources(
         ),
         Err(error) => domain_error(error),
     }
+}
+
+async fn list_prices(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path(group_id): Path<String>,
+) -> Response {
+    let group_id = match parse_id(group_id, "accountGroupId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    match state
+        .store
+        .list_account_group_resource_prices(subject(scoped), group_id)
+        .await
+    {
+        Ok(items) => collection_item_response(
+            group_id,
+            items.into_iter().map(PriceResponse::from).collect(),
+        ),
+        Err(error) => domain_error(error),
+    }
+}
+
+async fn replace_prices(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path(group_id): Path<String>,
+    headers: HeaderMap,
+    payload: Result<Json<PriceReplaceRequest>, JsonRejection>,
+) -> Response {
+    let group_id = match parse_id(group_id, "accountGroupId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    let expected_version = match parse_if_match(&headers) {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    let items = match decode_json(payload).and_then(price_inputs) {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    match state
+        .store
+        .replace_account_group_resource_prices(subject(scoped), group_id, expected_version, items)
+        .await
+    {
+        Ok(items) => collection_item_response(
+            group_id,
+            items.into_iter().map(PriceResponse::from).collect(),
+        ),
+        Err(error) => domain_error(error),
+    }
+}
+
+fn price_inputs(request: PriceReplaceRequest) -> RequestResult<Vec<AdminGroupResourcePriceInput>> {
+    request
+        .items
+        .into_iter()
+        .map(|item| {
+            let id = match item
+                .id
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
+                Some(raw) => {
+                    let parsed = raw.parse::<i64>().map_err(|_| {
+                        problem(
+                            SdkWorkResultCode::InvalidParameter,
+                            format!("price id `{raw}` is not a numeric identifier"),
+                        )
+                    })?;
+                    Some(parsed)
+                }
+                None => None,
+            };
+            Ok(AdminGroupResourcePriceInput {
+                id,
+                resource_type: required_text(
+                    item.resource_type.unwrap_or_default(),
+                    "resourceType",
+                    32,
+                )?,
+                catalog_key: required_text(
+                    item.catalog_key.unwrap_or_default(),
+                    "catalogKey",
+                    256,
+                )?,
+                operation_code: required_text(
+                    item.operation_code.unwrap_or_default(),
+                    "operationCode",
+                    160,
+                )?,
+                meter_code: required_text(item.meter_code.unwrap_or_default(), "meterCode", 96)?,
+                region_code: required_text(item.region_code.unwrap_or_default(), "regionCode", 64)?,
+                provider_code: item.provider_code.unwrap_or_default().trim().to_owned(),
+                price_mode: required_text(item.price_mode.unwrap_or_default(), "priceMode", 24)?,
+                multiplier: item.multiplier.unwrap_or_default().trim().to_owned(),
+                markup_amount: item.markup_amount.unwrap_or_default().trim().to_owned(),
+                unit_price_override: item
+                    .unit_price_override
+                    .map(|value| value.trim().to_owned())
+                    .filter(|value| !value.is_empty()),
+                currency_code: required_text(
+                    item.currency_code.unwrap_or_default(),
+                    "currencyCode",
+                    3,
+                )?,
+                effective_from: required_text(
+                    item.effective_from.unwrap_or_default(),
+                    "effectiveFrom",
+                    64,
+                )?,
+                effective_to: item
+                    .effective_to
+                    .map(|value| value.trim().to_owned())
+                    .filter(|value| !value.is_empty()),
+            })
+        })
+        .collect()
 }
 
 /// 自动生成唯一分组代码：group-<16位随机hex>。

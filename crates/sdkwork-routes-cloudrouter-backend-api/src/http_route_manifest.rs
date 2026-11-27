@@ -838,6 +838,24 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.settings.update",
     ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices",
+        "ai",
+        "upstreamAccountGroups.prices.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Put,
+        "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices",
+        "ai",
+        "upstreamAccountGroups.prices.update",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/billing/decision",
+        "billing",
+        "decision.retrieve",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

@@ -6515,7 +6515,10 @@ mod tests {
             );
             guards += 1;
         }
-        assert_eq!(guards, 2, "both the vendor and relay writers must be guarded");
+        assert_eq!(
+            guards, 2,
+            "both the vendor and relay writers must be guarded"
+        );
     }
 
     /// Every generic api_endpoint the model-catalog import can bind a model to

@@ -46,10 +46,13 @@ fn subject() -> InvocationSubject {
 
 fn catalog() -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();
-    catalog.add_vendor(ModelVendorDefinition::new(VENDOR, ModelVendor::OpenAi, "OpenAI"));
-    catalog.add_model(
-        AiModel::new(MODEL, MODEL, VENDOR, vec!["chat"]).with_catalog_key(CATALOG_KEY),
-    );
+    catalog.add_vendor(ModelVendorDefinition::new(
+        VENDOR,
+        ModelVendor::OpenAi,
+        "OpenAI",
+    ));
+    catalog
+        .add_model(AiModel::new(MODEL, MODEL, VENDOR, vec!["chat"]).with_catalog_key(CATALOG_KEY));
     catalog.add_plan(PricingPlan::new(
         "standard",
         PriceSide::OfficialReference,
@@ -73,7 +76,11 @@ fn catalog() -> InMemoryPricingCatalog {
         ),
     );
     catalog.add_model_upstream_route(ModelUpstreamRoute::new_for_catalog_key(
-        CATALOG_KEY, MODEL, VENDOR, ACCOUNT_ID, MODEL,
+        CATALOG_KEY,
+        MODEL,
+        VENDOR,
+        ACCOUNT_ID,
+        MODEL,
     ));
     catalog.add_upstream_account_route(
         UpstreamAccountRoute::new(VENDOR, ACCOUNT_ID).with_account_group_binding(

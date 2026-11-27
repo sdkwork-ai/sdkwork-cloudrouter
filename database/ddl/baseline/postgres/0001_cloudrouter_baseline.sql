@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 6b2b4b02576ebd6eccae955658f01c7f4a0d2c40c63bb1897cb824ed81889b72.
+-- Registry SHA-256: ea595b61127842a4510be4e58f764c5a147abbacb6380d6743cbac7a532a9281.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1417,6 +1417,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_cloudrouter_account_rate_card_scope_referen
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_account_rate_card_resolve ON cloudrouter_account_rate_card (tenant_id, organization_id, subject_type, subject_id, status, priority, effective_from, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_account_rate_card_code ON cloudrouter_account_rate_card (tenant_id, organization_id, subject_type, subject_code, status, priority, effective_from, id);
 
+CREATE TABLE IF NOT EXISTS cloudrouter_catalog_generation (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    config_scope VARCHAR(64) NOT NULL,
+    partition_key VARCHAR(256) NOT NULL DEFAULT '',
+    generation BIGINT NOT NULL DEFAULT 0,
+    changed_by VARCHAR(128),
+    changed_reason VARCHAR(256),
+    CONSTRAINT ck_cloudrouter_catalog_generation_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_cloudrouter_catalog_generation_scope CHECK (BTRIM(config_scope) <> ''),
+    CONSTRAINT ck_cloudrouter_catalog_generation_non_negative CHECK (generation >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_catalog_generation ON cloudrouter_catalog_generation (config_scope, partition_key) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_catalog_generation_uuid ON cloudrouter_catalog_generation (uuid) WHERE deleted_at IS NULL;
+
 CREATE TABLE IF NOT EXISTS cloudrouter_usage_measurement (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -1578,6 +1604,11 @@ CREATE TABLE IF NOT EXISTS pricing_rate (
     billability VARCHAR(32) NOT NULL,
     charge_timing VARCHAR(32) NOT NULL,
     calculation_mode VARCHAR(32) NOT NULL,
+    price_item_type VARCHAR(16) NOT NULL DEFAULT 'usage',
+    metering_mode VARCHAR(16) NOT NULL DEFAULT 'per_quantity',
+    quantity_source VARCHAR(24) NOT NULL DEFAULT 'provider_usage',
+    rounding_mode VARCHAR(16) NOT NULL DEFAULT 'half_up',
+    included_quantity NUMERIC(38, 12) NOT NULL DEFAULT 0,
     quantity_aggregation VARCHAR(32) NOT NULL,
     unit_size NUMERIC(38, 12) NOT NULL,
     unit_price NUMERIC(38, 12) NOT NULL,
@@ -1623,6 +1654,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_book_hash ON pricing_rate (ten
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_reference ON pricing_rate (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_book_reference ON pricing_rate (tenant_id, organization_id, id, price_book_id);
 CREATE INDEX IF NOT EXISTS idx_pricing_rate_resolve ON pricing_rate (tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id);
+CREATE INDEX IF NOT EXISTS idx_pricing_rate_charge_model ON pricing_rate (tenant_id, organization_id, price_item_type, quantity_source, status, id);
 
 CREATE TABLE IF NOT EXISTS cloudrouter_pricing_rule (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1718,6 +1750,7 @@ CREATE TABLE IF NOT EXISTS cloudrouter_rating_decision (
     currency_code VARCHAR(10),
     billing_components JSONB NOT NULL,
     pricing_snapshot JSONB NOT NULL,
+    pricing_layer VARCHAR(32),
     decided_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT ck_cloudrouter_rating_decision_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
     CONSTRAINT fk_cloudrouter_rating_decision_measurement FOREIGN KEY (tenant_id, organization_id, measurement_id) REFERENCES cloudrouter_usage_measurement (tenant_id, organization_id, id),
@@ -1734,7 +1767,8 @@ CREATE TABLE IF NOT EXISTS cloudrouter_rating_decision (
     CONSTRAINT ck_cloudrouter_rating_decision_rate_identity CHECK ((price_book_tenant_id IS NULL AND price_book_organization_id IS NULL AND price_book_id IS NULL AND rate_id IS NULL) OR (price_book_tenant_id IS NOT NULL AND price_book_organization_id IS NOT NULL AND price_book_id IS NOT NULL AND rate_id IS NOT NULL)),
     CONSTRAINT ck_cloudrouter_rating_decision_rate_card_identity CHECK ((account_rate_card_tenant_id IS NULL AND account_rate_card_organization_id IS NULL AND account_rate_card_id IS NULL) OR (account_rate_card_tenant_id IS NOT NULL AND account_rate_card_organization_id IS NOT NULL AND account_rate_card_id IS NOT NULL)),
     CONSTRAINT ck_cloudrouter_rating_decision_plan_identity CHECK ((pricing_plan_tenant_id IS NULL AND pricing_plan_organization_id IS NULL AND pricing_plan_id IS NULL AND pricing_rule_id IS NULL) OR (pricing_plan_tenant_id IS NOT NULL AND pricing_plan_organization_id IS NOT NULL AND pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT NULL)),
-    CONSTRAINT ck_cloudrouter_rating_decision_amount CHECK ((decision_status = 'rated' AND billability = 'chargeable' AND reference_unit_price IS NOT NULL AND reference_unit_price >= 0 AND (cost_unit_price IS NULL OR cost_unit_price >= 0) AND unit_price IS NOT NULL AND unit_price >= 0 AND reference_amount IS NOT NULL AND reference_amount >= 0 AND (cost_amount IS NULL OR cost_amount >= 0) AND amount IS NOT NULL AND amount >= 0 AND currency_code IS NOT NULL AND unit_size > 0 AND strategy_code IS NOT NULL AND calculation_mode IS NOT NULL AND price_book_id IS NOT NULL AND rate_id IS NOT NULL AND account_rate_card_id IS NOT NULL AND pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT NULL) OR (decision_status = 'non_chargeable' AND billability IN ('free', 'not_applicable') AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL AND price_book_id IS NOT NULL AND rate_id IS NOT NULL) OR (decision_status = 'unrated' AND billability IN ('chargeable', 'unknown') AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL)),
+    CONSTRAINT ck_cloudrouter_rating_decision_layer CHECK (pricing_layer IS NULL OR pricing_layer IN ('plan_reference', 'plan_rule', 'group_resource', 'group_multiplier')),
+    CONSTRAINT ck_cloudrouter_rating_decision_amount CHECK ((decision_status = 'rated' AND billability = 'chargeable' AND reference_unit_price IS NOT NULL AND reference_unit_price >= 0 AND (cost_unit_price IS NULL OR cost_unit_price >= 0) AND unit_price IS NOT NULL AND unit_price >= 0 AND reference_amount IS NOT NULL AND reference_amount >= 0 AND (cost_amount IS NULL OR cost_amount >= 0) AND amount IS NOT NULL AND amount >= 0 AND currency_code IS NOT NULL AND unit_size > 0 AND strategy_code IS NOT NULL AND calculation_mode IS NOT NULL AND price_book_id IS NOT NULL AND rate_id IS NOT NULL AND pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT NULL) OR (decision_status = 'non_chargeable' AND billability IN ('free', 'not_applicable') AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL AND price_book_id IS NOT NULL AND rate_id IS NOT NULL) OR (decision_status = 'unrated' AND billability IN ('chargeable', 'unknown') AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL)),
     CONSTRAINT ck_cloudrouter_rating_decision_currency CHECK (currency_code IS NULL OR currency_code ~ '^[A-Z]{3}$')
 );
 
@@ -1792,6 +1826,49 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_charge_line_decision ON cloudro
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_charge_line_dashboard ON cloudrouter_charge_line (tenant_id, organization_id, user_id, charge_status, charged_at, invocation_id, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_charge_line_settlement ON cloudrouter_charge_line (tenant_id, organization_id, charge_status, settled_at, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_charge_line_retention ON cloudrouter_charge_line (retention_until, id);
+
+CREATE TABLE IF NOT EXISTS cloudrouter_group_resource_price (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    account_group_id BIGINT NOT NULL,
+    account_group_code_snapshot VARCHAR(64) NOT NULL,
+    resource_type VARCHAR(32) NOT NULL,
+    catalog_key VARCHAR(256) NOT NULL,
+    operation_code VARCHAR(160) NOT NULL,
+    meter_code VARCHAR(96) NOT NULL,
+    region_code VARCHAR(64) NOT NULL,
+    provider_code VARCHAR(64) NOT NULL DEFAULT '',
+    price_mode VARCHAR(24) NOT NULL,
+    multiplier NUMERIC(38, 12) NOT NULL DEFAULT 1,
+    markup_amount NUMERIC(38, 12) NOT NULL DEFAULT 0,
+    unit_price_override NUMERIC(38, 12),
+    currency_code VARCHAR(10) NOT NULL,
+    effective_from TIMESTAMPTZ NOT NULL,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_cloudrouter_group_resource_price_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_cloudrouter_group_resource_price_group FOREIGN KEY (tenant_id, organization_id, account_group_id) REFERENCES ai_upstream_account_group (tenant_id, organization_id, id),
+    CONSTRAINT ck_cloudrouter_group_resource_price_resource_type CHECK (resource_type IN ('model', 'image', 'video', 'api', 'audio', 'other')),
+    CONSTRAINT ck_cloudrouter_group_resource_price_mode CHECK (price_mode IN ('multiplier', 'markup', 'unit_price', 'free')),
+    CONSTRAINT ck_cloudrouter_group_resource_price_payload CHECK ((price_mode = 'multiplier' AND multiplier > 0 AND markup_amount = 0 AND unit_price_override IS NULL) OR (price_mode = 'markup' AND multiplier = 1 AND markup_amount >= 0 AND unit_price_override IS NULL) OR (price_mode = 'unit_price' AND multiplier = 1 AND markup_amount = 0 AND unit_price_override > 0) OR (price_mode = 'free' AND multiplier = 1 AND markup_amount = 0 AND unit_price_override = 0)),
+    CONSTRAINT ck_cloudrouter_group_resource_price_interval CHECK (effective_to IS NULL OR effective_to > effective_from),
+    CONSTRAINT ck_cloudrouter_group_resource_price_currency CHECK (currency_code ~ '^[A-Z]{3}$'),
+    CONSTRAINT ck_cloudrouter_group_resource_price_target CHECK (BTRIM(catalog_key) <> '' AND BTRIM(operation_code) <> '' AND BTRIM(meter_code) <> '' AND BTRIM(region_code) <> '' AND BTRIM(account_group_code_snapshot) <> '')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_group_resource_price_uuid ON cloudrouter_group_resource_price (uuid) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_group_resource_price_scope_id ON cloudrouter_group_resource_price (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_group_resource_price_target ON cloudrouter_group_resource_price (tenant_id, organization_id, account_group_id, catalog_key, operation_code, meter_code, region_code, provider_code) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cloudrouter_group_resource_price_resolve ON cloudrouter_group_resource_price (tenant_id, organization_id, account_group_id, resource_type, catalog_key, meter_code, status, effective_from, id);
 
 CREATE TABLE IF NOT EXISTS commerce_payment_operation_attempt (
     id TEXT NOT NULL PRIMARY KEY,
@@ -2599,9 +2676,9 @@ CREATE TABLE IF NOT EXISTS pricing_default_region (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_uuid ON pricing_default_region (uuid) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_scope_id ON pricing_default_region (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key) WHERE deleted_at IS NULL AND BTRIM(resource_key) <> '';
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_default_region_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key, default_region_code, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_book_reference ON pricing_default_region (tenant_id, organization_id, id, price_book_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_rate_resolve ON pricing_default_region (tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id);
 
 CREATE TABLE IF NOT EXISTS sdkwork_node_registry (
     node_id INTEGER NOT NULL PRIMARY KEY CHECK (node_id BETWEEN 0 AND 1023),

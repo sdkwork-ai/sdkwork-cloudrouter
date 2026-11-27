@@ -128,6 +128,14 @@ tables:
     billability: { type: string(32), constraints: NOT NULL }
     charge_timing: { type: string(32), constraints: NOT NULL }
     calculation_mode: { type: string(32), constraints: NOT NULL }
+    # Explicit charge-model declaration. Mirrors `ai_model_pricing` in
+    # sdkwork-models so an imported rate and the runtime description of that
+    # same rate cannot diverge.
+    price_item_type: { type: string(16), constraints: "NOT NULL DEFAULT 'usage'" }
+    metering_mode: { type: string(16), constraints: "NOT NULL DEFAULT 'per_quantity'" }
+    quantity_source: { type: string(24), constraints: "NOT NULL DEFAULT 'provider_usage'" }
+    rounding_mode: { type: string(16), constraints: "NOT NULL DEFAULT 'half_up'" }
+    included_quantity: { type: decimal, constraints: "NOT NULL DEFAULT 0" }
     quantity_aggregation: { type: string(32), constraints: NOT NULL }
     unit_size: { type: decimal, constraints: NOT NULL }
     unit_price: { type: decimal, constraints: NOT NULL }
@@ -163,6 +171,64 @@ tables:
   - { name: ck_pricing_rate_chargeable_price, expression: billability <> 'chargeable' OR unit_price > 0 }
   - { name: ck_pricing_rate_non_chargeable_price, expression: "billability NOT IN ('free', 'not_applicable') OR unit_price = 0" }
   - { name: ck_pricing_rate_currency, expression: "currency_code ~ '^[A-Z]{3}$'" }
+  - { name: ck_pricing_rate_conditions_json, expression: "jsonb_typeof(conditions) = 'array'" }
+  - { name: ck_pricing_rate_tiers_json, expression: "jsonb_typeof(tiers) = 'array'" }
+  - { name: ck_pricing_rate_formula_json, expression: "formula IS NULL OR jsonb_typeof(formula) = 'object'" }
+  - { name: ck_pricing_rate_variant, expression: "rate_variant IN ('standard', 'time_window', 'batch')" }
+  - { name: ck_pricing_rate_schedule_json, expression: "schedule IS NULL OR jsonb_typeof(schedule) = 'object'" }
+  - { name: ck_pricing_rate_schedule_variant, expression: "((rate_variant IN ('standard', 'batch')) AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT NULL)" }
+  - { name: ck_pricing_rate_calculation_payload, expression: "(calculation_mode IN ('graduated', 'volume')) = (jsonb_array_length(tiers) > 0) AND (calculation_mode = 'formula') = (formula IS NOT NULL)" }
+  indexes:
+  - { name: uq_pricing_rate_scope_reference, columns: [tenant_id, organization_id, id], unique: true }
+  - { name: uq_pricing_rate_scope_book_reference, columns: [tenant_id, organization_id, id, price_book_id], unique: true }
+  - { name: idx_pricing_rate_resolve, columns: [tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id] }
+  - { name: idx_pricing_rate_charge_model, columns: [tenant_id, organization_id, price_item_type, quantity_source, status, id] }
+
+- table: pricing_default_region
+  domain: commerce
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  columns:
+    vendor_code: { type: string(64), constraints: NOT NULL }
+    provider_code: { type: string(64), constraints: "NOT NULL DEFAULT ''" }
+    product_code: { type: string(160), constraints: NOT NULL }
+    resource_code: { type: string(256), constraints: "NOT NULL DEFAULT ''" }
+    catalog_key: { type: string(256), constraints: NOT NULL }
+    # Stable resource identity hash computed by the IMMUTABLE
+    # pricing_resource_key(vendor_code, provider_code, catalog_key,
+    # product_code, resource_code) function. A resource (model) that exposes
+    # prices across multiple regions still owns exactly one default billing
+    # region row: uniqueness is enforced on resource_key, not catalog_key, so
+    # the admin list can render one row per resource with region tabs.
+    resource_key: { type: string(64), constraints: "NOT NULL DEFAULT ''" }
+    default_region_code: { type: string(64), constraints: NOT NULL }
+    currency_code: { type: string(3), constraints: NOT NULL }
+    description: string(1024)
+    effective_from: { type: instant, constraints: NOT NULL }
+    effective_to: instant
+  unique_constraints:
+  - { name: uk_pricing_default_region_uuid, columns: [uuid] }
+  - { name: uk_pricing_default_region_scope_id, columns: [tenant_id, organization_id, id] }
+  - { name: uk_pricing_default_region_resource_key, columns: [tenant_id, organization_id, resource_key], where: "deleted_at IS NULL AND BTRIM(resource_key) <> ''" }
+  check_constraints:
+  - { name: ck_pricing_default_region_currency, expression: "currency_code ~ '^[A-Z]{3}$'" }
+  - { name: ck_pricing_default_region_region_not_blank, expression: "BTRIM(default_region_code) <> ''" }
+  - { name: ck_pricing_default_region_interval, expression: effective_to IS NULL OR effective_to > effective_from }
+  - { name: ck_pricing_default_region_resource_key_blank, expression: "BTRIM(resource_key) <> ''" }
+  indexes:
+  - { name: uq_pricing_default_region_scope_reference, columns: [tenant_id, organization_id, id], unique: true }
+  - { name: idx_pricing_default_region_catalog_key, columns: [tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id] }
+  - { name: idx_pricing_default_region_resource_key, columns: [tenant_id, organization_id, resource_key, default_region_code, id] }
+  - { name: ck_pricing_rate_price_item_type, expression: "price_item_type IN ('usage', 'recurring', 'one_time', 'adjustment')" }
+  - { name: ck_pricing_rate_metering_mode, expression: "metering_mode IN ('flat', 'per_quantity', 'graduated', 'volume', 'formula')" }
+  - { name: ck_pricing_rate_quantity_source, expression: "quantity_source IN ('request_invariant', 'request_body', 'provider_usage', 'period_meter')" }
+  - { name: ck_pricing_rate_rounding_mode, expression: "rounding_mode IN ('half_up', 'half_even', 'up', 'down')" }
+  - { name: ck_pricing_rate_included_quantity, expression: included_quantity >= 0 }
+  - name: ck_pricing_rate_metering_mode_payload
+    expression: (metering_mode = 'flat' AND unit_size = 1) OR (metering_mode IN ('per_quantity') AND jsonb_array_length(tiers) = 0 AND formula IS NULL) OR (metering_mode IN ('graduated', 'volume') AND jsonb_array_length(tiers) > 0 AND formula IS NULL) OR (metering_mode = 'formula' AND formula IS NOT NULL AND jsonb_array_length(tiers) = 0)
   - { name: ck_pricing_rate_conditions_json, expression: "jsonb_typeof(conditions) = 'array'" }
   - { name: ck_pricing_rate_tiers_json, expression: "jsonb_typeof(tiers) = 'array'" }
   - { name: ck_pricing_rate_formula_json, expression: "formula IS NULL OR jsonb_typeof(formula) = 'object'" }

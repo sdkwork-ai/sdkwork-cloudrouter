@@ -11,6 +11,7 @@ import type {
   CreateUpstreamSupplierRequest,
   ExplainUpstreamAccountGroupRouteRequest,
   ReplaceUpstreamAccountGroupMembersRequest,
+  ReplaceUpstreamAccountGroupResourcePricesRequest,
   ReplaceUpstreamAccountGroupResourcesRequest,
   ReplaceUpstreamAccountResourcesRequest,
   ReplaceUpstreamSupplierAuthMethodsRequest,
@@ -261,6 +262,34 @@ export async function updateUpstreamAccountGroupMembers(
   );
 }
 
+/// Loads the per-resource prices an account group defines.
+///
+/// The admin price table is rendered from this layer, so a resource absent from
+/// the list still inherits the group multiplier and must stay visibly
+/// unpriced instead of disappearing from the editor.
+export async function listUpstreamAccountGroupPrices(accountGroupId: string) {
+  const response = await getCloudRouterBackendSdkClient().ai.upstreamAccountGroups.prices.list(
+    accountGroupId,
+  );
+  return response.items;
+}
+
+/// Replaces the whole price set of one account group atomically.
+///
+/// `ifMatch` carries the group entity version the editor loaded, so a
+/// concurrent edit is rejected instead of silently overwriting it.
+export async function updateUpstreamAccountGroupPrices(
+  accountGroupId: string,
+  input: ReplaceUpstreamAccountGroupResourcePricesRequest,
+  ifMatch: string,
+) {
+  const response = await getCloudRouterBackendSdkClient().ai.upstreamAccountGroups.prices.update(
+    accountGroupId,
+    input,
+    { ifMatch },
+  );
+  return response.items;
+}
 export async function listUpstreamAccountGroupResources(accountGroupId: string) {
   const response = await getCloudRouterBackendSdkClient().ai.upstreamAccountGroups.resources.list(accountGroupId);
   return response.items;
@@ -323,6 +352,8 @@ export const upstreamService = {
     replaceMembers: updateUpstreamAccountGroupMembers,
     listResources: listUpstreamAccountGroupResources,
     replaceResources: updateUpstreamAccountGroupResources,
+    listPrices: listUpstreamAccountGroupPrices,
+    replacePrices: updateUpstreamAccountGroupPrices,
     explain: explainUpstreamAccountGroupRoute,
   },
 };

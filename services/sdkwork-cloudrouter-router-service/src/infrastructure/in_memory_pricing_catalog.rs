@@ -30,6 +30,9 @@ pub struct InMemoryPricingCatalog {
     access_policies: Vec<GatewayAccessPolicy>,
     quota_policies: Vec<QuotaPolicy>,
     gateway_risk_rules: Vec<GatewayRiskRule>,
+    /// Per-resource prices defined on account groups. Kept as a flat list:
+    /// the layer is small and the resolver asks for one group at a time.
+    group_resource_prices: Vec<crate::domain::GroupResourcePrice>,
     upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ModelPrice>,
     account_group_model_access: HashMap<i64, AccountGroupModelAccess>,
@@ -75,10 +78,7 @@ impl InMemoryPricingCatalog {
     /// Registers one user-scoped model routing rule
     /// (`ai_user_account_group_route`). The SQL catalog loads real rows; tests
     /// and in-memory fixtures use this.
-    pub fn add_user_account_group_route(
-        &mut self,
-        route: crate::domain::UserAccountGroupRoute,
-    ) {
+    pub fn add_user_account_group_route(&mut self, route: crate::domain::UserAccountGroupRoute) {
         self.user_account_group_routes.retain(|existing| {
             !(existing.tenant_id == route.tenant_id
                 && existing.organization_id == route.organization_id
@@ -307,6 +307,19 @@ impl PricingCatalog for InMemoryPricingCatalog {
             .iter()
             .find(|group| group.id == group_id)
             .cloned()
+    }
+
+    fn list_group_resource_prices(
+        &self,
+        _tenant_id: i64,
+        _organization_id: i64,
+        account_group_id: i64,
+    ) -> Vec<crate::domain::GroupResourcePrice> {
+        self.group_resource_prices
+            .iter()
+            .filter(|price| price.account_group_id == account_group_id)
+            .cloned()
+            .collect()
     }
 
     fn find_access_policy(&self, policy_id: i64) -> Option<GatewayAccessPolicy> {

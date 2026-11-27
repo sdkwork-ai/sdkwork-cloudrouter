@@ -3,3 +3,4 @@ export { UpstreamAccountAdmin } from './accountsPage';
 export { UpstreamAccountGroupAdmin } from './accountGroupsPage';
 
 export { upstreamService } from './upstreamService';
+export { GroupResourcePricesModal } from './groupResourcePricesModal';

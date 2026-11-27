@@ -285,12 +285,10 @@ async fn pricing_integrity_migration_enforces_payloads_dimensions_and_immutabili
     .await;
     // Batch rows are a first-class official variant: accepted by the enum and
     // required to carry no schedule.
-    sqlx::query(
-        "UPDATE pricing_rate SET rate_variant = 'batch', schedule = NULL WHERE id = 1",
-    )
-    .execute(&context.pool)
-    .await
-    .unwrap();
+    sqlx::query("UPDATE pricing_rate SET rate_variant = 'batch', schedule = NULL WHERE id = 1")
+        .execute(&context.pool)
+        .await
+        .unwrap();
     assert_rejected(
         &context.pool,
         "UPDATE pricing_rate SET rate_variant = 'unknown' WHERE id = 1",

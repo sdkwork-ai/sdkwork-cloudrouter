@@ -216,6 +216,7 @@ export const zh: ApplicationCatalogMessages = {
     },
   },
   countTemplate: "共 {count} 个应用",
+  detailAction: "详情",
   emptyDescription: "该应用体系下还没有可展示的应用。",
   emptyTitle: "暂无应用",
   groups: {

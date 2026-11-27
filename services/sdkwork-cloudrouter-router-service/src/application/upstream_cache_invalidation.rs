@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use crate::domain::DomainResult;
 use crate::ports::{
-    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountCredentialSecretItem,
-    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
-    AdminUpstreamAccountGroupMemberItem, AdminUpstreamAccountItem, AdminUpstreamFuture,
-    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamResourceInput,
-    AdminUpstreamResourceItem, AdminUpstreamStore, AdminUpstreamSubject,
-    AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
-    AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
-    AdminUpstreamSupplierItem, CreateAdminUpstreamAccountCredentialCommand,
-    SaveAdminUpstreamAccountCommand, SaveAdminUpstreamAccountGroupCommand,
-    SaveAdminUpstreamSupplierCommand,
+    AdminGroupResourcePriceInput, AdminGroupResourcePriceItem, AdminUpstreamAccountCredentialItem,
+    AdminUpstreamAccountCredentialSecretItem, AdminUpstreamAccountGroupItem,
+    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
+    AdminUpstreamAccountItem, AdminUpstreamFuture, AdminUpstreamListQuery, AdminUpstreamPage,
+    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamStore,
+    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
+    AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
+    AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem,
+    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
+    SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
 };
 
 use super::ai_routing_cache_invalidation::AiRoutingCacheInvalidator;
@@ -379,6 +379,40 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
                 )
                 .await?;
             self.invalidate_after(items).await
+        })
+    }
+
+    /// Reading the group price layer never has to invalidate the routing
+    /// snapshot; only a write does, because the resolver loads this layer with
+    /// the rest of the pricing catalog.
+    fn list_account_group_resource_prices<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_group_id: i64,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminGroupResourcePriceItem>> {
+        self.inner
+            .list_account_group_resource_prices(subject, account_group_id)
+    }
+
+    fn replace_account_group_resource_prices<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_group_id: i64,
+        expected_version: i64,
+        items: Vec<AdminGroupResourcePriceInput>,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminGroupResourcePriceItem>> {
+        Box::pin(async move {
+            let items = self
+                .inner
+                .replace_account_group_resource_prices(
+                    subject,
+                    account_group_id,
+                    expected_version,
+                    items,
+                )
+                .await?;
+            self.invalidator.invalidate_routing_facts().await?;
+            Ok(items)
         })
     }
 

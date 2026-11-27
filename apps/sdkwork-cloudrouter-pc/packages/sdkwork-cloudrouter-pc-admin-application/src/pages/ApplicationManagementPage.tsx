@@ -815,6 +815,23 @@ export function ApplicationManagementPage({
     setIntegrationTarget({ application, kind });
   };
 
+  /**
+   * Detail-page route for one list row, or `undefined` when the row has none.
+   *
+   * The detail page is an application-centric surface of the Deploy domain: it
+   * reads the deploy application (uuid-keyed), its delivery history, and its
+   * metered usage. An IAM installation or an App Store library entry is not a
+   * deploy application, so it has no deployment detail page to open — the
+   * command is not offered rather than opening a page that cannot answer.
+   */
+  const detailRouteFor = (application: ApplicationRecord): (() => void) | undefined => {
+    if (application.groupId !== "deploy") {
+      return undefined;
+    }
+    const appId = application.id;
+    return () => navigate(`/admin/applications/deploy/${encodeURIComponent(appId)}`);
+  };
+
   const handleIntegrationSaved = (result: ApplicationIntegrationSaveResult) => {
     const updatedMetadata = new Map<string, Record<string, unknown>>([
       [result.deployAppId, result.metadata],
@@ -1223,6 +1240,7 @@ export function ApplicationManagementPage({
                     messages={messages}
                     onAccessToken={() => openAccessToken(item)}
                     onCorrectKind={() => openKindCorrection(item)}
+                    onDetail={detailRouteFor(item)}
                     onIntegration={(kind) => openIntegration(item, kind)}
                     onRetryIdentity={() => void retryIdentity(item)}
                     onSource={() => setSourceTarget(item)}

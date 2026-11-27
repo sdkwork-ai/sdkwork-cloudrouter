@@ -398,10 +398,7 @@ async fn seed_routing_topology(
     // held to the production egress boundary by default, so this dev-only
     // harness opts into loopback cleartext explicitly (public cleartext stays
     // rejected).
-    std::env::set_var(
-        "SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK",
-        "1",
-    );
+    std::env::set_var("SDKWORK_CLOUDROUTER_UPSTREAM_BASE_URL_ALLOW_LOOPBACK", "1");
     // The request path resolves the model from `ai_model`; a bare schema has no
     // bundled catalog rows, so the fixture owns its model row exactly like the
     // responses e2e fixture does.

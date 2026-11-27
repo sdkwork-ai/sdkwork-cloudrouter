@@ -460,6 +460,7 @@ mod tests {
                 "pricing",
                 "cloudrouter-billing",
                 "payment-control-plane",
+                "payment-reconciliation",
             ],
             module_ids
         );

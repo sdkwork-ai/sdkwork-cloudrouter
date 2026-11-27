@@ -80,6 +80,24 @@ export type SandboxIsolationAssurance =
   | 'micro_vm'
   | 'dedicated_vm';
 
+/**
+ * The runtime **engine** an instance is provisioned on.
+ *
+ * Orthogonal to {@link SandboxIsolationAssurance}: assurance says how strong the
+ * boundary is, this says what actually runs the workload. Docker and Firecracker
+ * are different products to size, bill and support even when the resource shape
+ * matches, so the console must never collapse them into one label.
+ *
+ * Mirrors `SandboxRuntimeKind` in sdkwork-sandbox's provider SPI.
+ */
+export type SandboxRuntimeKind =
+  | 'sandbox'
+  | 'docker'
+  | 'gvisor'
+  | 'kata'
+  | 'firecracker'
+  | 'qemu';
+
 export const SANDBOX_INSTANCE_STATES: readonly SandboxInstanceState[] = [
   'requested',
   'active',
@@ -113,6 +131,33 @@ export const SANDBOX_ISOLATION_ASSURANCES: readonly SandboxIsolationAssurance[] 
   'dedicated_vm',
 ];
 
+/** Canonical picker order: weakest boundary first, matching the isolation ladder. */
+export const SANDBOX_RUNTIME_KINDS: readonly SandboxRuntimeKind[] = [
+  'sandbox',
+  'docker',
+  'gvisor',
+  'kata',
+  'firecracker',
+  'qemu',
+];
+
+/**
+ * The strongest isolation each engine can provide, mirroring
+ * `SandboxRuntimeKind::isolation_assurance` on the server.
+ *
+ * The provisioning form uses this to offer only the assurance tiers the selected
+ * engine can actually satisfy, so the caller cannot submit a combination the
+ * server would reject with a validation error.
+ */
+export const SANDBOX_RUNTIME_KIND_ASSURANCE: Readonly<Record<SandboxRuntimeKind, SandboxIsolationAssurance>> = {
+  sandbox: 'host_user',
+  docker: 'container',
+  gvisor: 'user_space_kernel',
+  kata: 'micro_vm',
+  firecracker: 'micro_vm',
+  qemu: 'dedicated_vm',
+};
+
 /**
  * One VM instance, exactly as the app-api serializes it (`camelCase`, no rename
  * layer).
@@ -135,6 +180,8 @@ export interface SandboxInstance {
   sandboxInstanceDiskMb: number;
   sandboxInstanceRequiredCapabilities: readonly SandboxRuntimeCapability[];
   sandboxInstanceMinimumAssurance: SandboxIsolationAssurance;
+  /** The engine actually provisioned; always present on a stored instance. */
+  sandboxInstanceRuntimeKind: SandboxRuntimeKind;
   sandboxInstanceAutoStart: boolean;
   sandboxInstanceExpiresAt?: string;
   sandboxWorkspaceId?: string;
@@ -179,6 +226,11 @@ export interface CreateSandboxInstanceInput {
   sandboxInstanceDiskMb: number;
   sandboxInstanceRequiredCapabilities?: readonly SandboxRuntimeCapability[];
   sandboxInstanceMinimumAssurance: SandboxIsolationAssurance;
+  /**
+   * Required by the server: the engine decides what is actually provisioned, so
+   * omitting it is a 400 rather than an implicit default.
+   */
+  sandboxInstanceRuntimeKind: SandboxRuntimeKind;
   sandboxInstanceAutoStart?: boolean;
   sandboxInstanceExpiresAt?: string;
   sandboxWorkspaceId?: string;

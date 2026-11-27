@@ -341,6 +341,10 @@ pub struct GatewayUsageRecordCommand {
     pub pricing_plan_code: String,
     pub billing_components: String,
     pub pricing_snapshot: String,
+    /// Which pricing layer decided the customer amount.
+    /// Empty for a decision that never reached a priced rate.
+    #[serde(default)]
+    pub pricing_layer: String,
     #[serde(default)]
     pub official_rate: Option<GatewayOfficialRateReference>,
 }

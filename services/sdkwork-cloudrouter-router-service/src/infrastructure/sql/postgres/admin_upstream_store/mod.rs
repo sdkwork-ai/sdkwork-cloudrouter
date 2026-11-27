@@ -1,6 +1,7 @@
 mod account;
 mod account_group;
 mod account_group_member;
+mod account_group_price;
 mod account_group_resource;
 mod account_resource;
 mod model_access;
@@ -17,16 +18,16 @@ use sqlx::PgPool;
 
 use crate::application::UpstreamCredentialSecretCodec;
 use crate::ports::{
-    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountCredentialSecretItem,
-    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
-    AdminUpstreamAccountGroupMemberItem, AdminUpstreamAccountItem, AdminUpstreamFuture,
-    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamResourceInput,
-    AdminUpstreamResourceItem, AdminUpstreamStore, AdminUpstreamSubject,
-    AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
-    AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
-    AdminUpstreamSupplierItem, CreateAdminUpstreamAccountCredentialCommand,
-    SaveAdminUpstreamAccountCommand, SaveAdminUpstreamAccountGroupCommand,
-    SaveAdminUpstreamSupplierCommand,
+    AdminGroupResourcePriceInput, AdminGroupResourcePriceItem, AdminUpstreamAccountCredentialItem,
+    AdminUpstreamAccountCredentialSecretItem, AdminUpstreamAccountGroupItem,
+    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
+    AdminUpstreamAccountItem, AdminUpstreamFuture, AdminUpstreamListQuery, AdminUpstreamPage,
+    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamStore,
+    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
+    AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
+    AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem,
+    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
+    SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
 };
 
 pub use verifier::PostgresAdminUpstreamAccountVerifier;
@@ -361,6 +362,35 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
     ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>> {
         Box::pin(async move {
             account_group_resource::list(&self.pool, subject, account_group_id).await
+        })
+    }
+
+    fn list_account_group_resource_prices<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_group_id: i64,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminGroupResourcePriceItem>> {
+        Box::pin(
+            async move { account_group_price::list(&self.pool, subject, account_group_id).await },
+        )
+    }
+
+    fn replace_account_group_resource_prices<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_group_id: i64,
+        expected_version: i64,
+        items: Vec<AdminGroupResourcePriceInput>,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminGroupResourcePriceItem>> {
+        Box::pin(async move {
+            account_group_price::replace(
+                &self.pool,
+                subject,
+                account_group_id,
+                expected_version,
+                items,
+            )
+            .await
         })
     }
 

@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sdkwork/deployments-pc-admin-app-detail": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/iam-contracts": "workspace:*",

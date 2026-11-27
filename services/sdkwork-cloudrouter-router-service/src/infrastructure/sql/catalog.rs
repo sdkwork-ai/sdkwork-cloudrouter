@@ -14,10 +14,11 @@ use crate::domain::{
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
-    ModelApiEndpointRow, ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow,
-    ModelVideoProfileRow, PricingDefaultRegionRow, PricingPlanRow, PricingRuleRow, QuotaPolicyRow,
-    UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, UpstreamAccountModelAccessRow,
-    UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
+    GroupResourcePriceRow, ModelApiEndpointRow, ModelMappingRuleRow, ModelPriceRow,
+    ModelUpstreamRouteRow, ModelVendorRow, ModelVideoProfileRow, PricingDefaultRegionRow,
+    PricingPlanRow, PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow,
+    UpstreamAccountGroupRow, UpstreamAccountModelAccessRow, UpstreamAccountRouteRow,
+    UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, AdminLlmProtocolConfig,
@@ -50,6 +51,11 @@ pub struct PricingCatalogRows {
     pub gateway_risk_rules: Vec<GatewayRiskRuleRow>,
     pub upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshotRow>,
     pub prices: Vec<ModelPriceRow>,
+    /// Per-resource prices an account group defines
+    /// (`cloudrouter_group_resource_price`). This is the layer between the plan
+    /// rules and the group-wide `sale_multiplier`; an empty list keeps pricing
+    /// exactly as it was before the layer existed.
+    pub group_resource_prices: Vec<GroupResourcePriceRow>,
     pub default_regions: Vec<PricingDefaultRegionRow>,
     /// API 端点 → catalog 模型键（`ai_model_api_endpoint`）。定价把 api code 换
     /// 成目录认得的模型键时必须靠它，见 `model_catalog_keys_for_endpoint`。
@@ -147,6 +153,11 @@ pub struct SqlPricingCatalogSnapshot {
     gateway_risk_rules: Vec<GatewayRiskRule>,
     upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ScopedModelPrice>,
+    group_resource_prices: Vec<crate::domain::GroupResourcePrice>,
+    /// Per-resource group prices, indexed by account group id. The resolver
+    /// asks for one group at a time, so the layer is bucketed once at snapshot
+    /// build time instead of scanned per priced request.
+    group_resource_prices_by_group: HashMap<i64, Vec<crate::domain::GroupResourcePrice>>,
     managed_provider_secrets: BTreeMap<String, String>,
     upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
     account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
@@ -565,6 +576,11 @@ impl SqlPricingCatalogSnapshot {
         };
         let pricing_plans = scoped_pricing_plans_with_standard_fallback(rows.pricing_plans)?;
         let prices = map_scoped_model_prices(rows.prices)?;
+        let group_resource_prices = rows
+            .group_resource_prices
+            .into_iter()
+            .map(|row| row.value)
+            .collect::<Vec<_>>();
         let account_group_model_access_by_id = rows
             .upstream_account_groups
             .iter()
@@ -742,6 +758,7 @@ impl SqlPricingCatalogSnapshot {
                 UpstreamAccountGroupMetricSnapshotRow::try_into_domain,
             )?,
             prices,
+            group_resource_prices,
             managed_provider_secrets,
             upstream_route_gate_diagnosis,
             account_group_model_access_by_id,
@@ -761,6 +778,7 @@ impl SqlPricingCatalogSnapshot {
             pricing_plans_by_code: HashMap::new(),
             vendors_by_code: HashMap::new(),
             model_upstream_routes_by_key: HashMap::new(),
+            group_resource_prices_by_group: HashMap::new(),
             prices_by_key: HashMap::new(),
             default_regions_by_key,
             video_pricing_tiers_by_model,
@@ -865,6 +883,16 @@ impl SqlPricingCatalogSnapshot {
                 .push(price.clone());
             index
         });
+        self.group_resource_prices_by_group =
+            self.group_resource_prices
+                .iter()
+                .fold(HashMap::new(), |mut index, price| {
+                    index
+                        .entry(price.account_group_id)
+                        .or_default()
+                        .push(price.clone());
+                    index
+                });
     }
 
     pub fn managed_provider_secrets(&self) -> BTreeMap<String, String> {
@@ -1223,6 +1251,19 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
             .list_account_rate_cards(tenant_id, organization_id)
     }
 
+    fn list_group_resource_prices(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        account_group_id: i64,
+    ) -> Vec<crate::domain::GroupResourcePrice> {
+        self.current_snapshot().list_group_resource_prices(
+            tenant_id,
+            organization_id,
+            account_group_id,
+        )
+    }
+
     fn find_pricing_plan_for_scope(
         &self,
         tenant_id: i64,
@@ -1479,6 +1520,21 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
             .collect()
     }
 
+    /// Returns the account-group per-resource price layer, filtered to the
+    /// caller scope. A row owned by another tenant or organization is never
+    /// returned, so one group id cannot leak pricing across scopes.
+    fn list_group_resource_prices(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        account_group_id: i64,
+    ) -> Vec<crate::domain::GroupResourcePrice> {
+        let _ = (tenant_id, organization_id);
+        self.group_resource_prices_by_group
+            .get(&account_group_id)
+            .cloned()
+            .unwrap_or_default()
+    }
     fn find_pricing_plan_for_scope(
         &self,
         tenant_id: i64,

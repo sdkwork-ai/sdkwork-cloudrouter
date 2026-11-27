@@ -1276,6 +1276,7 @@ where
         pricing_plan_code: pricing.pricing_plan_code,
         billing_components: pricing.billing_components,
         pricing_snapshot,
+        pricing_layer: pricing.pricing_layer,
         official_rate: pricing.official_rate,
     }))
 }

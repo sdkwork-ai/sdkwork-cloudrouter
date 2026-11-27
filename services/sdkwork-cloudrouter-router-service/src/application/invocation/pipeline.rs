@@ -797,10 +797,8 @@ mod tests {
     #[test]
     fn a_mid_stream_failure_rewrites_the_successful_attempt() {
         let mut invocation = invocation();
-        invocation
-            .routing
-            .attempted_routes
-            .push(crate::application::invocation::InvocationRouteAttempt {
+        invocation.routing.attempted_routes.push(
+            crate::application::invocation::InvocationRouteAttempt {
                 supplier_code: "openai".to_owned(),
                 account_id: 3001,
                 candidate_index: 0,
@@ -810,7 +808,8 @@ mod tests {
                 error_code: None,
                 error_message: None,
                 latency_ms: Some(12),
-            });
+            },
+        );
         let error = InvocationError::new(
             InvocationErrorKind::Dispatch,
             "provider stream idle deadline exceeded",
@@ -834,10 +833,8 @@ mod tests {
     #[test]
     fn an_already_failed_attempt_is_not_rewritten() {
         let mut invocation = invocation();
-        invocation
-            .routing
-            .attempted_routes
-            .push(crate::application::invocation::InvocationRouteAttempt {
+        invocation.routing.attempted_routes.push(
+            crate::application::invocation::InvocationRouteAttempt {
                 supplier_code: "openai".to_owned(),
                 account_id: 3001,
                 candidate_index: 0,
@@ -847,7 +844,8 @@ mod tests {
                 error_code: Some("provider_unavailable".to_owned()),
                 error_message: Some("already recorded".to_owned()),
                 latency_ms: Some(9),
-            });
+            },
+        );
         let error = InvocationError::new(InvocationErrorKind::Dispatch, "stream failed");
 
         mark_stream_account_failure(&mut invocation, &error);

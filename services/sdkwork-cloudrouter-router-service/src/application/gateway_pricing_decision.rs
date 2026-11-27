@@ -17,6 +17,10 @@ const UNIT_PRICE_DECIMAL_DIGITS: u32 = 12;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GatewayPricingDecision {
     pub decision_status: String,
+    /// Which pricing layer decided the customer amount
+    /// (`plan_reference`, `plan_rule`, `group_resource`, `group_multiplier`).
+    /// Empty when the resolution did not produce a priced rate.
+    pub pricing_layer: String,
     pub billability: String,
     pub reason_code: String,
     pub strategy_code: Option<String>,
@@ -52,6 +56,11 @@ impl GatewayPricingDecision {
 
         Ok(Self {
             decision_status: resolution.status.code().to_owned(),
+            pricing_layer: resolution
+                .resolved_price
+                .as_ref()
+                .map(|resolved| resolved.customer_price_layer.code().to_owned())
+                .unwrap_or_default(),
             billability: resolution.billability.code().to_owned(),
             reason_code: decision_reason_code(resolution),
             strategy_code: billing.map(|billing| billing.strategy.code().to_owned()),

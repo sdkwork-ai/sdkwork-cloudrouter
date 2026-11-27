@@ -8,6 +8,7 @@ mod upstream_account_group_selection;
 mod upstream_auth;
 mod vendor_code_alias;
 
+pub(crate) use account_group_routing::rule_matches_request;
 pub use account_group_routing::{
     account_group_can_serve_modality, normalize_account_group_header,
     select_api_key_account_group_override, select_session_account_group_with_user_routing,
@@ -15,7 +16,6 @@ pub use account_group_routing::{
     AccountGroupRouteScope, SessionAccountGroupRoutingSelection, UserAccountGroupRoute,
     ACCOUNT_GROUP_ROUTING_HEADER, ACCOUNT_GROUP_ROUTING_HEADER_MAX_LEN,
 };
-pub(crate) use account_group_routing::rule_matches_request;
 
 pub use async_usage_task::{
     AsyncUsageTask, AsyncUsageTaskKind, AsyncUsageTaskStatus, NewAsyncUsageTask,
@@ -35,13 +35,12 @@ pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,
     parse_model_catalog_identity, parse_request_model_identity, provider_native_model_id,
-    AccountRateCard, AiModel,
-    AiModelPublicMetadata, AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy,
-    BillingMeter, DecimalValue, GatewayAccessPolicy, GatewayApiKey,
-    GatewayApiKeyAccountGroupBinding, GatewayRiskRule, IntegrationProviderType,
-    ModelCatalogIdentity, ModelMappingBindingType, ModelMappingRule, ModelPrice,
-    ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
-    PricingDimensionContext, PricingFormula, PricingFormulaTerm, PricingPlan,
+    AccountRateCard, AiModel, AiModelPublicMetadata, AiRouteFailureStrategy,
+    AiRouteModelRequirement, AiRouteStrategy, BillingMeter, DecimalValue, GatewayAccessPolicy,
+    GatewayApiKey, GatewayApiKeyAccountGroupBinding, GatewayRiskRule, GroupPriceMode,
+    GroupResourcePrice, IntegrationProviderType, ModelCatalogIdentity, ModelMappingBindingType,
+    ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money,
+    PriceSide, PricingDimensionContext, PricingFormula, PricingFormulaTerm, PricingPlan,
     PricingPolicyRecordIdentity, PricingRateCondition, PricingRateMetadata,
     PricingRateRecordIdentity, PricingRateTier, PricingRateVariant, PricingRule, PricingSchedule,
     PricingWeeklyWindow, ProviderAuthHeader, ProviderAuthProfile, ProviderAuthType,

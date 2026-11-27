@@ -13,6 +13,10 @@ export {
   resolveApplicationCatalogView,
 } from "./pages/ApplicationManagementPage";
 export { AppCenterOverviewPage } from "./pages/AppCenterOverviewPage";
+export { CloudRouterDeployApplicationDetailPage } from "./pages/CloudRouterDeployApplicationDetailRoute";
+export {
+  createCloudRouterDeploymentApplicationDetailDataSource,
+} from "./services/deployment-app-detail-adapter";
 export { AppCenterAnalyticsPage } from "./pages/AppCenterAnalyticsPage";
 export { AppModerationPage } from "./pages/AppModerationPage";
 export { AppAppealsPage } from "./pages/AppAppealsPage";
