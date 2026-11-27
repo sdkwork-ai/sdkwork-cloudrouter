@@ -1,5 +1,3 @@
-success
-
 -- sdkwork:migration
 -- id: 0012_pricing_charge_model_columns
 -- engine: postgres
