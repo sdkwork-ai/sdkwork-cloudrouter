@@ -6,7 +6,7 @@
 --   rules that 0004 tightened without normalizing. Rules written before 0004
 --   carry the four-key schedule, so any later UPDATE fails the payload guard.
 -- reversible: true
--- rollback: down-migration
+-- rollback: forward-fix
 -- transactional: true
 -- lock: table
 -- lock_timeout: 5s

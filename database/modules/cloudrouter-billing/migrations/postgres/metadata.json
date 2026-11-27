@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.migration-metadata",
+  "engine": "postgres",
+  "sourcePolicy": "historical-immutable",
+  "migrations": {
+    "0005_pricing_rule_schedule_holiday_backfill.up.sql": {
+      "reversible": "true",
+      "rollback": "down-migration",
+      "correctionReason": "0005 was already applied under the forward-fix header and its applied checksum is immutable, so the header stays byte-identical; the paired 0005 down script is a no-op that exists only for layout pairing, which is what this correction declares."
+    }
+  }
+}

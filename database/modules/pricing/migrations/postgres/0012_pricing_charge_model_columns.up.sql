@@ -80,22 +80,30 @@ ALTER TABLE pricing_rate
     );
 
 -- `calculation_mode` predates `metering_mode` and stays the projection the
--- runtime already reads. Keeping the two in lockstep prevents a row whose two
--- declarations disagree from ever being written.
+-- runtime already reads. Its vocabulary is the published one
+-- (`per_unit`, `flat`, `graduated`, `volume`, `formula`), so `per_quantity`
+-- projects onto `per_unit` rather than onto a new token: the legacy check
+-- constraint and every SDK enum already speak `per_unit`. Keeping the two in
+-- lockstep prevents a row whose two declarations disagree from being written.
 CREATE OR REPLACE FUNCTION pricing_sync_calculation_mode()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    projected TEXT;
 BEGIN
+    projected := CASE
+        WHEN NEW.metering_mode = 'per_quantity' THEN 'per_unit'
+        ELSE NEW.metering_mode
+    END;
+
     IF NEW.metering_mode IS DISTINCT FROM OLD.metering_mode
         OR TG_OP = 'INSERT'
     THEN
-        NEW.calculation_mode := NEW.metering_mode;
-    ELSIF NEW.calculation_mode IS DISTINCT FROM OLD.calculation_mode
-        AND NEW.calculation_mode IS DISTINCT FROM NEW.metering_mode
-    THEN
+        NEW.calculation_mode := projected;
+    ELSIF NEW.calculation_mode IS DISTINCT FROM projected THEN
         RAISE EXCEPTION
-            'pricing_rate.calculation_mode (%) must equal metering_mode (%)',
+            'pricing_rate.calculation_mode (%) must project metering_mode (%)',
             NEW.calculation_mode, NEW.metering_mode;
     END IF;
     RETURN NEW;
@@ -136,8 +144,14 @@ WHERE metering_mode IS DISTINCT FROM CASE
     END;
 
 UPDATE pricing_rate
-SET calculation_mode = metering_mode
-WHERE calculation_mode IS DISTINCT FROM metering_mode;
+SET calculation_mode = CASE
+        WHEN metering_mode = 'per_quantity' THEN 'per_unit'
+        ELSE metering_mode
+    END
+WHERE calculation_mode IS DISTINCT FROM CASE
+        WHEN metering_mode = 'per_quantity' THEN 'per_unit'
+        ELSE metering_mode
+    END;
 
 CREATE INDEX IF NOT EXISTS idx_pricing_rate_charge_model
     ON pricing_rate (tenant_id, organization_id, price_item_type, quantity_source, status, id);
