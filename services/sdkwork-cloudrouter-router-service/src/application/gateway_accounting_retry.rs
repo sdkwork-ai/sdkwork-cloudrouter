@@ -55,6 +55,17 @@ impl GatewayAccountingRetryRecorderConfig {
 #[derive(Clone, Default)]
 pub struct GatewayAccountingRetryHealth {
     queue_unavailable: Arc<AtomicBool>,
+    /// Records that were dead-lettered and still sit in the dead-letter queue.
+    ///
+    /// Recoverable: once the queue is drained (a replay after the underlying
+    /// write defect is fixed, or operator reconciliation) the backlog is gone
+    /// and readiness must return to healthy. Treating these as permanently
+    /// unreconciled pinned `/readyz` at 503 for the rest of the process
+    /// lifetime, so a single transient write defect kept the gateway
+    /// "unhealthy" long after the data path was repaired.
+    dead_letter_backlog: Arc<AtomicBool>,
+    /// Records lost outright: the primary write failed *and* the durable retry
+    /// enqueue failed, so no durable copy exists. Sticky by design.
     unreconciled_failure: Arc<AtomicBool>,
     dual_failure_count: Arc<AtomicU64>,
 }
@@ -62,6 +73,7 @@ pub struct GatewayAccountingRetryHealth {
 impl GatewayAccountingRetryHealth {
     pub fn is_degraded(&self) -> bool {
         self.queue_unavailable.load(Ordering::Relaxed)
+            || self.dead_letter_backlog.load(Ordering::Relaxed)
             || self.unreconciled_failure.load(Ordering::Relaxed)
     }
 
@@ -93,9 +105,17 @@ impl GatewayAccountingRetryHealth {
         self.refresh_gauge();
     }
 
-    fn mark_unreconciled_failure(&self) {
-        self.unreconciled_failure.store(true, Ordering::Relaxed);
+    /// Registers that at least one record is waiting in the dead-letter queue.
+    fn mark_dead_letter_backlog(&self) {
+        self.dead_letter_backlog.store(true, Ordering::Relaxed);
         self.refresh_gauge();
+    }
+
+    /// Clears the dead-letter backlog once the queue reports it is empty.
+    fn clear_dead_letter_backlog(&self) {
+        if self.dead_letter_backlog.swap(false, Ordering::Relaxed) {
+            self.refresh_gauge();
+        }
     }
 
     fn refresh_gauge(&self) {
@@ -524,7 +544,12 @@ impl GatewayAccountingRetryWorker {
             Ok(depth) => {
                 accounting_retry_dlq_depth_gauge().set(i64::try_from(depth).unwrap_or(i64::MAX));
                 if depth > 0 {
-                    self.health.mark_unreconciled_failure();
+                    self.health.mark_dead_letter_backlog();
+                } else {
+                    // Draining the dead-letter queue restores readiness: the
+                    // records are durable again (replayed) or reconciled by an
+                    // operator, so the backlog no longer blocks the data path.
+                    self.health.clear_dead_letter_backlog();
                 }
             }
             Err(error) => {
@@ -579,7 +604,7 @@ impl GatewayAccountingRetryWorker {
                     "invalid_retry_envelope",
                 )
                 .await?;
-            self.health.mark_unreconciled_failure();
+            self.health.mark_dead_letter_backlog();
             accounting_retry_outcome_counter()
                 .with_label_values(&["unknown", "dead_lettered_invalid"])
                 .inc();
@@ -617,7 +642,7 @@ impl GatewayAccountingRetryWorker {
                             "recorder_retry_exhausted",
                         )
                         .await?;
-                    self.health.mark_unreconciled_failure();
+                    self.health.mark_dead_letter_backlog();
                     accounting_retry_outcome_counter()
                         .with_label_values(&[record_type, "dead_lettered"])
                         .inc();
@@ -1342,6 +1367,41 @@ mod tests {
         assert_eq!(0, worker.run_once().await.expect("inspect retry queue"));
         assert!(health.is_degraded());
         assert!(!(health.readiness_check())().await);
+    }
+
+    /// A dead-letter backlog is recoverable state: once the queue is drained the
+    /// gateway must be ready again. Before this, the backlog flag was sticky, so a
+    /// single defect that dead-lettered a usage record left `/readyz` at 503 for
+    /// the rest of the process lifetime even after the data path was repaired.
+    #[tokio::test]
+    async fn readiness_recovers_once_the_dead_letter_queue_drains() {
+        let health = GatewayAccountingRetryHealth::default();
+        let backlogged = Arc::new(TestRetryQueue::with_dead_letter_depth(2));
+        let worker = GatewayAccountingRetryWorker::new(
+            Arc::new(TestRecorder::default()),
+            backlogged,
+            health.clone(),
+            "test-worker",
+            GatewayAccountingRetryWorkerConfig::default(),
+        );
+        assert_eq!(
+            0,
+            worker.run_once().await.expect("inspect backlogged queue")
+        );
+        assert!(health.is_degraded());
+        assert!(!(health.readiness_check())().await);
+
+        let drained = Arc::new(TestRetryQueue::default());
+        let worker = GatewayAccountingRetryWorker::new(
+            Arc::new(TestRecorder::default()),
+            drained,
+            health.clone(),
+            "test-worker",
+            GatewayAccountingRetryWorkerConfig::default(),
+        );
+        assert_eq!(0, worker.run_once().await.expect("inspect drained queue"));
+        assert!(!health.is_degraded());
+        assert!((health.readiness_check())().await);
     }
 
     #[tokio::test]
