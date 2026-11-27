@@ -30,6 +30,15 @@ const RELAY_PROVIDER_GROUPS_JSON: &str =
 
 const ACTIVE_STATUS: i32 = 1;
 const DISABLED_STATUS: i32 = 0;
+/// Tenant that owns the bundled AI-routing **directory**: `ai_resource`,
+/// `ai_resource_group`, `ai_resource_group_item` and `ai_api_endpoint`.
+///
+/// This is a shared system catalog rather than tenant-owned data, which is why
+/// it stays at tenant `0` while the account groups it is granted to live under
+/// [`DEFAULT_IAM_TENANT_ID`]. The value matters because the seed writer and
+/// [`postgres_ai_routing_seed_gap`] must agree: they now both read this one
+/// constant, where the predicate used to hard-code a literal `tenant_id = 0`
+/// and could silently drift from the writer.
 const SYSTEM_TENANT_ID: i64 = 0;
 const SYSTEM_ORGANIZATION_ID: i64 = 0;
 const SYSTEM_DATA_SCOPE: i32 = 1;
@@ -1542,17 +1551,23 @@ pub async fn postgres_ai_routing_seed_gap(
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
     let resource_codes = postgres_string_set(
         pool,
-        "SELECT resource_code FROM ai_resource WHERE tenant_id = 0 AND organization_id = 0 AND status = 1 AND deleted_at IS NULL",
+        "SELECT resource_code FROM ai_resource \
+         WHERE tenant_id = $1 AND organization_id = $2 AND status = 1 AND deleted_at IS NULL",
+        SYSTEM_TENANT_ID,
     )
     .await?;
     let group_codes = postgres_string_set(
         pool,
-        "SELECT group_code FROM ai_resource_group WHERE tenant_id = 0 AND organization_id = 0 AND status = 1 AND deleted_at IS NULL",
+        "SELECT group_code FROM ai_resource_group \
+         WHERE tenant_id = $1 AND organization_id = $2 AND status = 1 AND deleted_at IS NULL",
+        SYSTEM_TENANT_ID,
     )
     .await?;
     let endpoint_codes = postgres_string_set(
         pool,
-        "SELECT endpoint_code FROM ai_api_endpoint WHERE tenant_id = 0 AND organization_id = 0 AND status = 1 AND deleted_at IS NULL",
+        "SELECT endpoint_code FROM ai_api_endpoint \
+         WHERE tenant_id = $1 AND organization_id = $2 AND status = 1 AND deleted_at IS NULL",
+        SYSTEM_TENANT_ID,
     )
     .await?;
 
@@ -5277,8 +5292,11 @@ async fn postgres_group_ids(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
 ) -> Result<BTreeMap<String, i64>, sqlx::Error> {
     let rows = sqlx::query(
-        "SELECT id, group_code FROM ai_resource_group WHERE tenant_id = 0 AND organization_id = 0",
+        "SELECT id, group_code FROM ai_resource_group \
+         WHERE tenant_id = $1 AND organization_id = $2",
     )
+    .bind(SYSTEM_TENANT_ID)
+    .bind(SYSTEM_ORGANIZATION_ID)
     .fetch_all(&mut **tx)
     .await?;
     Ok(rows
@@ -5326,24 +5344,38 @@ async fn postgres_resource_group_item_count(
         r#"
         SELECT (COUNT(1))::bigint AS count
         FROM ai_resource_group_item
-        WHERE tenant_id = 0
-          AND organization_id = 0
+        WHERE tenant_id = $2
+          AND organization_id = $3
           AND status = 1
           AND deleted_at IS NULL
           AND metadata ->> 'catalogCode' = $1
         "#,
     )
     .bind(&catalog.manifest.catalog_code)
+    .bind(SYSTEM_TENANT_ID)
+    .bind(SYSTEM_ORGANIZATION_ID)
     .fetch_one(pool)
     .await?;
     Ok(row.get::<i64, _>("count"))
 }
 
+/// Runs a directory query scoped to one tenant/organization and collects the
+/// first column as a set.
+///
+/// The tenant is a bound parameter rather than a literal `0` in the SQL so a
+/// reader and the seed writer cannot drift apart: both take the same
+/// [`SYSTEM_TENANT_ID`] constant, which is where the "system directory" scope is
+/// defined.
 async fn postgres_string_set(
     pool: &PgPool,
     query: &'static str,
+    tenant_id: i64,
 ) -> Result<BTreeSet<String>, sqlx::Error> {
-    let rows = sqlx::query(query).fetch_all(pool).await?;
+    let rows = sqlx::query(query)
+        .bind(tenant_id)
+        .bind(SYSTEM_ORGANIZATION_ID)
+        .fetch_all(pool)
+        .await?;
     Ok(rows
         .into_iter()
         .filter_map(|row| row.try_get::<String, _>(0).ok())

@@ -33,3 +33,18 @@ test('payment admin maintenance operations are wired through the backend service
   assert.equal(typeof backend.intents.list, 'function');
   assert.equal(typeof backend.intents.retrieve, 'function');
 });
+
+test('every one-cent test capability is reachable through the backend service', () => {
+  // "Configure a provider and the whole payment function works" is only true
+  // if the console can reach each link of the chain: coverage, checkout,
+  // status, simulated settlement, close, refund, and notification delivery.
+  configureCloudRouterDomainServiceProviders();
+  const backend = getCloudRouterPaymentBackendService();
+  assert.equal(typeof backend.dev.testPaymentProducts.list, 'function');
+  assert.equal(typeof backend.dev.testPayments, 'function');
+  assert.equal(typeof backend.dev.checkAttemptStatus, 'function');
+  assert.equal(typeof backend.dev.settleTestPayment, 'function');
+  assert.equal(typeof backend.dev.cancelTestPayment, 'function');
+  assert.equal(typeof backend.dev.refundTestPayment, 'function');
+  assert.equal(typeof backend.dev.notificationTest, 'function');
+});

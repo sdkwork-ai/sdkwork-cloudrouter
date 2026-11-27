@@ -397,7 +397,9 @@ impl DatabaseInstaller {
             //   keys);
             // * the routing seed's projection — a resource/group/endpoint, a
             //   routing strategy, an account, or an account's credential;
-            // * `default_service_node_complete` — the control-plane instance row.
+            // * `default_service_node_complete` — the control-plane instance row;
+            // * the dev media gateway API key — two rows `bootstrap_status`
+            //   requires, seeded only when a pepper is configured.
             //
             // The credential case is the historic trap: `import_postgres_default_vendor_account_credential`
             // bails out when no codec is configured (a credential the runtime
@@ -433,6 +435,26 @@ impl DatabaseInstaller {
             }
             if !self.default_service_node_complete().await.unwrap_or(true) {
                 causes.push("the default service node instance row is absent".to_owned());
+            }
+            // The `UpgradeRequired` source this block used to omit: the dev media
+            // gateway API key. Without it a database missing only that key
+            // reported `UpgradeRequired` with an *empty* hint and read like an
+            // undiagnosable seed failure.
+            //
+            // The trap is the same shape as the credential one above and worse to
+            // see: `import_postgres_default_media_gateway_api_key` returns early
+            // and only logs when the API-key pepper is unset, while the predicate
+            // still demands both key rows. Diagnose it as a configuration gap, not
+            // a seed bug.
+            if let Ok(true) =
+                postgres_default_media_gateway_api_key_gap(&self.pool, environment).await
+            {
+                causes.push(
+                    "the dev media gateway API key is absent — the seed skips both key rows when \
+                     no API-key pepper is configured; set SDKWORK_CLOUDROUTER_API_KEY_PEPPER or \
+                     SDKWORK_CLOUDROUTER_API_KEY_PEPPER_FILE and re-run"
+                        .to_owned(),
+                );
             }
             let hint = if causes.is_empty() {
                 String::new()
@@ -1250,5 +1272,45 @@ mod tests {
             DatabaseInstallOptions::commercial().seed_profile
         );
         assert!(DatabaseInstallOptions::new("test", "commercial").is_err());
+    }
+
+    /// Every predicate `bootstrap_status` gates on must be named by the
+    /// diagnostic block in `ensure_bootstrap_data`.
+    ///
+    /// This is the regression lock for a real outage: `bootstrap_status` gates on
+    /// four predicates, but the diagnostics named only three of them — the media
+    /// gateway API key was missing — so a database missing only that key reported
+    /// `UpgradeRequired` with an *empty* hint and read like an undiagnosable seed
+    /// failure. Each predicate is now looked for by name in the diagnostic
+    /// section, so a newly added clause cannot silently go unnamed again.
+    #[test]
+    fn every_upgrade_required_source_is_diagnosed() {
+        const SOURCE: &str = include_str!("installer.rs");
+        let diagnostic_section = SOURCE
+            .split_once("let mut causes")
+            .expect("the diagnostic block is present")
+            .1;
+        let diagnostic_section = &diagnostic_section
+            [..diagnostic_section.find("catalog/seed bootstrap did not reach").unwrap_or(diagnostic_section.len())];
+
+        for probe in [
+            // model-catalog projection
+            "catalog_gap",
+            // the AI routing seed chain
+            "postgres_ai_routing_seed_gap",
+            // vendor default accounts without a credential
+            "vendor_accounts_lack_credentials",
+            // the dev media gateway API key — the clause that used to be missing
+            "postgres_default_media_gateway_api_key_gap",
+            // the control-plane instance row
+            "default_service_node_complete",
+        ] {
+            assert!(
+                diagnostic_section.contains(probe),
+                "`{probe}` gates `UpgradeRequired` in bootstrap_status but is not named in the \
+                 diagnostic block, so its failure would be reported as a bare \
+                 `UpgradeRequired` with no cause"
+            );
+        }
     }
 }
