@@ -241,6 +241,7 @@ table_fragments:
 - tables/user-settings.yaml
 - tables/payment-control-plane.yaml
 - tables/storage-center.yaml
+- tables/data-center.yaml
 modules:
   user-settings:
     owner: cloud-router-platform
@@ -374,6 +375,27 @@ modules:
     - commerce_refund_attempt
     - commerce_refund_item
     ddl_location: database/modules/payment-control-plane/ddl/baseline/{engine}/0001_payment_control_plane_baseline.sql
+  data-center:
+    owner: cloud-router-platform
+    description: Admin data-center governance plane (数据中心) behind
+      `/backend/v3/api/datacenter/*` — data sources with write-only credentials,
+      connectivity history, landed table and dataset catalogs, governed export
+      jobs, and the data-access audit trail. Landed data itself stays in a
+      Data Center-owned schema, never in the gateway/routing/billing tables.
+    compliance_level: L3
+    tables_count: 10
+    tables:
+    - dc_workspace
+    - dc_data_source
+    - dc_data_source_credential
+    - dc_data_source_test_log
+    - dc_table
+    - dc_table_column
+    - dc_dataset
+    - dc_dataset_field
+    - dc_export_job
+    - dc_audit_log
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
 registry_dependencies:
 - module_id: appbase-iam
   locator: ../sdkwork-appbase

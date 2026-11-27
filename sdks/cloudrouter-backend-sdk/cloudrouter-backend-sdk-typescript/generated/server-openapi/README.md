@@ -56,11 +56,13 @@ const client = new SdkworkBackendClient({
 
 - `client.ai` - ai API
 - `client.billing` - billing API
+- `client.system` - system API
+- `client.mcp` - mcp API
+- `client.memory` - memory API
 - `client.payments` - payments API
 - `client.pricing` - pricing API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
-- `client.system` - system API
 
 ## Usage Examples
 
@@ -80,6 +82,27 @@ const params = {
   page_size: 2,
 };
 const result = await client.billing.rechargeRecords.list(params);
+```
+
+### system
+
+```typescript
+// List overview
+const result = await client.system.overview.retrieve();
+```
+
+### mcp
+
+```typescript
+// List admin categories
+const result = await client.mcp.categories.list();
+```
+
+### memory
+
+```typescript
+// List memory records
+const result = await client.memory.list();
 ```
 
 ### payments
@@ -128,13 +151,6 @@ const params = {
   run_type: 'run_type',
 };
 const result = await client.storage.defaultBuckets.list(params);
-```
-
-### system
-
-```typescript
-// List cloud router auth settings
-const result = await client.system.auth.settings.retrieve();
 ```
 
 ## Error Handling

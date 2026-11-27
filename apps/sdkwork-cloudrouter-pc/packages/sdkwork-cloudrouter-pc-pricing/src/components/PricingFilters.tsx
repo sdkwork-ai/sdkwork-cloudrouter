@@ -8,10 +8,12 @@ import type {
   OfficialPricingRegionFacet,
   OfficialPricingValueFacet,
 } from '../types/pricing';
-import type {
-  PricingGroupOption,
-  PricingGroupSelection,
-  PricingGroupTagFacet,
+import {
+  hasPricingGroupSelection,
+  type PricingGroupOption,
+  type PricingGroupSelection,
+  type PricingGroupTagFacet,
+  type PricingGroupTypeCode,
 } from '../types/pricingGroup';
 
 interface PricingFiltersProps {
@@ -33,17 +35,26 @@ interface PricingFiltersProps {
   onRegionChange: (value: string) => void;
   onMeterChange: (value: string) => void;
   onCurrencyChange: (value: string) => void;
+  onGroupTypesChange: (types: PricingGroupTypeCode[]) => void;
   onGroupTagsChange: (tags: string[]) => void;
   onGroupCodesChange: (codes: string[]) => void;
   onClearGroups: () => void;
   onClear: () => void;
 }
 
+/**
+ * 价格页筛选区：搜索、分组、区域、计量、币种在同一行，分组不再占据独立面板，
+ * 改为悬停/点击展开的浮层（PricingGroupFilter）。清除按钮一次清空全部筛选。
+ */
 export function PricingFilters(props: PricingFiltersProps) {
   const { t, i18n } = useTranslation();
   const hasFilters = Boolean(
-    props.searchQuery || props.vendorCode || props.regionCode || props.meterCode || props.currencyCode,
-  );
+    props.searchQuery
+    || props.vendorCode
+    || props.regionCode
+    || props.meterCode
+    || props.currencyCode,
+  ) || hasPricingGroupSelection(props.groupSelection);
   const language = i18n.language;
 
   return (
@@ -53,8 +64,8 @@ export function PricingFilters(props: PricingFiltersProps) {
         vendorCode={props.vendorCode}
         onChange={props.onVendorChange}
       />
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(16rem,1fr)_10rem_11rem_7rem_auto]">
-        <label className="relative block sm:col-span-2 xl:col-span-1">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="relative block min-w-[14rem] flex-1 basis-64">
           <span className="sr-only">{t('pricing.search')}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input
@@ -65,10 +76,21 @@ export function PricingFilters(props: PricingFiltersProps) {
             className="h-10 w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-[#151515] dark:text-white"
           />
         </label>
+        <PricingGroupFilter
+          groups={props.groups}
+          tagFacets={props.groupTagFacets}
+          selection={props.groupSelection}
+          state={props.groupState}
+          onTypesChange={props.onGroupTypesChange}
+          onTagsChange={props.onGroupTagsChange}
+          onGroupCodesChange={props.onGroupCodesChange}
+          onClear={props.onClearGroups}
+        />
         <FacetSelect
           label={t('pricing.filters.region')}
           allLabel={t('pricing.filters.allRegions')}
           value={props.regionCode}
+          className="w-full sm:w-[9.5rem]"
           options={props.regions.map((item) => ({ value: item.code, label: regionDisplayName(item.code, language), count: item.count }))}
           onChange={props.onRegionChange}
         />
@@ -76,6 +98,7 @@ export function PricingFilters(props: PricingFiltersProps) {
           label={t('pricing.filters.meter')}
           allLabel={t('pricing.filters.allMeters')}
           value={props.meterCode}
+          className="w-full sm:w-[10.5rem]"
           options={props.meters.map((item) => ({ value: item.code, label: item.displayName || item.code, count: item.count }))}
           onChange={props.onMeterChange}
         />
@@ -83,6 +106,7 @@ export function PricingFilters(props: PricingFiltersProps) {
           label={t('pricing.filters.currency')}
           allLabel={t('pricing.filters.allCurrencies')}
           value={props.currencyCode}
+          className="w-full sm:w-[7.5rem]"
           options={props.currencies.map((item) => ({ value: item.code, label: item.code, count: item.count }))}
           onChange={props.onCurrencyChange}
         />
@@ -92,21 +116,11 @@ export function PricingFilters(props: PricingFiltersProps) {
           disabled={!hasFilters}
           title={t('pricing.filters.clear')}
           aria-label={t('pricing.filters.clear')}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 disabled:cursor-not-allowed disabled:opacity-35 dark:border-white/10 dark:text-slate-400 dark:hover:text-white"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-300 text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lobster-500 disabled:cursor-not-allowed disabled:opacity-35 dark:border-white/10 dark:text-slate-400 dark:hover:text-white"
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-
-      <PricingGroupFilter
-        groups={props.groups}
-        tagFacets={props.groupTagFacets}
-        selection={props.groupSelection}
-        state={props.groupState}
-        onTagsChange={props.onGroupTagsChange}
-        onGroupCodesChange={props.onGroupCodesChange}
-        onClear={props.onClearGroups}
-      />
     </div>
   );
 }
@@ -115,13 +129,14 @@ interface FacetSelectProps {
   label: string;
   allLabel: string;
   value: string;
+  className?: string;
   options: ReadonlyArray<{ value: string; label: string; count: string }>;
   onChange: (value: string) => void;
 }
 
-function FacetSelect({ label, allLabel, value, options, onChange }: FacetSelectProps) {
+function FacetSelect({ label, allLabel, value, className, options, onChange }: FacetSelectProps) {
   return (
-    <label className="block min-w-0">
+    <label className={`block min-w-0 shrink-0 ${className ?? ''}`}>
       <span className="sr-only">{label}</span>
       <select
         value={value}

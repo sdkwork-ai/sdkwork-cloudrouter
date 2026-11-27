@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { KeyRound, Plus, RefreshCw, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { AdminTableShell, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 
+import { DomainPaginationFooter } from '../components/DomainPaginationFooter';
 import {
   DomainCheckbox,
   DomainField,
@@ -16,6 +17,7 @@ import {
   DomainStateRows,
   DomainStatusPill,
   DomainTableHead,
+  DomainTableRefreshingBar,
   DomainTextInput,
 } from '../components/domainUi';
 import { domainCenterService } from '../domainService';
@@ -26,7 +28,14 @@ import {
   dnsProviderLabelOf,
   translateDomainLabel,
 } from '../domainLabels';
-import { useDomainCloudAccounts, usableDnsAccounts } from '../hooks/useDomainResources';
+import type { DomainCloudAccount } from '../domainTypes';
+import { useDomainDebouncedValue } from '../hooks/useDomainDebouncedValue';
+import { useDomainPagedList } from '../hooks/useDomainPagedList';
+import {
+  useDomainCloudAccounts,
+  usableDnsAccounts,
+} from '../hooks/useDomainResources';
+import { useDomainTableScrollReset } from '../hooks/useDomainTableScrollReset';
 import {
   toCreateCloudAccountInput,
   validateCloudAccountForm,
@@ -49,25 +58,27 @@ export function DomainAccountsPage() {
   const { t } = useTranslation();
   const accounts = useDomainCloudAccounts();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDomainDebouncedValue(search);
   const [providerFilter, setProviderFilter] = useState<'ALL' | 'ALIYUN_DNS' | 'DNSPOD' | 'CLOUDFLARE'>('ALL');
   const [createOpen, setCreateOpen] = useState(false);
+  const keyword = debouncedSearch.trim();
 
-  const rows = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    return accounts.data.filter((account) => {
-      if (providerFilter !== 'ALL' && account.dnsProvider !== providerFilter) {
-        return false;
-      }
-      if (keyword.length === 0) {
-        return true;
-      }
-      return (
-        account.displayName.toLowerCase().includes(keyword)
-        || account.accountCode.toLowerCase().includes(keyword)
-        || account.vendorCode.toLowerCase().includes(keyword)
-      );
-    });
-  }, [accounts.data, search, providerFilter]);
+  const table = useDomainPagedList<DomainCloudAccount>({
+    queryKey: `accounts|${keyword}|${providerFilter}`,
+    load: (page, pageSize) =>
+      domainCenterService.listCloudAccounts({
+        page,
+        pageSize,
+        ...(keyword ? { keyword } : {}),
+        ...(providerFilter === 'ALL' ? {} : { dnsProvider: providerFilter }),
+      }),
+  });
+  const viewportRef = useDomainTableScrollReset(table.page);
+  const filtersActive = keyword.length > 0 || providerFilter !== 'ALL';
+  const clearFilters = () => {
+    setSearch('');
+    setProviderFilter('ALL');
+  };
 
   const usable = usableDnsAccounts(accounts.data).length;
 
@@ -81,8 +92,18 @@ export function DomainAccountsPage() {
         )}
         actions={
           <>
-            <DomainSecondaryButton onClick={accounts.reload} disabled={accounts.status === 'loading'}>
-              <RefreshCw className={`h-4 w-4 ${accounts.status === 'loading' ? 'animate-spin' : ''}`} />
+            <DomainSecondaryButton
+              onClick={() => {
+                accounts.reload();
+                table.reload();
+              }}
+              disabled={accounts.status === 'loading' || table.status === 'loading'}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${
+                  accounts.status === 'loading' || table.status === 'loading' ? 'animate-spin' : ''
+                }`}
+              />
               {t('admin.domainCenter.actions.refresh', 'Refresh')}
             </DomainSecondaryButton>
             <DomainPrimaryButton onClick={() => setCreateOpen(true)}>
@@ -114,38 +135,69 @@ export function DomainAccountsPage() {
         />
       </div>
 
+      {filtersActive ? (
+        <p className="-mt-1 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
+          {t(
+            'admin.domainCenter.accounts.metrics.fleetNote',
+            'The cards above count every account; the table below shows the filtered page.',
+          )}
+        </p>
+      ) : null}
+
       <AdminTableShell
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
+        aria-busy={table.isRefreshing ? true : undefined}
+        viewportRef={viewportRef}
         header={
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={t('admin.domainCenter.accounts.search', 'Search account, code, or vendor')}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
-                />
-              </div>
-              <div className="w-full shrink-0 md:w-44">
-                <DomainSelect
-                  value={providerFilter}
-                  onChange={setProviderFilter}
-                  options={[
-                    { value: 'ALL', label: t('admin.domainCenter.accounts.filter.allProviders', 'All providers') },
-                    { value: 'ALIYUN_DNS', label: 'Aliyun DNS' },
-                    { value: 'DNSPOD', label: 'DNSPod' },
-                    { value: 'CLOUDFLARE', label: 'Cloudflare' },
-                  ]}
-                />
+          <>
+            {table.isRefreshing ? (
+              <DomainTableRefreshingBar label={t('admin.domainCenter.pagination.loadingPage', 'Loading page')} />
+            ) : null}
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder={t('admin.domainCenter.accounts.search', 'Search account or code')}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+                  />
+                </div>
+                <div className="w-full shrink-0 md:w-44">
+                  <DomainSelect
+                    value={providerFilter}
+                    onChange={setProviderFilter}
+                    options={[
+                      { value: 'ALL', label: t('admin.domainCenter.accounts.filter.allProviders', 'All providers') },
+                      { value: 'ALIYUN_DNS', label: 'Aliyun DNS' },
+                      { value: 'DNSPOD', label: 'DNSPod' },
+                      { value: 'CLOUDFLARE', label: 'Cloudflare' },
+                    ]}
+                  />
+                </div>
               </div>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {t('admin.domainCenter.accounts.count', '{{count}} accounts', { count: rows.length })}
-            </div>
-          </div>
+          </>
+        }
+        footer={
+          <DomainPaginationFooter
+            page={table.page}
+            pageSize={table.pageSize}
+            pageRowCount={table.items.length}
+            totalItems={table.totalItems}
+            totalPages={table.totalPages}
+            hasMore={table.hasMore}
+            disabled={table.status === 'loading' || table.isRefreshing}
+            totalSummary={table.totalItems !== null
+              ? t('admin.domainCenter.accounts.count', '{{count}} accounts', { count: table.totalItems })
+              : undefined}
+            onPreviousPage={table.goToPreviousPage}
+            onNextPage={table.goToNextPage}
+            onPageSelect={table.goToPage}
+            onPageSizeChange={table.changePageSize}
+          />
         }
       >
         <table className="w-full min-w-[1040px] whitespace-nowrap text-left text-sm">
@@ -161,33 +213,45 @@ export function DomainAccountsPage() {
             ]}
           />
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:divide-white/5 dark:text-slate-300">
-            {accounts.status === 'loading' || accounts.status === 'idle' ? (
+            {table.status === 'loading' ? (
               <DomainStateRows colSpan={7} kind="loading" title={t('admin.domainCenter.accounts.loading', 'Loading accounts...')} />
-            ) : accounts.status === 'error' ? (
+            ) : table.status === 'error' ? (
               <DomainStateRows
                 colSpan={7}
                 kind="error"
                 title={t('admin.domainCenter.accounts.loadError', 'Accounts could not be loaded')}
-                description={resolveProblemMessage(accounts.error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
-                onRetry={accounts.reload}
+                description={resolveProblemMessage(table.error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
+                onRetry={table.reload}
                 retryLabel={t('common.actions.retry', 'Retry')}
               />
-            ) : rows.length === 0 ? (
+            ) : table.items.length === 0 ? (
               <DomainStateRows
                 colSpan={7}
                 kind="empty"
-                title={t('admin.domainCenter.accounts.empty', 'No DNS automation account')}
-                description={t(
-                  'admin.domainCenter.accounts.emptyDesc',
-                  'Add an Aliyun DNS, DNSPod, or Cloudflare account so certificates can validate through DNS-01 and zones can sync resolution records.',
-                )}
-                action={{
-                  label: t('admin.domainCenter.accounts.actions.create', 'Add DNS account'),
-                  onClick: () => setCreateOpen(true),
-                }}
+                title={filtersActive
+                  ? t('admin.domainCenter.accounts.emptyFiltered', 'No DNS account matches these filters')
+                  : t('admin.domainCenter.accounts.empty', 'No DNS automation account')}
+                description={filtersActive
+                  ? t(
+                      'admin.domainCenter.accounts.emptyFilteredDesc',
+                      'Clear the search and provider filters to see every account.',
+                    )
+                  : t(
+                      'admin.domainCenter.accounts.emptyDesc',
+                      'Add an Aliyun DNS, DNSPod, or Cloudflare account so certificates can validate through DNS-01 and zones can sync resolution records.',
+                    )}
+                action={filtersActive
+                  ? {
+                      label: t('admin.domainCenter.pagination.clearFilters', 'Clear filters'),
+                      onClick: clearFilters,
+                    }
+                  : {
+                      label: t('admin.domainCenter.accounts.actions.create', 'Add DNS account'),
+                      onClick: () => setCreateOpen(true),
+                    }}
               />
             ) : (
-              rows.map((account) => (
+              table.items.map((account) => (
                 <tr key={account.id} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -251,7 +315,11 @@ export function DomainAccountsPage() {
           onClose={() => setCreateOpen(false)}
           onCreated={() => {
             setCreateOpen(false);
+            // The summary cards count the whole fleet, the table shows one server
+            // page: a new account changes both and may sort onto the first page.
             accounts.reload();
+            table.goToPage(1);
+            table.reload();
           }}
         />
       ) : null}

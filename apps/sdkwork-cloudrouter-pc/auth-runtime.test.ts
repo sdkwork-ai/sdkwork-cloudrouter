@@ -1223,14 +1223,17 @@ test("appbase OAuth runtime uses canonical OAuth app resources", () => {
 test("portal exposes backend-backed admin auth settings configuration", () => {
   const adminHostSource = readPortalFile("./src/admin/cloudRouterAdminHostMount.tsx");
   const adminRegistrySource = readAdminRegistrySource();
+  const iamContributionSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-iam/src/iamAdminContribution.ts");
   const settingsPageSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-site/src/CloudRouterAuthSettingsPage.tsx");
   const settingsServiceSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts");
   const routeClassificationSource = readPortalFile("../../docs/schema-registry/frontend-route-classification.yaml");
 
   assert.match(adminHostSource, /lazyAdminRoute\(\(\) => import\('@sdkwork\/cloudrouter-pc-admin-site'\), 'CloudRouterAuthSettingsPage'\)/);
-  assert.match(adminHostSource, /route\('settings', 'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-site', \['cloudrouter-backend-sdk'\]/);
-  assert.match(adminRegistrySource, /path:\s*'\/admin\/settings'/);
-  assert.match(adminRegistrySource, /ShieldCheck/);
+  assert.match(adminHostSource, /route\('iam\/auth-settings', 'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-site', \['cloudrouter-backend-sdk'\]/);
+  assert.match(adminHostSource, /route\('settings', 'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-site', \['cloudrouter-backend-sdk'\], 'cloudrouter\.admin\.access', <Navigate to="\/admin\/iam\/auth-settings" replace \/>\)/);
+  assert.match(iamContributionSource, /groupKey:\s*'admin\.menu\.iam\.authentication'/);
+  assert.match(iamContributionSource, /path:\s*'\/admin\/iam\/auth-settings',\s*labelKey:\s*'admin\.menu\.iam\.authSettings'/);
+  assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/settings'/);
   assert.match(settingsPageSource, /fetchCloudRouterAuthSettings/);
   assert.match(settingsPageSource, /updateCloudRouterAuthSettings/);
   assert.match(settingsPageSource, /emailRegistrationVerificationRequired/);
@@ -1245,7 +1248,7 @@ test("portal exposes backend-backed admin auth settings configuration", () => {
   assert.doesNotMatch(settingsServiceSource, /\bfetch\s*\(/);
   assert.doesNotMatch(settingsServiceSource, /\baxios\b/);
   assert.doesNotMatch(settingsServiceSource, /\/backend\/v3\/api\/system\/auth\/settings/);
-  assert.match(routeClassificationSource, /route:\s*\/admin\/settings/);
+  assert.match(routeClassificationSource, /route:\s*\/admin\/iam\/auth-settings/);
   assert.match(routeClassificationSource, /api_surface:\s*backend/);
   assert.match(routeClassificationSource, /apps\/sdkwork-cloudrouter-pc\/packages\/sdkwork-cloudrouter-pc-admin-site\/src\/AuthSettingsService\.ts/);
 });
@@ -2582,6 +2585,7 @@ test("console and admin logout revoke the current IAM session through the app SD
 test("admin sidebar labels are resolved through i18n keys", () => {
   const adminLayoutSource = readAdminLayoutSource();
   const adminRegistrySource = readAdminRegistrySource();
+  const iamContributionSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-iam/src/iamAdminContribution.ts");
   const i18nSource = readI18nResourceSource();
 
   assert.match(adminLayoutSource, /useTranslation/);
@@ -2589,7 +2593,7 @@ test("admin sidebar labels are resolved through i18n keys", () => {
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.upstreamManagement'/);
   assert.match(adminRegistrySource, /groupBlock\('admin\.menu\.home\.dataManagement'/);
   assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.analytics'/);
-  assert.match(adminRegistrySource, /labelKey:\s*'admin\.menu\.authSettings'/);
+  assert.match(iamContributionSource, /labelKey:\s*'admin\.menu\.iam\.authSettings'/);
   assert.match(adminLayoutSource, /t\(group\.groupKey\)/);
   assert.match(adminLayoutSource, /t\(item\.labelKey\)/);
   assert.match(adminLayoutSource, /t\('admin\.menu\.logout'\)/);
@@ -2605,7 +2609,7 @@ test("admin sidebar labels are resolved through i18n keys", () => {
     "admin.menu.home.upstreamManagement",
     "admin.menu.home.dataManagement",
     "admin.menu.analytics",
-    "admin.menu.authSettings",
+    "admin.menu.iam.authSettings",
     "admin.menu.logout",
   ]) {
     assert.match(i18nSource, new RegExp(`"${key.replaceAll(".", "\\.")}"`), `${key} must be present in i18n resources`);
@@ -2675,25 +2679,26 @@ test("direct admin translation lookups without fallbacks have English and Chines
   assert.deepEqual(missingLookups.sort(), []);
 });
 
-test("admin auth and site settings belong to the operations module", () => {
+test("admin site settings stay in operations while auth settings move to IAM", () => {
   const adminRegistrySource = readAdminRegistrySource();
+  const iamContributionSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-iam/src/iamAdminContribution.ts");
   const i18nSource = readI18nResourceSource();
   const homeLayoutModule = findAdminModuleMenuSource(adminRegistrySource, "home");
   const operationsLayoutModule = findAdminModuleMenuSource(adminRegistrySource, "operations");
   const homeHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "home");
   const operationsHeaderModule = findAdminModuleDefinitionSource(adminRegistrySource, "operations");
 
-  assert.doesNotMatch(homeLayoutModule, /path:\s*'\/admin\/settings'/);
-  assert.doesNotMatch(homeLayoutModule, /path:\s*'\/admin\/site'/);
+  assert.doesNotMatch(homeLayoutModule, /path:\s*'\/admin\/(settings|site|iam\/auth-settings)'/);
+  assert.doesNotMatch(iamContributionSource, /path:\s*'\/admin\/settings'/);
 
   assert.match(operationsLayoutModule, /groupBlock\('admin\.menu\.ops\.system'/);
-  assert.match(operationsLayoutModule, /path:\s*'\/admin\/settings',\s*labelKey:\s*'admin\.menu\.authSettings'/);
   assert.match(operationsLayoutModule, /path:\s*'\/admin\/site',\s*labelKey:\s*'admin\.menu\.siteSettings'/);
+  assert.match(iamContributionSource, /groupKey:\s*'admin\.menu\.iam\.authentication'/);
+  assert.match(iamContributionSource, /path:\s*'\/admin\/iam\/auth-settings',\s*labelKey:\s*'admin\.menu\.iam\.authSettings'/);
 
-  assert.doesNotMatch(homeHeaderModule, /'\/admin\/settings'/);
-  assert.doesNotMatch(homeHeaderModule, /'\/admin\/site'/);
-  assert.match(operationsHeaderModule, /'\/admin\/settings'/);
+  assert.doesNotMatch(homeHeaderModule, /'\/admin\/(settings|site|iam\/auth-settings)'/);
   assert.match(operationsHeaderModule, /'\/admin\/site'/);
+  assert.doesNotMatch(operationsHeaderModule, /'\/admin\/settings'/);
   assert.match(i18nSource, /"admin\.menu\.ops\.system":\s*"System Settings"/);
 });
 

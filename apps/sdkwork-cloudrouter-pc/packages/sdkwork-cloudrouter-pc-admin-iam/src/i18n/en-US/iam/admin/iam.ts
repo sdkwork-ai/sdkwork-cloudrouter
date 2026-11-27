@@ -60,6 +60,8 @@ export const en = {
   "admin.menu.iam.organizations": "Organizations",
   "admin.menu.iam.tenants": "Tenants",
   "admin.menu.iam.cloudAccounts": "Cloud Accounts",
+  "admin.menu.iam.authentication": "Authentication & Access",
+  "admin.menu.iam.authSettings": "Authentication Settings",
   "admin.menu.iam.accessControl": "Access Control",
   "admin.menu.iam.roles": "Roles",
   "admin.menu.iam.permissions": "Permissions",

@@ -228,10 +228,13 @@ export function VmInstancesConsoleView({ client }: VmInstancesConsoleViewProps =
 
   const emptyState = readCause !== null ? (
     // An unreadable listing is not an empty listing: a refused read must never be
-    // painted as the reassuring "you have none yet" frame.
+    // painted as the reassuring "you have none yet" frame. The frame carries the
+    // fixed guidance an operator can act on, and the transport cause is printed
+    // underneath it (see `readCauseDetail`), so a real refusal stays visible
+    // instead of being folded into a generic apology.
     <BusinessStateTableRow
       colSpan={7}
-      description={`${t('console.vmInstances.error.unavailable')} ${readCause}`}
+      description={t('console.vmInstances.error.unavailable')}
       kind="error"
       onRetry={refresh}
       retryLabel={t('console.vmInstances.actions.retry')}
@@ -260,6 +263,18 @@ export function VmInstancesConsoleView({ client }: VmInstancesConsoleViewProps =
       title={t('console.vmInstances.empty.title')}
     />
   );
+
+  const readCauseDetail = readCause !== null ? (
+    // The distinct cause sits outside the empty frame's generic copy because it
+    // is the only part a reader can act on: a 40401 route-manifest refusal, a
+    // 401, and a timeout all need different follow-ups.
+    <p
+      className="rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 font-mono text-[11px] leading-5 text-red-700 break-all dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+      data-vm-instances-read-cause
+    >
+      {readCause}
+    </p>
+  ) : null;
 
   return (
     <section
@@ -436,6 +451,8 @@ export function VmInstancesConsoleView({ client }: VmInstancesConsoleViewProps =
           </tbody>
         </table>
       </div>
+
+      {readCauseDetail}
 
       <footer className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">

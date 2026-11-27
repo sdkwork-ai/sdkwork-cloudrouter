@@ -810,6 +810,30 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "createRealtimeTranslationSession",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/v1/recharge/balance",
+        "Recharge",
+        "rechargeRetrieveBalance",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/v1/recharge/options",
+        "Recharge",
+        "rechargeListOptions",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/v1/recharge/orders",
+        "Recharge",
+        "rechargeCreateOrder",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/v1/recharge/orders/{order_id}",
+        "Recharge",
+        "rechargeRetrieveOrder",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
         "/v1/responses",
         "Responses",

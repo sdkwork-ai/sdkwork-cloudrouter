@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 45,
+  "materializedTableCount": 55,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -86,6 +86,16 @@
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
     "ai_user_account_group_route",
+    "dc_audit_log",
+    "dc_data_source",
+    "dc_data_source_credential",
+    "dc_data_source_test_log",
+    "dc_dataset",
+    "dc_dataset_field",
+    "dc_export_job",
+    "dc_table",
+    "dc_table_column",
+    "dc_workspace",
     "iam_user_preference",
     "integration_webhook_endpoint",
     "storage_bucket",
@@ -103,6 +113,7 @@
     "ai_",
     "iam_user_",
     "integration_",
-    "storage_"
+    "storage_",
+    "dc_"
   ]
 }

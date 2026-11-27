@@ -21,6 +21,11 @@
       "prefix": "storage_",
       "owner": "cloud-router-platform",
       "domain": "cloudrouter"
+    },
+    {
+      "prefix": "dc_",
+      "owner": "cloud-router-platform",
+      "domain": "cloudrouter"
     }
   ]
 }

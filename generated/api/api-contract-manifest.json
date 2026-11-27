@@ -7149,6 +7149,656 @@
       "write_tables": []
     },
     {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/datacenter/overview",
+      "api_surface": "backend",
+      "description": "Data-center overview counters for the caller workspace: configured sources, landed tables, data actions today, and export jobs still pending.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts#fetchOverview@/admin/data/overview",
+      "kind": "read",
+      "module": "pc-admin-data",
+      "openapi_exposed": true,
+      "operation": "fetchOverview",
+      "operation_id": "overview.retrieve",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "dc_data_source",
+        "dc_table",
+        "dc_export_job",
+        "dc_audit_log"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "DataCenterOverview",
+        "schema": {
+          "additionalProperties": false,
+          "name": "DataCenterOverview",
+          "properties": {
+            "pendingExports": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "sources": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "successRate": {
+              "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "tables": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "todayInstances": {
+              "format": "int64",
+              "pattern": "^[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "sources",
+            "tables",
+            "todayInstances",
+            "pendingExports",
+            "successRate"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/data/overview",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/datacenter/audits",
+      "api_surface": "backend",
+      "description": "List the data-access audit trail: who connected, queried, downloaded, changed, published, approved, or rolled back what, and the row count it touched.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts#listAudits@/admin/data/audits",
+      "kind": "read",
+      "module": "pc-admin-data",
+      "openapi_exposed": true,
+      "operation": "listAudits",
+      "operation_id": "dataCenterAudits.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "description": "1-based page number.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Page size between 1 and 200.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text filter over the rendered columns.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "dc_audit_log"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "DataCenterAuditPage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "DataCenterAuditPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DataCenterAudit",
+                "properties": {
+                  "action": {
+                    "enum": [
+                      "connect",
+                      "query",
+                      "download",
+                      "ddl",
+                      "dml",
+                      "publish",
+                      "approve",
+                      "rollback"
+                    ],
+                    "type": "string"
+                  },
+                  "actor": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "at": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "object": {
+                    "maxLength": 298,
+                    "type": "string"
+                  },
+                  "result": {
+                    "enum": [
+                      "success",
+                      "failure"
+                    ],
+                    "type": "string"
+                  },
+                  "rowCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "actor",
+                  "action",
+                  "object",
+                  "rowCount",
+                  "result",
+                  "at"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/data/audits",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/datacenter/exports",
+      "api_surface": "backend",
+      "description": "List governed export jobs with their approval/generation status and signed-link expiry.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts#listExports@/admin/data/exports",
+      "kind": "read",
+      "module": "pc-admin-data",
+      "openapi_exposed": true,
+      "operation": "listExports",
+      "operation_id": "dataCenterExports.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "description": "1-based page number.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Page size between 1 and 200.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text filter over the rendered columns.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "dc_export_job"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "DataCenterExportPage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "DataCenterExportPage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DataCenterExport",
+                "properties": {
+                  "datasetName": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "expiresAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "requestedBy": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "rowCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "status": {
+                    "enum": [
+                      "pending_approval",
+                      "running",
+                      "succeeded",
+                      "failed",
+                      "expired"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "datasetName",
+                  "status",
+                  "rowCount",
+                  "requestedBy",
+                  "expiresAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/data/exports",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/datacenter/data_sources",
+      "api_surface": "backend",
+      "description": "List configured data sources with their last connectivity result. Credentials are write-only and never returned.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts#listSources@/admin/data/sources",
+      "kind": "read",
+      "module": "pc-admin-data",
+      "openapi_exposed": true,
+      "operation": "listSources",
+      "operation_id": "dataSources.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "description": "1-based page number.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Page size between 1 and 200.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text filter over the rendered columns.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "dc_data_source",
+        "dc_data_source_test_log"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "DataCenterSourcePage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "DataCenterSourcePage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DataCenterSource",
+                "properties": {
+                  "health": {
+                    "enum": [
+                      "healthy",
+                      "warning",
+                      "error",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "postgresql",
+                      "mysql",
+                      "platform",
+                      "file"
+                    ],
+                    "type": "string"
+                  },
+                  "lastTestedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      }
+                    ],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "tableCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "kind",
+                  "health",
+                  "tableCount",
+                  "lastTestedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/data/sources",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/datacenter/tables",
+      "api_surface": "backend",
+      "description": "List the governed table catalog. Landed tables carry exact row counts as decimal strings; external tables and views stay read-only.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts#listTables@/admin/data/tables",
+      "kind": "read",
+      "module": "pc-admin-data",
+      "openapi_exposed": true,
+      "operation": "listTables",
+      "operation_id": "dataCenterTables.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "description": "1-based page number.",
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Page size between 1 and 200.",
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "description": "Free-text filter over the rendered columns.",
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "dc_table"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "DataCenterTablePage",
+        "schema": {
+          "additionalProperties": false,
+          "name": "DataCenterTablePage",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DataCenterTable",
+                "properties": {
+                  "columnCount": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "landed",
+                      "external",
+                      "view"
+                    ],
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "owner": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "rowCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "updatedAt": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "kind",
+                  "rowCount",
+                  "columnCount",
+                  "owner",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/data/tables",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "system",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts",
+      "tag": "system",
+      "write_tables": []
+    },
+    {
       "api_method": "POST",
       "api_path": "/backend/v3/api/billing/referral_strategies",
       "api_surface": "backend",
@@ -20450,6 +21100,440 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/recharge/orders",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": true,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts#createUpstreamSupplierRechargeOrder@/admin/upstream/suppliers",
+      "kind": "create",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "createUpstreamSupplierRechargeOrder",
+      "operation_id": "upstreamSuppliers.recharge.orders.create",
+      "path_params": [
+        "supplierId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_upstream_supplier",
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "CreateUpstreamSupplierRechargeOrderRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "CreateUpstreamSupplierRechargeOrderRequest",
+          "properties": {
+            "amount": {
+              "description": "Custom amount in major units; mutually exclusive with packageId.",
+              "maxLength": 32,
+              "nullable": true,
+              "type": "string"
+            },
+            "packageId": {
+              "maxLength": 128,
+              "nullable": true,
+              "type": "string"
+            },
+            "paymentMethod": {
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "UpstreamSupplierRechargeOrderResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamSupplierRechargeOrderResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "UpstreamRechargeOrder",
+              "properties": {
+                "amount": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "cashierUrl": {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                "createdAt": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "currencyCode": {
+                  "maxLength": 10,
+                  "type": "string"
+                },
+                "expiresAt": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "id": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "nextAction": {
+                  "enum": [
+                    "scan_qr",
+                    "redirect",
+                    "none"
+                  ],
+                  "type": "string"
+                },
+                "orderId": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "orderNo": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "outTradeNo": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "paidAt": {
+                  "format": "date-time",
+                  "nullable": true,
+                  "type": "string"
+                },
+                "points": {
+                  "format": "int32",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "qrCodePayload": {
+                  "maxLength": 4096,
+                  "type": "string"
+                },
+                "status": {
+                  "maxLength": 32,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "orderId",
+                "orderNo",
+                "outTradeNo",
+                "amount",
+                "currencyCode",
+                "points",
+                "status",
+                "nextAction",
+                "cashierUrl",
+                "qrCodePayload",
+                "expiresAt",
+                "paidAt",
+                "createdAt"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream/suppliers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/recharge",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts#getUpstreamSupplierRecharge@/admin/upstream/suppliers",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "getUpstreamSupplierRecharge",
+      "operation_id": "upstreamSuppliers.recharge.retrieve",
+      "path_params": [
+        "supplierId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_supplier",
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamSupplierRechargeOverviewResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamSupplierRechargeOverviewResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "UpstreamSupplierRechargeOverview",
+              "properties": {
+                "accountCode": {
+                  "maxLength": 128,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "accountId": {
+                  "maxLength": 32,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "agreement": {
+                  "description": "Agreement copy the operator must accept before paying.",
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                "balance": {
+                  "additionalProperties": false,
+                  "description": "Live balance of the relay account that owns the recharge API key.",
+                  "name": "UpstreamRechargeBalance",
+                  "properties": {
+                    "amount": {
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "checkedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "currencyCode": {
+                      "maxLength": 10,
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "frozen": {
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "unit": {
+                      "maxLength": 32,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "frozen",
+                    "unit",
+                    "currencyCode",
+                    "checkedAt"
+                  ],
+                  "type": "object"
+                },
+                "currencyCode": {
+                  "maxLength": 10,
+                  "type": "string"
+                },
+                "customAmountSupported": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "maxAmount": {
+                  "maxLength": 32,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "minAmount": {
+                  "maxLength": 32,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "options": {
+                  "items": {
+                    "additionalProperties": false,
+                    "name": "UpstreamRechargeOption",
+                    "properties": {
+                      "bonusPoints": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "currencyCode": {
+                        "maxLength": 10,
+                        "type": "string"
+                      },
+                      "grantAmount": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "label": {
+                        "maxLength": 128,
+                        "type": "string"
+                      },
+                      "packageId": {
+                        "maxLength": 128,
+                        "type": "string"
+                      },
+                      "points": {
+                        "format": "int32",
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "priceAmount": {
+                        "maxLength": 32,
+                        "type": "string"
+                      },
+                      "recommended": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "packageId",
+                      "label",
+                      "points",
+                      "bonusPoints",
+                      "grantAmount",
+                      "priceAmount",
+                      "currencyCode",
+                      "recommended"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 100,
+                  "type": "array"
+                },
+                "pointsUnit": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "refreshedAt": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "supplierId": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "supplierName": {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                "supplierType": {
+                  "enum": [
+                    "official",
+                    "relay"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "supplierId",
+                "supplierName",
+                "supplierType",
+                "accountId",
+                "accountCode",
+                "balance",
+                "options",
+                "currencyCode",
+                "pointsUnit",
+                "customAmountSupported",
+                "minAmount",
+                "maxAmount",
+                "agreement",
+                "refreshedAt"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream/suppliers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/recharge/orders/{orderId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts#getUpstreamSupplierRechargeOrder@/admin/upstream/suppliers",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "getUpstreamSupplierRechargeOrder",
+      "operation_id": "upstreamSuppliers.recharge.orders.retrieve",
+      "path_params": [
+        "supplierId",
+        "orderId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_supplier",
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamSupplierRechargeOrderItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamSupplierRechargeOrderItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/UpstreamRechargeOrder"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream/suppliers",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
       "api_path": "/backend/v3/api/ai/upstream_accounts",
       "api_surface": "backend",
       "file_targets": [],
@@ -22268,6 +23352,161 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#listUpstreamAccountGroupPrices@/admin/upstream",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "listUpstreamAccountGroupPrices",
+      "operation_id": "upstreamAccountGroups.prices.list",
+      "path_params": [
+        "accountGroupId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_account_group",
+        "cloudrouter_group_resource_price"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamAccountGroupResourcePriceListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamAccountGroupResourcePriceListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UpstreamAccountGroupResourcePrice",
+                "properties": {
+                  "accountGroupCodeSnapshot": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "accountGroupId": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "catalogKey": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "currencyCode": {
+                    "maxLength": 10,
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "markupAmount": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "meterCode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "multiplier": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "operationCode": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "priceMode": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "status": {
+                    "format": "int32",
+                    "type": "integer"
+                  },
+                  "unitPriceOverride": {
+                    "maxLength": 32,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "uuid": {
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "uuid",
+                  "accountGroupId",
+                  "accountGroupCodeSnapshot",
+                  "resourceType",
+                  "catalogKey",
+                  "operationCode",
+                  "meterCode",
+                  "regionCode",
+                  "providerCode",
+                  "priceMode",
+                  "multiplier",
+                  "markupAmount",
+                  "unitPriceOverride",
+                  "currencyCode",
+                  "effectiveFrom",
+                  "effectiveTo",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources",
       "api_surface": "backend",
       "bounded_collection_max": 100,
@@ -23441,6 +24680,22 @@
                     "maxLength": 128,
                     "type": "string"
                   },
+                  "balanceAmount": {
+                    "description": "Aggregated relay balance cached on the supplier accounts. Null when no account has reported a balance yet.",
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "balanceCurrency": {
+                    "maxLength": 10,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "balanceUpdatedAt": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  },
                   "defaultBaseUrl": {
                     "maxLength": 2048,
                     "nullable": true,
@@ -23635,7 +24890,10 @@
                   "sortOrder",
                   "status",
                   "version",
-                  "updatedAt"
+                  "updatedAt",
+                  "balanceAmount",
+                  "balanceCurrency",
+                  "balanceUpdatedAt"
                 ],
                 "type": "object"
               },
@@ -24277,6 +25535,174 @@
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
         "ai_upstream_account",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": true,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#updateUpstreamAccountGroupPrices@/admin/upstream",
+      "kind": "update",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "updateUpstreamAccountGroupPrices",
+      "operation_id": "upstreamAccountGroups.prices.update",
+      "path_params": [
+        "accountGroupId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_upstream_account_group",
+        "cloudrouter_group_resource_price"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "ReplaceUpstreamAccountGroupResourcePricesRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "ReplaceUpstreamAccountGroupResourcePricesRequest",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "UpstreamAccountGroupResourcePriceInput",
+                "properties": {
+                  "catalogKey": {
+                    "maxLength": 256,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "currencyCode": {
+                    "maxLength": 10,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "id": {
+                    "maxLength": 32,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "markupAmount": {
+                    "maxLength": 32,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "meterCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "multiplier": {
+                    "maxLength": 32,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "operationCode": {
+                    "maxLength": 128,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "priceMode": {
+                    "maxLength": 32,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "unitPriceOverride": {
+                    "maxLength": 32,
+                    "nullable": true,
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "type": "object"
+              },
+              "maxItems": 500,
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "UpstreamAccountGroupResourcePriceCollectionResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamAccountGroupResourcePriceCollectionResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "UpstreamAccountGroupResourcePriceCollection",
+              "properties": {
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "items": {
+                  "items": {
+                    "$ref": "#/components/schemas/UpstreamAccountGroupResourcePrice"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "id",
+                "items"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_upstream_account_group",
+        "cloudrouter_group_resource_price",
         "ops_audit_log",
         "ops_config_snapshot"
       ]
@@ -36364,24 +37790,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 25,
-      "GET": 133,
+      "GET": 141,
       "PATCH": 24,
-      "POST": 74,
-      "PUT": 16
+      "POST": 75,
+      "PUT": 17
     },
     "api_surface_counts": {
       "app": 81,
-      "backend": 191
+      "backend": 201
     },
-    "operation_count": 272,
+    "operation_count": 282,
     "route_scope_counts": {
-      "admin": 191,
+      "admin": 201,
       "console": 38,
       "public": 43
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 81,
-      "SdkworkBackendClient": 191
+      "SdkworkBackendClient": 201
     }
   }
 }

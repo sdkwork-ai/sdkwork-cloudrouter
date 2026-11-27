@@ -60,6 +60,8 @@ export const zh = {
   "admin.menu.iam.organizations": "组织",
   "admin.menu.iam.tenants": "租户",
   "admin.menu.iam.cloudAccounts": "云账号管理",
+  "admin.menu.iam.authentication": "认证与访问",
+  "admin.menu.iam.authSettings": "认证设置",
   "admin.menu.iam.accessControl": "访问控制",
   "admin.menu.iam.roles": "角色管理",
   "admin.menu.iam.permissions": "权限管理",

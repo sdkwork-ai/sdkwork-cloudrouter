@@ -37,6 +37,7 @@ sdkwork-cloudrouter-provider-adapter-contract.workspace = true
 sdkwork-cloudrouter-provider-adapter-http.workspace = true
 sdkwork-cloudrouter-provider-adapter-registry.workspace = true
 sdkwork-cloudrouter-router-service.workspace = true
+sdkwork-cloudrouter-open-recharge-repository-sqlx.workspace = true
 sdkwork-cloudrouter-database-host.workspace = true
 sdkwork-database-config.workspace = true
 sdkwork-database-sqlx.workspace = true

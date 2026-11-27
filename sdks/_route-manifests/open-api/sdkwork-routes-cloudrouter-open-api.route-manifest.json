@@ -3936,6 +3936,110 @@
       "apiSurface": "open-api"
     },
     {
+      "method": "GET",
+      "path": "/v1/recharge/balance",
+      "operationId": "rechargeRetrieveBalance",
+      "tags": [
+        "Recharge"
+      ],
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/recharge/options",
+      "operationId": "rechargeListOptions",
+      "tags": [
+        "Recharge"
+      ],
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/recharge/orders",
+      "operationId": "rechargeCreateOrder",
+      "tags": [
+        "Recharge"
+      ],
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/recharge/orders/{order_id}",
+      "operationId": "rechargeRetrieveOrder",
+      "tags": [
+        "Recharge"
+      ],
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-open-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apps/sdkwork-cloudrouter-pc/public/openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
       "method": "POST",
       "path": "/v1/responses",
       "operationId": "createResponse",

@@ -12,7 +12,8 @@
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "lucide-react": "catalog:",
     "react": "catalog:",
-    "react-i18next": "catalog:"
+    "react-i18next": "catalog:",
+    "react-router-dom": "catalog:"
   },
   "devDependencies": {
     "vitest": "catalog:"

@@ -92,6 +92,46 @@ pub struct AdminUpstreamSupplierItem {
     pub status: i32,
     pub version: i64,
     pub updated_at: String,
+    /// Sum of the supplier accounts' cached upstream balances, decimal string.
+    /// `None` until an account reports a balance through the recharge surface.
+    pub balance_amount: Option<String>,
+    /// Currency of `balance_amount`; `None` when accounts report mixed
+    /// currencies (or none reported yet), so the UI never adds unlike amounts.
+    pub balance_currency: Option<String>,
+    /// Most recent account balance check, RFC 3339.
+    pub balance_checked_at: Option<String>,
+}
+
+/// Everything needed to call one supplier's relay recharge API.
+///
+/// The API key is decrypted from the supplier account credential inside the
+/// store; it never enters a list response or a log line. `base_url` is already
+/// normalized to the relay origin (protocol path stripped).
+#[derive(Clone, PartialEq, Eq)]
+pub struct AdminUpstreamRechargeBinding {
+    pub supplier_id: i64,
+    pub supplier_name: String,
+    pub supplier_type: String,
+    pub account_id: i64,
+    pub account_code: String,
+    pub base_url: String,
+    pub api_key: String,
+    pub currency_code: Option<String>,
+}
+
+impl std::fmt::Debug for AdminUpstreamRechargeBinding {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("AdminUpstreamRechargeBinding")
+            .field("supplier_id", &self.supplier_id)
+            .field("supplier_name", &self.supplier_name)
+            .field("account_id", &self.account_id)
+            .field("account_code", &self.account_code)
+            .field("base_url", &self.base_url)
+            .field("api_key", &"[redacted]")
+            .field("currency_code", &self.currency_code)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -617,4 +657,30 @@ pub trait AdminUpstreamStore: Send + Sync {
         items: Vec<AdminUpstreamResourceInput>,
         requested_at: String,
     ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>>;
+
+    /// Resolves the relay recharge connection of one supplier.
+    ///
+    /// The first active account (by credential priority, then id) that owns an
+    /// unexpired active credential is selected. Returns `None` when the
+    /// supplier has no rechargeable account, so the handler can explain the
+    /// missing relay API key instead of calling an unauthenticated endpoint.
+    fn load_supplier_recharge_binding<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        supplier_id: i64,
+    ) -> AdminUpstreamFuture<'a, Option<AdminUpstreamRechargeBinding>>;
+
+    /// Caches a balance reported by the relay on the account that produced it.
+    ///
+    /// The write reuses the existing `upstream_balance_*` columns, so the
+    /// supplier list can render the last known balance without a live relay
+    /// call per row.
+    fn record_supplier_account_balance<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        amount: String,
+        currency_code: Option<String>,
+        checked_at: String,
+    ) -> AdminUpstreamFuture<'a, ()>;
 }

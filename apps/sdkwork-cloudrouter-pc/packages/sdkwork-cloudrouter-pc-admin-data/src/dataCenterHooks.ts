@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  DataCenterBackendPendingError,
-  isDataCenterBackendAvailable,
-} from './dataCenterService';
 
 export type DataCenterQueryState<T> =
-  | { phase: 'pending-backend' }
   | { phase: 'loading' }
   | { phase: 'ready'; data: T }
   | { phase: 'error'; message: string };
@@ -14,21 +9,14 @@ export type DataCenterQueryState<T> =
  * Runs one data-center read on mount.
  *
  * `load` must be stable (wrap it in `useCallback`); a new identity re-runs the
- * read. The returned state distinguishes "backend not provisioned" from
- * "ready but empty", because both would otherwise render as an empty table and
- * hide a deployment gap.
+ * read. The state distinguishes a transport/validation failure from an empty
+ * result, because "the request failed" and "there is nothing configured yet"
+ * must never render the same way.
  */
 export function useDataCenterQuery<T>(load: () => Promise<T>): DataCenterQueryState<T> {
-  const [state, setState] = useState<DataCenterQueryState<T>>(() => (
-    isDataCenterBackendAvailable() ? { phase: 'loading' } : { phase: 'pending-backend' }
-  ));
+  const [state, setState] = useState<DataCenterQueryState<T>>({ phase: 'loading' });
 
   useEffect(() => {
-    if (!isDataCenterBackendAvailable()) {
-      setState({ phase: 'pending-backend' });
-      return undefined;
-    }
-
     let active = true;
     setState({ phase: 'loading' });
     load().then(
@@ -39,10 +27,6 @@ export function useDataCenterQuery<T>(load: () => Promise<T>): DataCenterQuerySt
       },
       (error: unknown) => {
         if (!active) {
-          return;
-        }
-        if (error instanceof DataCenterBackendPendingError) {
-          setState({ phase: 'pending-backend' });
           return;
         }
         setState({

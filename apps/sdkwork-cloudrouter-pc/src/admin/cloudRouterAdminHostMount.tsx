@@ -48,6 +48,12 @@ const DataCenterSourcesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter
 const DataCenterTablesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterTablesPage');
 const DataCenterExportsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterExportsPage');
 const DataCenterAuditsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterAuditsPage');
+/**
+ * Operator data wall. It renders full-bleed (no admin chrome), so the host
+ * exposes it through its own route table instead of the admin layout branch:
+ * see `CLOUDROUTER_ADMIN_FULLSCREEN_ROUTE_CONTRIBUTIONS`.
+ */
+const DataCenterScreenAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterScreenPage') as LazyExoticComponent<ComponentType<{ onExit: () => void; onOpenConsole: () => void }>>;
 const CacheAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-cache'), 'CacheAdmin');
 const UpstreamSupplierAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamSupplierAdmin');
 const UpstreamAccountAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamAccountAdmin');
@@ -409,7 +415,8 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('cache', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-cache', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <CacheAdmin />),
   route('ratelimit', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-ratelimit', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RateLimitAdmin />),
   route('service-nodes', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-service-nodes', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <ServiceNodesAdmin />),
-  route('settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterAuthSettingsPage />),
+  route('iam/auth-settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterAuthSettingsPage />),
+  route('settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/iam/auth-settings" replace />),
   route('runtime-region', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-runtime-region', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RuntimeRegionAdmin />),
   route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <SiteSettingsRoute />),
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
@@ -657,8 +664,45 @@ function route(
   return { path, owner, adminPackage, backendSdkFamilies, requiredPermission, element };
 }
 
+/**
+ * Full-bleed admin surfaces.
+ *
+ * The operator data wall is mounted in its own browser window and must not carry
+ * the console sidebar, the top navigation bar, or the content gutters: the wall
+ * *is* the page. They therefore live outside the `/admin` layout branch, keep the
+ * admin session gate, and declare the modules they read so a dependency audit can
+ * trace the surface back to its owning API families without reading the UI.
+ */
+export const CLOUDROUTER_ADMIN_FULLSCREEN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
+  route(
+    '/admin/data/screen',
+    'sdkwork-cloudrouter',
+    '@sdkwork/cloudrouter-pc-admin-data',
+    ['cloudrouter-backend-sdk', 'sdkwork-payment-backend-sdk'],
+    'cloudrouter.admin.access',
+    <DataCenterScreenRoute />,
+  ),
+];
+
+function DataCenterScreenRoute() {
+  const navigate = useNavigate();
+  return (
+    <DataCenterScreenAdmin
+      onExit={() => navigate('/admin/data/overview')}
+      onOpenConsole={() => navigate('/admin/data/overview')}
+    />
+  );
+}
+
 export function CloudRouterAdminHostRoutes(): ReactElement[] {
   return CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS.map((contribution) => (
+    <Route key={contribution.path} path={contribution.path} element={contribution.element} />
+  ));
+}
+
+/** Route elements for the full-bleed admin surfaces declared above. */
+export function CloudRouterAdminFullscreenHostRoutes(): ReactElement[] {
+  return CLOUDROUTER_ADMIN_FULLSCREEN_ROUTE_CONTRIBUTIONS.map((contribution) => (
     <Route key={contribution.path} path={contribution.path} element={contribution.element} />
   ));
 }

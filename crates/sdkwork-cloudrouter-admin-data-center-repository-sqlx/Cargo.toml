@@ -1,0 +1,20 @@
+[package]
+name = "sdkwork-cloudrouter-admin-data-center-repository-sqlx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+description = "SDKWork Cloud Router admin data-center governance SQLx repository"
+
+[lib]
+name = "sdkwork_cloudrouter_admin_data_center_repository_sqlx"
+path = "src/lib.rs"
+
+[dependencies]
+chrono.workspace = true
+sqlx = { workspace = true }
+sdkwork-cloudrouter-router-service.workspace = true
+sdkwork-utils-rust.workspace = true
+
+[lints]
+workspace = true

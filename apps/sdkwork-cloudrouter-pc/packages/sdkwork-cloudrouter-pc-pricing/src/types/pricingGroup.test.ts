@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPricingGroupRateMatcher,
   buildPricingGroupTagFacets,
+  buildPricingGroupTypeFacets,
   EMPTY_PRICING_GROUP_SELECTION,
   filterPricingGroups,
   hasPricingGroupSelection,
   pricingGroupHasTags,
   pricingGroupMatchesRate,
+  pricingGroupMatchesType,
   pricingGroupMultiplier,
+  pricingGroupType,
   pricingGroupsServingRates,
   resolveSelectedPricingGroups,
   toggleSelectionValue,
@@ -54,9 +57,26 @@ describe('pricing group tag filters', () => {
       group({ code: 'openai.text', name: 'OpenAI 文本', tags: ['stable'] }),
       group({ code: 'openai.image', name: 'OpenAI 图片', tags: ['beta'] }),
     ];
-    expect(filterPricingGroups(groups, '', ['stable']).map((item) => item.code)).toEqual(['openai.text']);
-    expect(filterPricingGroups(groups, '图片', []).map((item) => item.code)).toEqual(['openai.image']);
-    expect(filterPricingGroups(groups, 'beta', []).map((item) => item.code)).toEqual(['openai.image']);
+    expect(filterPricingGroups(groups, { query: '', tags: ['stable'], types: [] }).map((item) => item.code))
+      .toEqual(['openai.text']);
+    expect(filterPricingGroups(groups, { query: '图片', tags: [], types: [] }).map((item) => item.code))
+      .toEqual(['openai.image']);
+    expect(filterPricingGroups(groups, { query: 'beta', tags: [], types: [] }).map((item) => item.code))
+      .toEqual(['openai.image']);
+  });
+
+  it('narrows the group list by group type before tags and query', () => {
+    const groups = [
+      group({ code: 'openai.text', name: 'OpenAI 文本', modalities: ['text'] }),
+      group({ code: 'acme.video', name: 'Acme 视频', modalities: ['video'], vendorCode: 'acme' }),
+      group({ code: 'acme.mixed', name: 'Acme 混合', modalities: ['text', 'image'], vendorCode: 'acme' }),
+    ];
+    expect(filterPricingGroups(groups, { query: '', tags: [], types: ['video'] }).map((item) => item.code))
+      .toEqual(['acme.video']);
+    expect(filterPricingGroups(groups, { query: '', tags: [], types: ['mixed'] }).map((item) => item.code))
+      .toEqual(['acme.mixed']);
+    expect(filterPricingGroups(groups, { query: '', tags: [], types: ['llm'] }).map((item) => item.code))
+      .toEqual(['openai.text']);
   });
 
   it('narrows tagged groups by explicit group codes', () => {
@@ -65,9 +85,9 @@ describe('pricing group tag filters', () => {
       group({ code: 'b', tags: ['stable'] }),
       group({ code: 'c', tags: ['beta'] }),
     ];
-    expect(resolveSelectedPricingGroups(groups, { tags: [], groupCodes: [] })).toHaveLength(3);
-    expect(resolveSelectedPricingGroups(groups, { tags: ['stable'], groupCodes: [] })).toHaveLength(2);
-    expect(resolveSelectedPricingGroups(groups, { tags: ['stable'], groupCodes: ['b', 'c'] })).toEqual([
+    expect(resolveSelectedPricingGroups(groups, { types: [], tags: [], groupCodes: [] })).toHaveLength(3);
+    expect(resolveSelectedPricingGroups(groups, { types: [], tags: ['stable'], groupCodes: [] })).toHaveLength(2);
+    expect(resolveSelectedPricingGroups(groups, { types: [], tags: ['stable'], groupCodes: ['b', 'c'] })).toEqual([
       groups[1],
     ]);
   });
@@ -106,12 +126,63 @@ describe('pricing group rate matching', () => {
       group({ code: 'openai.text', tags: ['stable'] }),
       group({ code: 'anthropic.text', tags: ['beta'], vendorCode: 'anthropic' }),
     ];
-    const stableMatcher = buildPricingGroupRateMatcher(groups, { tags: ['stable'], groupCodes: [] });
+    const stableMatcher = buildPricingGroupRateMatcher(groups, { types: [], tags: ['stable'], groupCodes: [] });
     expect(stableMatcher(rate(['all', 'llm']))).toBe(true);
     expect(stableMatcher(rate(['all', 'llm'], { vendorCode: 'anthropic' }))).toBe(false);
 
-    const emptyMatcher = buildPricingGroupRateMatcher(groups, { tags: ['promotion'], groupCodes: [] });
+    const emptyMatcher = buildPricingGroupRateMatcher(groups, { types: [], tags: ['promotion'], groupCodes: [] });
     expect(emptyMatcher(rate(['all', 'llm']))).toBe(false);
+  });
+
+  it('scopes rates by group type without requiring an explicit group selection', () => {
+    const groups = [
+      group({ code: 'openai.text', modalities: ['text'] }),
+      group({ code: 'acme.video', modalities: ['video'], vendorCode: 'acme' }),
+    ];
+    const videoMatcher = buildPricingGroupRateMatcher(groups, { types: ['video'], tags: [], groupCodes: [] });
+    expect(videoMatcher(rate(['all', 'video'], { vendorCode: 'acme' }))).toBe(true);
+    expect(videoMatcher(rate(['all', 'llm'], { vendorCode: 'acme' }))).toBe(false);
+
+    const imageMatcher = buildPricingGroupRateMatcher(groups, { types: ['image'], tags: [], groupCodes: [] });
+    expect(imageMatcher(rate(['all', 'llm']))).toBe(false);
+  });
+});
+
+describe('pricing group types', () => {
+  it('classifies a single declared modality into its group type', () => {
+    expect(pricingGroupType({ modalities: ['text'] })).toBe('llm');
+    expect(pricingGroupType({ modalities: ['image'] })).toBe('image');
+    expect(pricingGroupType({ modalities: ['video'] })).toBe('video');
+    expect(pricingGroupType({ modalities: ['music'] })).toBe('music');
+    expect(pricingGroupType({ modalities: ['audio'] })).toBe('voice');
+    expect(pricingGroupType({ modalities: [' Text '] })).toBe('llm');
+  });
+
+  it('treats multi-modality, unrestricted, and unknown-modality groups as mixed', () => {
+    expect(pricingGroupType({ modalities: ['text', 'image'] })).toBe('mixed');
+    expect(pricingGroupType({ modalities: [] })).toBe('mixed');
+    expect(pricingGroupType({ modalities: null })).toBe('mixed');
+    expect(pricingGroupType({ modalities: ['embedding'] })).toBe('mixed');
+  });
+
+  it('matches a group against the selected type scope', () => {
+    expect(pricingGroupMatchesType({ modalities: ['video'] }, [])).toBe(true);
+    expect(pricingGroupMatchesType({ modalities: ['video'] }, ['video'])).toBe(true);
+    expect(pricingGroupMatchesType({ modalities: ['text'] }, ['video'])).toBe(false);
+  });
+
+  it('counts available groups per type in declaration order', () => {
+    const facets = buildPricingGroupTypeFacets([
+      group({ code: 'a', modalities: ['text'] }),
+      group({ code: 'b', modalities: ['text'] }),
+      group({ code: 'c', modalities: ['video'] }),
+      group({ code: 'd', modalities: ['text', 'image'] }),
+    ]);
+    expect(facets).toEqual([
+      { code: 'llm', count: 2 },
+      { code: 'video', count: 1 },
+      { code: 'mixed', count: 1 },
+    ]);
   });
 });
 

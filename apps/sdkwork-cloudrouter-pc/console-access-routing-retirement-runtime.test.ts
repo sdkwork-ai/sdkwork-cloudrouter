@@ -91,6 +91,7 @@ test("retired relay-external admin routes are absent from schema governance", ()
     "/admin/model",
     "/admin/upstream",
     "/admin/settings",
+    "/admin/iam/auth-settings",
     "/admin/monitor",
     "/admin/ratelimit",
     "/admin/skill",

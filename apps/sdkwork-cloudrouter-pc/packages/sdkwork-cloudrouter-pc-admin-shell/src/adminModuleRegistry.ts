@@ -279,7 +279,6 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/monitor',
       '/admin/cache',
       '/admin/service-nodes',
-      '/admin/settings',
       '/admin/runtime-region',
       '/admin/site',
     ],
@@ -609,7 +608,6 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/cache', labelKey: 'admin.menu.cache', icon: HardDrive, iconColor: 'text-lobster-400' }),
       ]),
       groupBlock('admin.menu.ops.system', [
-        itemBlock({ path: '/admin/settings', labelKey: 'admin.menu.authSettings', icon: ShieldCheck, iconColor: 'text-lobster-400' }),
         itemBlock({ path: '/admin/runtime-region', labelKey: 'admin.menu.runtimeRegion', icon: Globe2, iconColor: 'text-lobster-400' }),
         itemBlock({ path: '/admin/site', labelKey: 'admin.menu.siteSettings', icon: Settings, iconColor: 'text-lobster-400' }),
       ]),

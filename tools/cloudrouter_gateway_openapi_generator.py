@@ -857,6 +857,12 @@ class CloudRouterGatewayOpenApiGenerator:
             }
 
         for path, path_item in paths.items():
+            # SDKWork-owned recharge operations answer the standard
+            # `SdkWorkApiResponse` envelope and `application/problem+json`
+            # errors; they are not vendor-protocol mirrors, so the OpenAI and
+            # provider error envelopes must not be injected into them.
+            if path.startswith("/v1/recharge/"):
+                continue
             protocol_id = next(
                 (protocol for prefix, protocol in protocol_prefixes if path.startswith(prefix)),
                 None,
@@ -3815,6 +3821,7 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Videos/pixverse", "description": "PixVerse video generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/runway", "description": "Runway text-to-video and image-to-video APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/zhipu", "description": "Zhipu CogVideoX video generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Recharge", "description": "API-key recharge APIs a relay exposes to its own callers: balance, recharge packages, and recharge orders."},
         ]
 
     def _paths(self) -> dict[str, Any]:
@@ -4445,7 +4452,226 @@ class CloudRouterGatewayOpenApiGenerator:
                 {"type": "string", "format": "uuid"},
             ),
         )
+        paths.update(self._recharge_paths())
         return paths
+
+    def _recharge_paths(self) -> dict[str, Any]:
+        """SDKWork-owned relay recharge operations (API key bearer auth).
+
+        A Cloud Router relay exposes these paths so that another Cloud Router
+        deployment (or any API-key caller) can read its recharge balance and
+        catalog and create recharge orders. They carry the standard
+        `SdkWorkApiResponse` envelope instead of a vendor wire protocol.
+        """
+        return {
+            "/v1/recharge/balance": {
+                "get": self._recharge_operation(
+                    "rechargeRetrieveBalance",
+                    "Relay recharge balance",
+                    "Returns the calling API key owner's recharge balance on this relay.",
+                    "RechargeBalanceEnvelope",
+                )
+            },
+            "/v1/recharge/options": {
+                "get": self._recharge_operation(
+                    "rechargeListOptions",
+                    "Relay recharge options",
+                    "Returns the recharge package catalog and custom-amount bounds for the calling API key owner.",
+                    "RechargeOptionsEnvelope",
+                )
+            },
+            "/v1/recharge/orders": {
+                "post": self._recharge_operation(
+                    "rechargeCreateOrder",
+                    "Create a relay recharge order",
+                    "Creates a recharge order for the calling API key owner and returns the cashier link and QR payload.",
+                    "RechargeOrderEnvelope",
+                    request_schema="RechargeOrderCreateRequest",
+                    success_status="201",
+                )
+            },
+            "/v1/recharge/orders/{order_id}": {
+                "get": self._recharge_operation(
+                    "rechargeRetrieveOrder",
+                    "Retrieve a relay recharge order",
+                    "Returns the current status of one recharge order owned by the calling API key.",
+                    "RechargeOrderEnvelope",
+                    parameters=[self._path_param("order_id", "Recharge order identifier returned by the create call.")],
+                )
+            },
+        }
+
+    def _recharge_operation(
+        self,
+        operation_id: str,
+        summary: str,
+        description: str,
+        response_schema: str,
+        request_schema: str | None = None,
+        parameters: list[dict[str, Any]] | None = None,
+        success_status: str = "200",
+    ) -> dict[str, Any]:
+        problem_response = {
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail.",
+            "content": {
+                "application/problem+json": {
+                    "schema": {"$ref": "#/components/schemas/ProblemDetail"},
+                }
+            },
+        }
+        operation: dict[str, Any] = {
+            "tags": ["Recharge"],
+            "operationId": operation_id,
+            "summary": summary,
+            "description": description,
+            "parameters": parameters or [],
+            "responses": {
+                success_status: {
+                    "description": "Recharge response.",
+                    "content": {
+                        "application/json": {
+                            "schema": {"$ref": f"#/components/schemas/{response_schema}"},
+                        }
+                    },
+                },
+                "400": problem_response,
+                "401": problem_response,
+                "404": problem_response,
+                "422": problem_response,
+                "500": problem_response,
+                "502": problem_response,
+            },
+            "security": [{"bearerAuth": []}],
+        }
+        if request_schema is not None:
+            operation["requestBody"] = {
+                "required": True,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": f"#/components/schemas/{request_schema}"},
+                    }
+                },
+            }
+        return operation
+
+    def _recharge_schemas(self) -> dict[str, Any]:
+        """Schemas for the SDKWork-owned relay recharge surface."""
+        return {
+            "ProblemDetail": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["code", "status", "title", "detail", "traceId"],
+                "properties": {
+                    "code": {"type": "integer", "format": "int32", "description": "Numeric SDKWork platform error code."},
+                    "status": {"type": "integer", "format": "int32", "description": "HTTP status code."},
+                    "title": {"type": "string", "description": "Short human-readable problem title."},
+                    "detail": {"type": "string", "description": "Human-readable problem detail."},
+                    "traceId": {"type": "string", "description": "Server trace identifier for support and logs."},
+                    "i18nKey": {"type": "string", "nullable": True, "description": "Optional localization key for the problem."},
+                },
+            },
+            "RechargeBalance": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["amount", "frozen", "unit", "currencyCode", "checkedAt"],
+                "properties": {
+                    "amount": {"type": "string", "description": "Available balance as a decimal string in `unit`."},
+                    "frozen": {"type": "string", "description": "Frozen (held) balance as a decimal string in `unit`."},
+                    "unit": {"type": "string", "description": "Balance asset unit label, for example TOKEN_BANK."},
+                    "currencyCode": {"type": "string", "nullable": True, "description": "ISO-4217 presentation currency when known."},
+                    "checkedAt": {"type": "string", "format": "date-time", "description": "Time the snapshot was produced (RFC 3339)."},
+                },
+            },
+            "RechargeBalanceEnvelope": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["code", "data", "traceId"],
+                "properties": {
+                    "code": {"type": "integer", "format": "int32", "enum": [0], "description": "SDKWork success code; always 0."},
+                    "data": {"$ref": "#/components/schemas/RechargeBalance"},
+                    "traceId": {"type": "string", "description": "Server trace identifier."},
+                },
+            },
+            "RechargeOption": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["packageId", "label", "points", "bonusPoints", "grantAmount", "priceAmount", "currencyCode", "recommended"],
+                "properties": {
+                    "packageId": {"type": "string", "description": "Relay-owned package identifier."},
+                    "label": {"type": "string", "description": "Display label for the package."},
+                    "points": {"type": "integer", "format": "int32", "minimum": 0, "description": "Base points granted by the package."},
+                    "bonusPoints": {"type": "integer", "format": "int32", "minimum": 0, "description": "Extra points granted on top of `points`."},
+                    "grantAmount": {"type": "integer", "format": "int32", "minimum": 0, "description": "Total points granted once paid."},
+                    "priceAmount": {"type": "string", "description": "Price in major units as a decimal string."},
+                    "currencyCode": {"type": "string", "description": "ISO-4217 currency code of `priceAmount`."},
+                    "recommended": {"type": "boolean", "description": "Whether the relay recommends this package."},
+                },
+            },
+            "RechargeOptions": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["items", "currencyCode", "pointsUnit", "customAmountSupported", "agreement"],
+                "properties": {
+                    "items": {"type": "array", "items": {"$ref": "#/components/schemas/RechargeOption"}, "description": "Fixed recharge packages in relay display order."},
+                    "currencyCode": {"type": "string", "description": "Currency shared by `items`."},
+                    "pointsUnit": {"type": "string", "description": "Points asset label used by the relay."},
+                    "customAmountSupported": {"type": "boolean", "description": "Whether the relay accepts an arbitrary amount."},
+                    "minAmount": {"type": "string", "nullable": True, "description": "Lowest accepted custom amount in major units."},
+                    "maxAmount": {"type": "string", "nullable": True, "description": "Highest accepted custom amount in major units."},
+                    "agreement": {"type": "string", "description": "Agreement copy the caller must accept before paying."},
+                },
+            },
+            "RechargeOptionsEnvelope": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["code", "data", "traceId"],
+                "properties": {
+                    "code": {"type": "integer", "format": "int32", "enum": [0], "description": "SDKWork success code; always 0."},
+                    "data": {"$ref": "#/components/schemas/RechargeOptions"},
+                    "traceId": {"type": "string", "description": "Server trace identifier."},
+                },
+            },
+            "RechargeOrderCreateRequest": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "packageId": {"type": "string", "nullable": True, "description": "Fixed package id; mutually exclusive with `amount`."},
+                    "amount": {"type": "string", "nullable": True, "description": "Custom amount in major units; mutually exclusive with `packageId`."},
+                    "paymentMethod": {"type": "string", "nullable": True, "description": "Relay payment method key; omit to let the relay choose its default."},
+                    "idempotencyKey": {"type": "string", "nullable": True, "description": "Caller-side idempotency key scoped to the API key owner."},
+                },
+            },
+            "RechargeOrder": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["orderId", "orderNo", "outTradeNo", "amount", "currencyCode", "points", "status", "nextAction", "cashierUrl", "qrCodePayload", "expiresAt", "paidAt", "createdAt"],
+                "properties": {
+                    "orderId": {"type": "string", "description": "Relay order identifier."},
+                    "orderNo": {"type": "string", "description": "Relay order number."},
+                    "outTradeNo": {"type": "string", "description": "Out-trade number used for payment reconciliation."},
+                    "amount": {"type": "string", "description": "Payable amount in major units as a decimal string."},
+                    "currencyCode": {"type": "string", "description": "ISO-4217 currency code of `amount`."},
+                    "points": {"type": "integer", "format": "int32", "minimum": 0, "description": "Points granted once paid."},
+                    "status": {"type": "string", "description": "Order status (`pending`, `paid`, `failed`, `cancelled`)."},
+                    "nextAction": {"type": "string", "description": "Next action to render (`scan_qr`, `redirect`, `none`)."},
+                    "cashierUrl": {"type": "string", "description": "Cashier deep link when the relay produced one."},
+                    "qrCodePayload": {"type": "string", "description": "QR payload when the relay produced one."},
+                    "expiresAt": {"type": "string", "format": "date-time", "description": "Payment expiry (RFC 3339)."},
+                    "paidAt": {"type": "string", "format": "date-time", "nullable": True, "description": "Payment time (RFC 3339); null while unpaid."},
+                    "createdAt": {"type": "string", "format": "date-time", "description": "Order creation time (RFC 3339)."},
+                },
+            },
+            "RechargeOrderEnvelope": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["code", "data", "traceId"],
+                "properties": {
+                    "code": {"type": "integer", "format": "int32", "enum": [0], "description": "SDKWork success code; always 0."},
+                    "data": {"$ref": "#/components/schemas/RechargeOrder"},
+                    "traceId": {"type": "string", "description": "Server trace identifier."},
+                },
+            },
+        }
 
     def _path_param(self, name: str, description: str) -> dict[str, Any]:
         return {"name": name, "in": "path", "required": True, "description": description, "schema": {"type": "string"}}
@@ -5420,6 +5646,7 @@ class CloudRouterGatewayOpenApiGenerator:
                 **self._google_provider_schemas(),
                 **self._anthropic_provider_schemas(),
                 **self._media_provider_schemas(),
+                **self._recharge_schemas(),
             },
         }
 

@@ -1,20 +1,28 @@
 /**
  * Data Center service boundary.
  *
- * The Data Center is a standalone data platform that ships its own backend
- * (`/backend/v3/api/datacenter/*`). Until that backend and its generated SDK
- * land, this module owns a typed client port instead of calling an endpoint
- * that does not exist yet. Consequences that keep the page honest:
+ * Every read goes through the generated `@sdkwork/cloudrouter-backend-sdk`
+ * client (`/backend/v3/api/datacenter/*`); pages never build HTTP requests or
+ * auth headers themselves. Responses are validated field by field so a partial
+ * or malformed payload surfaces as a typed error instead of rendering as empty
+ * data — the page must never claim "no data sources" when the answer was
+ * actually unreadable.
  *
- * - no client is configured by default, so every page renders an explicit
- *   "backend not provisioned" state instead of fabricated numbers;
- * - once the generated SDK exists, the host binds a client built on it via
- *   `configureDataCenterClient`, exactly once, at app bootstrap;
- * - the port is the only place that may touch the network, so swapping the
- *   transport never leaks into pages.
+ * `int64` values (row counts) stay decimal strings end to end; nothing here
+ * converts an id or a count to `number`.
  */
 
-export type DataCenterSourceHealth = 'healthy' | 'warning' | 'error';
+import {
+  getCloudRouterBackendSdkClient,
+  isRecord,
+  readApiData,
+  readRequiredApiItems,
+  readRequiredNonNegativeInt64String,
+  readRequiredString,
+  type ApiRecord,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
+
+export type DataCenterSourceHealth = 'healthy' | 'warning' | 'error' | 'unknown';
 
 export interface DataCenterSourceSummary {
   id: string;
@@ -52,7 +60,7 @@ export interface DataCenterExportSummary {
   /** Decimal string for the same reason as `rowCount`. */
   rowCount: string;
   requestedBy: string;
-  expiresAt: string;
+  expiresAt: string | null;
 }
 
 export type DataCenterAuditAction =
@@ -65,6 +73,8 @@ export type DataCenterAuditAction =
   | 'approve'
   | 'rollback';
 
+export type DataCenterAuditResult = 'success' | 'failure';
+
 export interface DataCenterAuditSummary {
   id: string;
   actor: string;
@@ -72,100 +82,185 @@ export interface DataCenterAuditSummary {
   object: string;
   /** Decimal string for the same reason as `rowCount`. */
   rowCount: string;
-  result: 'success' | 'failure';
+  result: DataCenterAuditResult;
   at: string;
 }
 
+/** Counters stay decimal strings: they are int64 values the browser must not round. */
 export interface DataCenterOverviewSummary {
-  sources: number;
-  tables: number;
-  todayInstances: number;
-  pendingExports: number;
+  sources: string;
+  tables: string;
+  todayInstances: string;
+  pendingExports: string;
   /** Percentage rendered as a decimal string, e.g. `99.20`. */
   successRate: string;
 }
 
-export interface DataCenterClient {
-  fetchOverview(): Promise<DataCenterOverviewSummary>;
-  listSources(): Promise<readonly DataCenterSourceSummary[]>;
-  listTables(): Promise<readonly DataCenterTableSummary[]>;
-  listExports(): Promise<readonly DataCenterExportSummary[]>;
-  listAudits(): Promise<readonly DataCenterAuditSummary[]>;
-}
+const SOURCE_HEALTH: readonly DataCenterSourceHealth[] = ['healthy', 'warning', 'error', 'unknown'];
+const TABLE_KINDS: readonly DataCenterTableKind[] = ['landed', 'external', 'view'];
+const EXPORT_STATUSES: readonly DataCenterExportStatus[] = [
+  'pending_approval',
+  'running',
+  'succeeded',
+  'failed',
+  'expired',
+];
+const AUDIT_ACTIONS: readonly DataCenterAuditAction[] = [
+  'connect',
+  'query',
+  'download',
+  'ddl',
+  'dml',
+  'publish',
+  'approve',
+  'rollback',
+];
+const AUDIT_RESULTS: readonly DataCenterAuditResult[] = ['success', 'failure'];
 
-/** Raised when a page tries to act before the datacenter backend is bound. */
-export class DataCenterBackendPendingError extends Error {
-  constructor() {
-    super('Data center backend has not been provisioned for this deployment.');
-    this.name = 'DataCenterBackendPendingError';
+function requiredCount(record: ApiRecord, key: string): number {
+  const value = record[key];
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) {
+    return value;
   }
+  throw new Error(`Data center ${key} must be a non-negative integer.`);
 }
 
-let dataCenterClient: DataCenterClient | null = null;
-
-/** Host-owned seam: bind the generated-SDK-backed client at bootstrap. */
-export function configureDataCenterClient(next: DataCenterClient | null): void {
-  dataCenterClient = next;
-}
-
-export function isDataCenterBackendAvailable(): boolean {
-  return dataCenterClient !== null;
-}
-
-function requireClient(): DataCenterClient {
-  if (!dataCenterClient) {
-    throw new DataCenterBackendPendingError();
+function requiredEnum<T extends string>(
+  record: ApiRecord,
+  key: string,
+  allowed: readonly T[],
+): T {
+  const value = requiredString(record, key);
+  const match = allowed.find((candidate) => candidate === value);
+  if (!match) {
+    throw new Error(`Data center ${key} must be one of ${allowed.join(', ')}.`);
   }
-  return dataCenterClient;
+  return match;
 }
 
-function ensureArray<T>(value: readonly T[] | null | undefined, field: string): readonly T[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`Data center ${field} response must be an array.`);
+function requiredString(record: ApiRecord, key: string): string {
+  return readRequiredString(record, key, `Data center ${key} is required.`);
+}
+
+function optionalString(record: ApiRecord, key: string): string | null {
+  const value = record[key];
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value !== 'string') {
+    throw new Error(`Data center ${key} must be a string or null.`);
   }
   return value;
 }
 
-function ensureCount(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
-    throw new Error(`Data center ${field} must be a non-negative integer.`);
+function requireRecord(value: unknown, field: string): ApiRecord {
+  if (!isRecord(value)) {
+    throw new Error(`Data center ${field} must be an object.`);
   }
   return value;
 }
 
-function normalizeOverview(value: DataCenterOverviewSummary): DataCenterOverviewSummary {
-  const successRate = value.successRate;
-  if (typeof successRate !== 'string') {
+function normalizeOverview(payload: unknown): DataCenterOverviewSummary {
+  const record = requireRecord(payload, 'overview');
+  const successRate = record.successRate;
+  if (typeof successRate !== 'string' || !/^[0-9]+(\.[0-9]+)?$/u.test(successRate)) {
     throw new Error('Data center overview.successRate must be a decimal string.');
   }
   return {
-    sources: ensureCount(value.sources, 'overview.sources'),
-    tables: ensureCount(value.tables, 'overview.tables'),
-    todayInstances: ensureCount(value.todayInstances, 'overview.todayInstances'),
-    pendingExports: ensureCount(value.pendingExports, 'overview.pendingExports'),
+    sources: readRequiredNonNegativeInt64String(record, 'sources', 'Data center overview.sources is required.'),
+    tables: readRequiredNonNegativeInt64String(record, 'tables', 'Data center overview.tables is required.'),
+    todayInstances: readRequiredNonNegativeInt64String(
+      record,
+      'todayInstances',
+      'Data center overview.todayInstances is required.',
+    ),
+    pendingExports: readRequiredNonNegativeInt64String(
+      record,
+      'pendingExports',
+      'Data center overview.pendingExports is required.',
+    ),
     successRate,
   };
 }
 
+function normalizeSource(payload: unknown): DataCenterSourceSummary {
+  const record = requireRecord(payload, 'source');
+  return {
+    id: requiredString(record, 'id'),
+    name: requiredString(record, 'name'),
+    kind: requiredString(record, 'kind'),
+    health: requiredEnum(record, 'health', SOURCE_HEALTH),
+    tableCount: requiredCount(record, 'tableCount'),
+    lastTestedAt: optionalString(record, 'lastTestedAt'),
+  };
+}
+
+function normalizeTable(payload: unknown): DataCenterTableSummary {
+  const record = requireRecord(payload, 'table');
+  return {
+    id: requiredString(record, 'id'),
+    name: requiredString(record, 'name'),
+    kind: requiredEnum(record, 'kind', TABLE_KINDS),
+    rowCount: readRequiredNonNegativeInt64String(record, 'rowCount', 'Data center table.rowCount is required.'),
+    columnCount: requiredCount(record, 'columnCount'),
+    owner: optionalString(record, 'owner') ?? '',
+    updatedAt: optionalString(record, 'updatedAt') ?? '',
+  };
+}
+
+function normalizeExport(payload: unknown): DataCenterExportSummary {
+  const record = requireRecord(payload, 'export');
+  return {
+    id: requiredString(record, 'id'),
+    datasetName: requiredString(record, 'datasetName'),
+    status: requiredEnum(record, 'status', EXPORT_STATUSES),
+    rowCount: readRequiredNonNegativeInt64String(record, 'rowCount', 'Data center export.rowCount is required.'),
+    requestedBy: optionalString(record, 'requestedBy') ?? '',
+    expiresAt: optionalString(record, 'expiresAt'),
+  };
+}
+
+function normalizeAudit(payload: unknown): DataCenterAuditSummary {
+  const record = requireRecord(payload, 'audit');
+  return {
+    id: requiredString(record, 'id'),
+    actor: optionalString(record, 'actor') ?? '',
+    action: requiredEnum(record, 'action', AUDIT_ACTIONS),
+    object: optionalString(record, 'object') ?? '',
+    rowCount: readRequiredNonNegativeInt64String(record, 'rowCount', 'Data center audit.rowCount is required.'),
+    result: requiredEnum(record, 'result', AUDIT_RESULTS),
+    at: optionalString(record, 'at') ?? '',
+  };
+}
+
+function requireItems(result: unknown, entity: string): unknown[] {
+  return readRequiredApiItems(result, `Data center ${entity} response is missing items.`, ['items']);
+}
+
 /**
- * Typed facade used by pages. Every method rejects with
- * `DataCenterBackendPendingError` while no client is bound, so callers can
- * branch on the state instead of guessing whether data is empty or absent.
+ * Typed facade used by the Data Center pages. Each method validates the
+ * generated SDK payload; a failure rejects with an error naming the offending
+ * field so the page can show a retryable state instead of an empty list.
  */
 export const DataCenterService = {
   async fetchOverview(): Promise<DataCenterOverviewSummary> {
-    return normalizeOverview(await requireClient().fetchOverview());
+    const result = await getCloudRouterBackendSdkClient().datacenter.overview.retrieve();
+    return normalizeOverview(readApiData(result));
   },
   async listSources(): Promise<readonly DataCenterSourceSummary[]> {
-    return ensureArray(await requireClient().listSources(), 'sources');
+    const result = await getCloudRouterBackendSdkClient().datacenter.dataSources.list();
+    return requireItems(result, 'sources').map(normalizeSource);
   },
   async listTables(): Promise<readonly DataCenterTableSummary[]> {
-    return ensureArray(await requireClient().listTables(), 'tables');
+    const result = await getCloudRouterBackendSdkClient().datacenter.dataCenterTables.list();
+    return requireItems(result, 'tables').map(normalizeTable);
   },
   async listExports(): Promise<readonly DataCenterExportSummary[]> {
-    return ensureArray(await requireClient().listExports(), 'exports');
+    const result = await getCloudRouterBackendSdkClient().datacenter.dataCenterExports.list();
+    return requireItems(result, 'exports').map(normalizeExport);
   },
   async listAudits(): Promise<readonly DataCenterAuditSummary[]> {
-    return ensureArray(await requireClient().listAudits(), 'audits');
+    const result = await getCloudRouterBackendSdkClient().datacenter.dataCenterAudits.list();
+    return requireItems(result, 'audits').map(normalizeAudit);
   },
 };

@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode, Ref } from 'react';
 
 type DataAttributes = Record<`data-${string}`, string | number | boolean | undefined>;
 
@@ -7,6 +7,14 @@ export interface AdminTableShellProps extends HTMLAttributes<HTMLDivElement> {
   footer?: ReactNode;
   viewportClassName?: string;
   viewportProps?: HTMLAttributes<HTMLDivElement> & DataAttributes;
+  /**
+   * Handle on the scroll viewport.
+   *
+   * A paged list resets `scrollTop` here when the page changes, so a new page
+   * starts at its first row instead of inheriting the middle-of-the-table scroll
+   * offset of the page the operator just left.
+   */
+  viewportRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 }
 
@@ -15,6 +23,7 @@ export function AdminTableShell({
   footer,
   viewportClassName = '',
   viewportProps,
+  viewportRef,
   children,
   className = '',
   ...props
@@ -28,6 +37,7 @@ export function AdminTableShell({
     >
       {header ? <div className="shrink-0">{header}</div> : null}
       <div
+        ref={viewportRef}
         data-admin-table-shell-viewport
         className={`min-h-0 flex-1 overflow-auto ${viewportClassName} ${viewportPropsClassName}`.trim()}
         {...restViewportProps}

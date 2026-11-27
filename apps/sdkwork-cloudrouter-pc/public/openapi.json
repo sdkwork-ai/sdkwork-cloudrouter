@@ -18249,6 +18249,47 @@
         },
         "type": "object"
       },
+      "ProblemDetail": {
+        "additionalProperties": false,
+        "description": "Problem detail schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Numeric SDKWork platform error code.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "detail": {
+            "description": "Human-readable problem detail.",
+            "type": "string"
+          },
+          "i18nKey": {
+            "description": "Optional localization key for the problem.",
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "description": "HTTP status code.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Short human-readable problem title.",
+            "type": "string"
+          },
+          "traceId": {
+            "description": "Server trace identifier for support and logs.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "status",
+          "title",
+          "detail",
+          "traceId"
+        ],
+        "type": "object"
+      },
       "ProviderGeneratedMedia": {
         "additionalProperties": {
           "allOf": [
@@ -18473,6 +18514,347 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "RechargeBalance": {
+        "additionalProperties": false,
+        "description": "Recharge balance schema exposed by Cloud Router.",
+        "properties": {
+          "amount": {
+            "description": "Available balance as a decimal string in `unit`.",
+            "type": "string"
+          },
+          "checkedAt": {
+            "description": "Time the snapshot was produced (RFC 3339).",
+            "format": "date-time",
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "ISO-4217 presentation currency when known.",
+            "nullable": true,
+            "type": "string"
+          },
+          "frozen": {
+            "description": "Frozen (held) balance as a decimal string in `unit`.",
+            "type": "string"
+          },
+          "unit": {
+            "description": "Balance asset unit label, for example TOKEN_BANK.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "frozen",
+          "unit",
+          "currencyCode",
+          "checkedAt"
+        ],
+        "type": "object"
+      },
+      "RechargeBalanceEnvelope": {
+        "additionalProperties": false,
+        "description": "Recharge balance envelope schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "SDKWork success code; always 0.",
+            "enum": [
+              0
+            ],
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RechargeBalance"
+              }
+            ],
+            "description": "Data field on the recharge balance envelope, using the recharge balance module."
+          },
+          "traceId": {
+            "description": "Server trace identifier.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "traceId"
+        ],
+        "type": "object"
+      },
+      "RechargeOption": {
+        "additionalProperties": false,
+        "description": "Recharge option schema exposed by Cloud Router.",
+        "properties": {
+          "bonusPoints": {
+            "description": "Extra points granted on top of `points`.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "currencyCode": {
+            "description": "ISO-4217 currency code of `priceAmount`.",
+            "type": "string"
+          },
+          "grantAmount": {
+            "description": "Total points granted once paid.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "label": {
+            "description": "Display label for the package.",
+            "type": "string"
+          },
+          "packageId": {
+            "description": "Relay-owned package identifier.",
+            "type": "string"
+          },
+          "points": {
+            "description": "Base points granted by the package.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "priceAmount": {
+            "description": "Price in major units as a decimal string.",
+            "type": "string"
+          },
+          "recommended": {
+            "description": "Whether the relay recommends this package.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "packageId",
+          "label",
+          "points",
+          "bonusPoints",
+          "grantAmount",
+          "priceAmount",
+          "currencyCode",
+          "recommended"
+        ],
+        "type": "object"
+      },
+      "RechargeOptions": {
+        "additionalProperties": false,
+        "description": "Recharge options schema exposed by Cloud Router.",
+        "properties": {
+          "agreement": {
+            "description": "Agreement copy the caller must accept before paying.",
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency shared by `items`.",
+            "type": "string"
+          },
+          "customAmountSupported": {
+            "description": "Whether the relay accepts an arbitrary amount.",
+            "type": "boolean"
+          },
+          "items": {
+            "description": "Fixed recharge packages in relay display order.",
+            "items": {
+              "$ref": "#/components/schemas/RechargeOption"
+            },
+            "type": "array"
+          },
+          "maxAmount": {
+            "description": "Highest accepted custom amount in major units.",
+            "nullable": true,
+            "type": "string"
+          },
+          "minAmount": {
+            "description": "Lowest accepted custom amount in major units.",
+            "nullable": true,
+            "type": "string"
+          },
+          "pointsUnit": {
+            "description": "Points asset label used by the relay.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "currencyCode",
+          "pointsUnit",
+          "customAmountSupported",
+          "agreement"
+        ],
+        "type": "object"
+      },
+      "RechargeOptionsEnvelope": {
+        "additionalProperties": false,
+        "description": "Recharge options envelope schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "SDKWork success code; always 0.",
+            "enum": [
+              0
+            ],
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RechargeOptions"
+              }
+            ],
+            "description": "Data field on the recharge options envelope, using the recharge options module."
+          },
+          "traceId": {
+            "description": "Server trace identifier.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "traceId"
+        ],
+        "type": "object"
+      },
+      "RechargeOrder": {
+        "additionalProperties": false,
+        "description": "Recharge order schema exposed by Cloud Router.",
+        "properties": {
+          "amount": {
+            "description": "Payable amount in major units as a decimal string.",
+            "type": "string"
+          },
+          "cashierUrl": {
+            "description": "Cashier deep link when the relay produced one.",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Order creation time (RFC 3339).",
+            "format": "date-time",
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "ISO-4217 currency code of `amount`.",
+            "type": "string"
+          },
+          "expiresAt": {
+            "description": "Payment expiry (RFC 3339).",
+            "format": "date-time",
+            "type": "string"
+          },
+          "nextAction": {
+            "description": "Next action to render (`scan_qr`, `redirect`, `none`).",
+            "type": "string"
+          },
+          "orderId": {
+            "description": "Relay order identifier.",
+            "type": "string"
+          },
+          "orderNo": {
+            "description": "Relay order number.",
+            "type": "string"
+          },
+          "outTradeNo": {
+            "description": "Out-trade number used for payment reconciliation.",
+            "type": "string"
+          },
+          "paidAt": {
+            "description": "Payment time (RFC 3339); null while unpaid.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "points": {
+            "description": "Points granted once paid.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "qrCodePayload": {
+            "description": "QR payload when the relay produced one.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Order status (`pending`, `paid`, `failed`, `cancelled`).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "orderNo",
+          "outTradeNo",
+          "amount",
+          "currencyCode",
+          "points",
+          "status",
+          "nextAction",
+          "cashierUrl",
+          "qrCodePayload",
+          "expiresAt",
+          "paidAt",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "RechargeOrderCreateRequest": {
+        "additionalProperties": false,
+        "description": "Recharge order create request schema exposed by Cloud Router.",
+        "properties": {
+          "amount": {
+            "description": "Custom amount in major units; mutually exclusive with `packageId`.",
+            "nullable": true,
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "description": "Caller-side idempotency key scoped to the API key owner.",
+            "nullable": true,
+            "type": "string"
+          },
+          "packageId": {
+            "description": "Fixed package id; mutually exclusive with `amount`.",
+            "nullable": true,
+            "type": "string"
+          },
+          "paymentMethod": {
+            "description": "Relay payment method key; omit to let the relay choose its default.",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RechargeOrderEnvelope": {
+        "additionalProperties": false,
+        "description": "Recharge order envelope schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "SDKWork success code; always 0.",
+            "enum": [
+              0
+            ],
+            "format": "int32",
+            "type": "integer"
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RechargeOrder"
+              }
+            ],
+            "description": "Data field on the recharge order envelope, using the recharge order module."
+          },
+          "traceId": {
+            "description": "Server trace identifier.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "traceId"
+        ],
         "type": "object"
       },
       "RunwayImageToVideoRequest": {
@@ -65833,6 +66215,407 @@
         "x-sdkwork-wire-protocol": "external"
       }
     },
+    "/v1/recharge/balance": {
+      "get": {
+        "description": "Returns the calling API key owner's recharge balance on this relay.",
+        "operationId": "rechargeRetrieveBalance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RechargeBalanceEnvelope"
+                }
+              }
+            },
+            "description": "Recharge response."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Relay recharge balance",
+        "tags": [
+          "Recharge"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/recharge/options": {
+      "get": {
+        "description": "Returns the recharge package catalog and custom-amount bounds for the calling API key owner.",
+        "operationId": "rechargeListOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RechargeOptionsEnvelope"
+                }
+              }
+            },
+            "description": "Recharge response."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Relay recharge options",
+        "tags": [
+          "Recharge"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/recharge/orders": {
+      "post": {
+        "description": "Creates a recharge order for the calling API key owner and returns the cashier link and QR payload.",
+        "operationId": "rechargeCreateOrder",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RechargeOrderCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the recharge create order operation.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RechargeOrderEnvelope"
+                }
+              }
+            },
+            "description": "Recharge response."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a relay recharge order",
+        "tags": [
+          "Recharge"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/recharge/orders/{order_id}": {
+      "get": {
+        "description": "Returns the current status of one recharge order owned by the calling API key.",
+        "operationId": "rechargeRetrieveOrder",
+        "parameters": [
+          {
+            "description": "Recharge order identifier returned by the create call.",
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RechargeOrderEnvelope"
+                }
+              }
+            },
+            "description": "Recharge response."
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          },
+          "502": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Recharge request failed; the body is an RFC 7807 problem detail."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve a relay recharge order",
+        "tags": [
+          "Recharge"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-open-api",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
     "/v1/responses": {
       "post": {
         "description": "Creates a model response through an OpenAI-compatible Responses API request.",
@@ -90640,6 +91423,10 @@
     {
       "description": "Zhipu CogVideoX video generation APIs exposed through Cloud Router vendor routing.",
       "name": "Videos/zhipu"
+    },
+    {
+      "description": "API-key recharge APIs a relay exposes to its own callers: balance, recharge packages, and recharge orders.",
+      "name": "Recharge"
     }
   ],
   "x-api-prefix": "/v1",

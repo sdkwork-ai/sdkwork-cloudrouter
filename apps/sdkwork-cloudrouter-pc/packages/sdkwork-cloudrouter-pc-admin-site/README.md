@@ -4,15 +4,15 @@ Domain: platform
 Capability: router  
 Status: ready
 
-Backend-admin site branding and auth settings for Cloud Router under `/admin/site` and `/admin/settings`.
+Backend-admin site branding for Cloud Router under `/admin/site`. Authentication settings are managed in the Identity & Access module under `/admin/iam/auth-settings`; `/admin/settings` redirects there.
 
 ## Integration
 
-- **Admin routes:** `CloudRouterSiteSettingsPage` and `CloudRouterAuthSettingsPage` mounted from `apps/sdkwork-cloudrouter-pc/src/App.tsx`.
-- **Admin navigation:** site settings under platform module; auth settings under control-plane module in `sdkwork-cloudrouter-pc-admin-shell`.
+- **Admin routes:** `CloudRouterSiteSettingsPage` and `CloudRouterAuthSettingsPage` mounted from `apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx`.
+- **Admin navigation:** site settings under the operations module; authentication settings under Identity & Access → Authentication & Access in `sdkwork-cloudrouter-pc-admin-iam`.
 - **Backend SDK:** `SiteSettingsService` and `AuthSettingsService` call `getCloudRouterBackendSdkClient().system.site.settings.*` and `.system.auth.settings.*`.
 - **Homepage header menu:** the `homepageMenu` tab writes `homepage.menu` (`{ version, items: [{ id, visible }] }`) inside the operator-authored `homepage` document. The public `Navbar` renders its links from `@sdkwork/cloudroutes-pc-commons/homepage-menu` and filters them with that document, so hiding a link needs no API or service release. A fully visible menu stores nothing.
-- **Permissions:** `/admin/site` and `/admin/settings` require platform/auth settings read permissions.
+- **Permissions:** `/admin/site` and `/admin/iam/auth-settings` require `cloudrouter.admin.access`.
 
 ## Verification
 

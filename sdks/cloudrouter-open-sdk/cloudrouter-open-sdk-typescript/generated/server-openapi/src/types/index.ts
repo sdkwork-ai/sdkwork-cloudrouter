@@ -360,6 +360,7 @@ export type { PixverseTaskResp } from './pixverse-task-resp';
 export type { PixverseVideoGenerationRequest } from './pixverse-video-generation-request';
 export type { PixverseVideoGenerationResponse } from './pixverse-video-generation-response';
 export type { PixverseVideoGenerationTask } from './pixverse-video-generation-task';
+export type { ProblemDetail } from './problem-detail';
 export type { ProviderGeneratedMedia } from './provider-generated-media';
 export type { ProviderGeneratedMediaMetadata } from './provider-generated-media-metadata';
 export type { ProviderJsonNull } from './provider-json-null';
@@ -367,6 +368,14 @@ export type { ProviderJsonObject } from './provider-json-object';
 export type { ProviderJsonSchema } from './provider-json-schema';
 export type { ProviderJsonValue } from './provider-json-value';
 export type { ProviderTaskError } from './provider-task-error';
+export type { RechargeBalance } from './recharge-balance';
+
+export type { RechargeOption } from './recharge-option';
+export type { RechargeOptions } from './recharge-options';
+
+export type { RechargeOrder } from './recharge-order';
+export type { RechargeOrderCreateRequest } from './recharge-order-create-request';
+
 export type { RunwayImageToVideoRequest } from './runway-image-to-video-request';
 export type { RunwayTask } from './runway-task';
 export type { RunwayTaskAccepted } from './runway-task-accepted';

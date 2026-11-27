@@ -46,6 +46,7 @@ mod billing_subject_resolver;
 mod chat_completion_relay;
 mod chat_completion_stream_relay;
 mod dashboard_overview_read_store;
+mod data_center_store;
 mod embeddings_relay;
 mod gateway_accounting_retry_queue;
 mod gateway_billing_store;
@@ -284,6 +285,12 @@ pub use dashboard_overview_read_store::{
     DashboardModalityDistribution, DashboardOverviewQuery, DashboardOverviewReadFuture,
     DashboardOverviewReadStore, DashboardOverviewSnapshot, DashboardOverviewSubject,
     DashboardOverviewSummary, DashboardSparklinePoint, DashboardTopModel,
+};
+pub use data_center_store::{
+    DataCenterAuditAction, DataCenterAuditEntry, DataCenterAuditFuture, DataCenterAuditItem,
+    DataCenterAuditResult, DataCenterExportItem, DataCenterExportStatus, DataCenterListFuture,
+    DataCenterOverview, DataCenterReadFuture, DataCenterSourceHealth, DataCenterSourceItem,
+    DataCenterStore, DataCenterSubject, DataCenterTableItem, DataCenterTableKind,
 };
 pub use embeddings_relay::{
     EmbeddingsRelay, EmbeddingsRelayFuture, EmbeddingsRelayRequest, EmbeddingsRelayResponse,

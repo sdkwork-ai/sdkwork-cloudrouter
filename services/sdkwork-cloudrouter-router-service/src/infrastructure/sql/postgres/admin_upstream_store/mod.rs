@@ -5,6 +5,7 @@ mod account_group_price;
 mod account_group_resource;
 mod account_resource;
 mod model_access;
+mod recharge;
 mod shared;
 mod supplier;
 mod supplier_auth;
@@ -22,8 +23,8 @@ use crate::ports::{
     AdminUpstreamAccountCredentialSecretItem, AdminUpstreamAccountGroupItem,
     AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
     AdminUpstreamAccountItem, AdminUpstreamFuture, AdminUpstreamListQuery, AdminUpstreamPage,
-    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamStore,
-    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
+    AdminUpstreamRechargeBinding, AdminUpstreamResourceInput, AdminUpstreamResourceItem,
+    AdminUpstreamStore, AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
     AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
     AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem,
     CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
@@ -439,6 +440,38 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
                 expected_version,
                 items,
                 requested_at,
+            )
+            .await
+        })
+    }
+
+    fn load_supplier_recharge_binding<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        supplier_id: i64,
+    ) -> AdminUpstreamFuture<'a, Option<AdminUpstreamRechargeBinding>> {
+        Box::pin(async move {
+            recharge::load_binding(&self.pool, self.secret_codec.as_ref(), subject, supplier_id)
+                .await
+        })
+    }
+
+    fn record_supplier_account_balance<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        amount: String,
+        currency_code: Option<String>,
+        checked_at: String,
+    ) -> AdminUpstreamFuture<'a, ()> {
+        Box::pin(async move {
+            recharge::record_balance(
+                &self.pool,
+                subject,
+                account_id,
+                &amount,
+                currency_code.as_deref(),
+                &checked_at,
             )
             .await
         })

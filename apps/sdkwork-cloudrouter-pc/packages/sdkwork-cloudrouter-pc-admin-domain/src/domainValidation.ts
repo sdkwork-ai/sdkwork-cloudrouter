@@ -425,21 +425,7 @@ function duplicatedCertificateIdentifier(
   return undefined;
 }
 
-/**
- * Create request body.
- *
- * `requestedIdentifiers` and `challengePresentation` are part of the
- * deployments contract but not yet of the applied
- * `@sdkwork/deployments-app-sdk`; the payload is therefore shaped as
- * "generated request plus the pending contract fields" until the SDK is
- * regenerated. No cast is involved: every extra key is typed here.
- */
-export interface CreateDomainCertificatePayload extends CreateDomainCertificateInput {
-  requestedIdentifiers?: string[];
-  challengePresentation?: 'MANAGED' | 'MANUAL';
-}
-
-export function toCreateCertificateInput(form: DomainCertificateForm): CreateDomainCertificatePayload {
+export function toCreateCertificateInput(form: DomainCertificateForm): CreateDomainCertificateInput {
   const typed = form.requestedIdentifiers.map((identifier) => normalizeCertificateIdentifier(identifier));
   return {
     certName: form.certName.trim(),

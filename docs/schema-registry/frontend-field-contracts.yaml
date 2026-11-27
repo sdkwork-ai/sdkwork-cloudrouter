@@ -6,6 +6,427 @@ frontend_operation_sdk_authorities:
   sdkwork-models-app-sdk:
     manifest: ../sdkwork-models/sdks/sdkwork-models-app-sdk/sdk-manifest.json
 frontend_operations:
+
+  - route: /admin/data/overview
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+    operation: fetchOverview
+    operation_id: overview.retrieve
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/datacenter/overview
+    description: 'Data-center overview counters for the caller workspace: configured sources, landed tables, data actions today,
+      and export jobs still pending.'
+    sdk_domain: system
+    read_sources:
+    - dc_data_source
+    - dc_table
+    - dc_export_job
+    - dc_audit_log
+    response_schema:
+      name: DataCenterOverview
+      schema:
+        additionalProperties: false
+        name: DataCenterOverview
+        properties:
+          sources:
+            format: int64
+            pattern: ^[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          tables:
+            format: int64
+            pattern: ^[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          todayInstances:
+            format: int64
+            pattern: ^[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          pendingExports:
+            format: int64
+            pattern: ^[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          successRate:
+            pattern: ^[0-9]+(?:\.[0-9]+)?$
+            type: string
+        required:
+        - sources
+        - tables
+        - todayInstances
+        - pendingExports
+        - successRate
+        type: object
+    query_parameters_declared: true
+    query_parameters: []
+
+  - route: /admin/data/sources
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+    operation: listSources
+    operation_id: dataSources.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/datacenter/data_sources
+    description: List configured data sources with their last connectivity result. Credentials are write-only and never returned.
+    sdk_domain: system
+    read_sources:
+    - dc_data_source
+    - dc_data_source_test_log
+    response_schema:
+      name: DataCenterSourcePage
+      schema:
+        additionalProperties: false
+        name: DataCenterSourcePage
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: DataCenterSource
+              properties:
+                id:
+                  maxLength: 32
+                  type: string
+                name:
+                  maxLength: 128
+                  type: string
+                kind:
+                  enum:
+                  - postgresql
+                  - mysql
+                  - platform
+                  - file
+                  type: string
+                health:
+                  enum:
+                  - healthy
+                  - warning
+                  - error
+                  - unknown
+                  type: string
+                tableCount:
+                  format: int64
+                  minimum: 0
+                  type: integer
+                lastTestedAt:
+                  anyOf:
+                  - type: string
+                  type:
+                  - string
+                  - 'null'
+              required:
+              - id
+              - name
+              - kind
+              - health
+              - tableCount
+              - lastTestedAt
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required:
+        - items
+        - pageInfo
+        type: object
+    query_parameters_declared: true
+    query_parameters:
+    - name: page
+      description: 1-based page number.
+      schema:
+        format: int32
+        minimum: 1
+        type: integer
+    - name: page_size
+      description: Page size between 1 and 200.
+      schema:
+        format: int32
+        maximum: 200
+        minimum: 1
+        type: integer
+    - name: q
+      description: Free-text filter over the rendered columns.
+      schema:
+        maxLength: 256
+        type: string
+
+  - route: /admin/data/tables
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+    operation: listTables
+    operation_id: dataCenterTables.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/datacenter/tables
+    description: List the governed table catalog. Landed tables carry exact row counts as decimal strings; external tables and
+      views stay read-only.
+    sdk_domain: system
+    read_sources:
+    - dc_table
+    response_schema:
+      name: DataCenterTablePage
+      schema:
+        additionalProperties: false
+        name: DataCenterTablePage
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: DataCenterTable
+              properties:
+                id:
+                  maxLength: 32
+                  type: string
+                name:
+                  maxLength: 128
+                  type: string
+                kind:
+                  enum:
+                  - landed
+                  - external
+                  - view
+                  type: string
+                rowCount:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                columnCount:
+                  format: int32
+                  minimum: 0
+                  type: integer
+                owner:
+                  maxLength: 128
+                  type: string
+                updatedAt:
+                  maxLength: 64
+                  type: string
+              required:
+              - id
+              - name
+              - kind
+              - rowCount
+              - columnCount
+              - owner
+              - updatedAt
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required:
+        - items
+        - pageInfo
+        type: object
+    query_parameters_declared: true
+    query_parameters:
+    - name: page
+      description: 1-based page number.
+      schema:
+        format: int32
+        minimum: 1
+        type: integer
+    - name: page_size
+      description: Page size between 1 and 200.
+      schema:
+        format: int32
+        maximum: 200
+        minimum: 1
+        type: integer
+    - name: q
+      description: Free-text filter over the rendered columns.
+      schema:
+        maxLength: 256
+        type: string
+
+  - route: /admin/data/exports
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+    operation: listExports
+    operation_id: dataCenterExports.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/datacenter/exports
+    description: List governed export jobs with their approval/generation status and signed-link expiry.
+    sdk_domain: system
+    read_sources:
+    - dc_export_job
+    response_schema:
+      name: DataCenterExportPage
+      schema:
+        additionalProperties: false
+        name: DataCenterExportPage
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: DataCenterExport
+              properties:
+                id:
+                  maxLength: 32
+                  type: string
+                datasetName:
+                  maxLength: 128
+                  type: string
+                status:
+                  enum:
+                  - pending_approval
+                  - running
+                  - succeeded
+                  - failed
+                  - expired
+                  type: string
+                rowCount:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                requestedBy:
+                  maxLength: 128
+                  type: string
+                expiresAt:
+                  anyOf:
+                  - type: string
+                  type:
+                  - string
+                  - 'null'
+              required:
+              - id
+              - datasetName
+              - status
+              - rowCount
+              - requestedBy
+              - expiresAt
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required:
+        - items
+        - pageInfo
+        type: object
+    query_parameters_declared: true
+    query_parameters:
+    - name: page
+      description: 1-based page number.
+      schema:
+        format: int32
+        minimum: 1
+        type: integer
+    - name: page_size
+      description: Page size between 1 and 200.
+      schema:
+        format: int32
+        maximum: 200
+        minimum: 1
+        type: integer
+    - name: q
+      description: Free-text filter over the rendered columns.
+      schema:
+        maxLength: 256
+        type: string
+
+  - route: /admin/data/audits
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+    operation: listAudits
+    operation_id: dataCenterAudits.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/datacenter/audits
+    description: 'List the data-access audit trail: who connected, queried, downloaded, changed, published, approved, or rolled
+      back what, and the row count it touched.'
+    sdk_domain: system
+    read_sources:
+    - dc_audit_log
+    response_schema:
+      name: DataCenterAuditPage
+      schema:
+        additionalProperties: false
+        name: DataCenterAuditPage
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: DataCenterAudit
+              properties:
+                id:
+                  maxLength: 32
+                  type: string
+                actor:
+                  maxLength: 128
+                  type: string
+                action:
+                  enum:
+                  - connect
+                  - query
+                  - download
+                  - ddl
+                  - dml
+                  - publish
+                  - approve
+                  - rollback
+                  type: string
+                object:
+                  maxLength: 298
+                  type: string
+                rowCount:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                result:
+                  enum:
+                  - success
+                  - failure
+                  type: string
+                at:
+                  maxLength: 64
+                  type: string
+              required:
+              - id
+              - actor
+              - action
+              - object
+              - rowCount
+              - result
+              - at
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required:
+        - items
+        - pageInfo
+        type: object
+    query_parameters_declared: true
+    query_parameters:
+    - name: page
+      description: 1-based page number.
+      schema:
+        format: int32
+        minimum: 1
+        type: integer
+    - name: page_size
+      description: Page size between 1 and 200.
+      schema:
+        format: int32
+        maximum: 200
+        minimum: 1
+        type: integer
+    - name: q
+      description: Free-text filter over the rendered columns.
+      schema:
+        maxLength: 256
+        type: string
   - route: /admin/memory/categories
     source: ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-admin-core/src/sdk/index.tsx
     operation: fetchMemoryCategories
@@ -6663,6 +7084,123 @@ frontend_operations:
       - ops_config_snapshot
   - route: /admin/upstream
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
+    operation: listUpstreamAccountGroupPrices
+    operation_id: upstreamAccountGroups.prices.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices
+    sdk_domain: ai
+    read_sources:
+      - ai_upstream_account_group
+      - cloudrouter_group_resource_price
+    response_schema:
+      name: UpstreamAccountGroupResourcePriceListResponse
+      schema:
+        additionalProperties: false
+        name: UpstreamAccountGroupResourcePriceListResponse
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: UpstreamAccountGroupResourcePrice
+              properties:
+                accountGroupCodeSnapshot: { maxLength: 128, type: string }
+                accountGroupId: { maxLength: 32, type: string }
+                catalogKey: { maxLength: 256, type: string }
+                currencyCode: { maxLength: 10, type: string }
+                effectiveFrom: { format: date-time, type: string }
+                effectiveTo: { format: date-time, nullable: true, type: string }
+                id: { maxLength: 32, type: string }
+                markupAmount: { maxLength: 32, type: string }
+                meterCode: { maxLength: 64, type: string }
+                multiplier: { maxLength: 32, type: string }
+                operationCode: { maxLength: 128, type: string }
+                priceMode: { maxLength: 32, type: string }
+                providerCode: { maxLength: 64, type: string }
+                regionCode: { maxLength: 64, type: string }
+                resourceType: { maxLength: 64, type: string }
+                status: { format: int32, type: integer }
+                unitPriceOverride: { maxLength: 32, nullable: true, type: string }
+                uuid: { maxLength: 64, type: string }
+              required: [id, uuid, accountGroupId, accountGroupCodeSnapshot, resourceType, catalogKey, operationCode, meterCode, regionCode, providerCode, priceMode, multiplier, markupAmount, unitPriceOverride, currencyCode, effectiveFrom, effectiveTo, status]
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required: [items, pageInfo]
+        type: object
+    query_parameters: []
+  - route: /admin/upstream
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
+    operation: updateUpstreamAccountGroupPrices
+    operation_id: upstreamAccountGroups.prices.update
+    if_match_required: true
+    kind: update
+    api_surface: backend
+    api_method: PUT
+    api_path: /backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices
+    sdk_domain: ai
+    read_sources:
+      - ai_upstream_account_group
+      - cloudrouter_group_resource_price
+    response_schema:
+      name: UpstreamAccountGroupResourcePriceCollectionResponse
+      schema:
+        additionalProperties: false
+        name: UpstreamAccountGroupResourcePriceCollectionResponse
+        properties:
+          item:
+            additionalProperties: false
+            name: UpstreamAccountGroupResourcePriceCollection
+            properties:
+              id: { maxLength: 32, type: string }
+              items:
+                items:
+                  $ref: '#/components/schemas/UpstreamAccountGroupResourcePrice'
+                type: array
+            required: [id, items]
+            type: object
+        required: [item]
+        type: object
+    request_schema:
+      name: ReplaceUpstreamAccountGroupResourcePricesRequest
+      schema:
+        additionalProperties: false
+        name: ReplaceUpstreamAccountGroupResourcePricesRequest
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: UpstreamAccountGroupResourcePriceInput
+              properties:
+                catalogKey: { maxLength: 256, nullable: true, type: string }
+                currencyCode: { maxLength: 10, nullable: true, type: string }
+                effectiveFrom: { format: date-time, nullable: true, type: string }
+                effectiveTo: { format: date-time, nullable: true, type: string }
+                id: { maxLength: 32, nullable: true, type: string }
+                markupAmount: { maxLength: 32, nullable: true, type: string }
+                meterCode: { maxLength: 64, nullable: true, type: string }
+                multiplier: { maxLength: 32, nullable: true, type: string }
+                operationCode: { maxLength: 128, nullable: true, type: string }
+                priceMode: { maxLength: 32, nullable: true, type: string }
+                providerCode: { maxLength: 64, nullable: true, type: string }
+                regionCode: { maxLength: 64, nullable: true, type: string }
+                resourceType: { maxLength: 64, nullable: true, type: string }
+                unitPriceOverride: { maxLength: 32, nullable: true, type: string }
+              required: []
+              type: object
+            maxItems: 500
+            type: array
+        required: [items]
+        type: object
+    write_tables:
+      - ai_upstream_account_group
+      - cloudrouter_group_resource_price
+      - ops_audit_log
+      - ops_config_snapshot
+  - route: /admin/upstream
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts
     operation: explainUpstreamAccountGroupRoute
     operation_id: upstreamAccountGroups.explain
     kind: read
@@ -7469,6 +8007,13 @@ frontend_operations:
               name: UpstreamSupplier
               properties:
                 adapterCode: { maxLength: 128, type: string }
+                balanceAmount:
+                  description: Aggregated relay balance cached on the supplier accounts. Null when no account has reported a balance yet.
+                  maxLength: 64
+                  nullable: true
+                  type: string
+                balanceCurrency: { maxLength: 10, nullable: true, type: string }
+                balanceUpdatedAt: { format: date-time, nullable: true, type: string }
                 defaultVendorCode: { maxLength: 64, nullable: true, type: string }
                 defaultBaseUrl: { maxLength: 2048, nullable: true, type: string }
                 description: { maxLength: 4000, nullable: true, type: string }
@@ -7531,7 +8076,7 @@ frontend_operations:
                 version: { maxLength: 32, type: string }
                 websiteUrl: { maxLength: 2048, nullable: true, type: string }
               required: [id, uuid, supplierCode, supplierName, displayName, description, supplierType, defaultVendorCode, defaultBaseUrl, adapterCode, protocolCode, protocols, modelBlacklist, modelWhitelist, websiteUrl, docsUrl, regionCode, environment,
-                healthStatus, sortOrder, status, version, updatedAt]
+                healthStatus, sortOrder, status, version, updatedAt, balanceAmount, balanceCurrency, balanceUpdatedAt]
               type: object
             type: array
           pageInfo:
@@ -7655,6 +8200,160 @@ frontend_operations:
         properties:
           item:
             $ref: '#/components/schemas/UpstreamSupplier'
+        required: [item]
+        type: object
+    query_parameters: []
+  - route: /admin/upstream/suppliers
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts
+    operation: getUpstreamSupplierRecharge
+    operation_id: upstreamSuppliers.recharge.retrieve
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/recharge
+    sdk_domain: ai
+    read_sources:
+      - ai_upstream_supplier
+      - ai_upstream_account
+      - ai_upstream_account_credential
+    response_schema:
+      name: UpstreamSupplierRechargeOverviewResponse
+      schema:
+        additionalProperties: false
+        name: UpstreamSupplierRechargeOverviewResponse
+        properties:
+          item:
+            additionalProperties: false
+            name: UpstreamSupplierRechargeOverview
+            properties:
+              accountCode: { maxLength: 128, nullable: true, type: string }
+              accountId: { maxLength: 32, nullable: true, type: string }
+              agreement:
+                description: Agreement copy the operator must accept before paying.
+                maxLength: 512
+                type: string
+              balance:
+                additionalProperties: false
+                description: Live balance of the relay account that owns the recharge API key.
+                name: UpstreamRechargeBalance
+                properties:
+                  amount: { maxLength: 64, type: string }
+                  checkedAt: { format: date-time, type: string }
+                  currencyCode: { maxLength: 10, nullable: true, type: string }
+                  frozen: { maxLength: 64, type: string }
+                  unit: { maxLength: 32, type: string }
+                required: [amount, frozen, unit, currencyCode, checkedAt]
+                type: object
+              currencyCode: { maxLength: 10, type: string }
+              customAmountSupported: { type: boolean }
+              id: { maxLength: 32, type: string }
+              maxAmount: { maxLength: 32, nullable: true, type: string }
+              minAmount: { maxLength: 32, nullable: true, type: string }
+              options:
+                items:
+                  additionalProperties: false
+                  name: UpstreamRechargeOption
+                  properties:
+                    bonusPoints: { format: int32, minimum: 0, type: integer }
+                    currencyCode: { maxLength: 10, type: string }
+                    grantAmount: { format: int32, minimum: 0, type: integer }
+                    label: { maxLength: 128, type: string }
+                    packageId: { maxLength: 128, type: string }
+                    points: { format: int32, minimum: 0, type: integer }
+                    priceAmount: { maxLength: 32, type: string }
+                    recommended: { type: boolean }
+                  required: [packageId, label, points, bonusPoints, grantAmount, priceAmount, currencyCode, recommended]
+                  type: object
+                maxItems: 100
+                type: array
+              pointsUnit: { maxLength: 32, type: string }
+              refreshedAt: { format: date-time, type: string }
+              supplierId: { maxLength: 32, type: string }
+              supplierName: { maxLength: 200, type: string }
+              supplierType: { enum: [official, relay], type: string }
+            required: [id, supplierId, supplierName, supplierType, accountId, accountCode, balance, options, currencyCode, pointsUnit, customAmountSupported, minAmount, maxAmount, agreement, refreshedAt]
+            type: object
+        required: [item]
+        type: object
+    query_parameters: []
+  - route: /admin/upstream/suppliers
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts
+    operation: createUpstreamSupplierRechargeOrder
+    operation_id: upstreamSuppliers.recharge.orders.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/recharge/orders
+    sdk_domain: ai
+    read_sources:
+      - ai_upstream_supplier
+      - ai_upstream_account
+      - ai_upstream_account_credential
+    response_schema:
+      name: UpstreamSupplierRechargeOrderResponse
+      schema:
+        additionalProperties: false
+        name: UpstreamSupplierRechargeOrderResponse
+        properties:
+          item:
+            additionalProperties: false
+            name: UpstreamRechargeOrder
+            properties:
+              amount: { maxLength: 32, type: string }
+              cashierUrl: { maxLength: 2048, type: string }
+              createdAt: { format: date-time, type: string }
+              currencyCode: { maxLength: 10, type: string }
+              expiresAt: { format: date-time, type: string }
+              id: { maxLength: 128, type: string }
+              nextAction: { enum: [scan_qr, redirect, none], type: string }
+              orderId: { maxLength: 128, type: string }
+              orderNo: { maxLength: 128, type: string }
+              outTradeNo: { maxLength: 128, type: string }
+              paidAt: { format: date-time, nullable: true, type: string }
+              points: { format: int32, minimum: 0, type: integer }
+              qrCodePayload: { maxLength: 4096, type: string }
+              status: { maxLength: 32, type: string }
+            required: [id, orderId, orderNo, outTradeNo, amount, currencyCode, points, status, nextAction, cashierUrl, qrCodePayload, expiresAt, paidAt, createdAt]
+            type: object
+        required: [item]
+        type: object
+    request_schema:
+      name: CreateUpstreamSupplierRechargeOrderRequest
+      schema:
+        additionalProperties: false
+        name: CreateUpstreamSupplierRechargeOrderRequest
+        properties:
+          amount:
+            description: Custom amount in major units; mutually exclusive with packageId.
+            maxLength: 32
+            nullable: true
+            type: string
+          packageId: { maxLength: 128, nullable: true, type: string }
+          paymentMethod: { maxLength: 64, nullable: true, type: string }
+        required: []
+        type: object
+    idempotency_required: true
+  - route: /admin/upstream/suppliers
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/supplierRechargeService.ts
+    operation: getUpstreamSupplierRechargeOrder
+    operation_id: upstreamSuppliers.recharge.orders.retrieve
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/upstream_suppliers/{supplierId}/recharge/orders/{orderId}
+    sdk_domain: ai
+    read_sources:
+      - ai_upstream_supplier
+      - ai_upstream_account
+      - ai_upstream_account_credential
+    response_schema:
+      name: UpstreamSupplierRechargeOrderItemResponse
+      schema:
+        additionalProperties: false
+        name: UpstreamSupplierRechargeOrderItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/UpstreamRechargeOrder'
         required: [item]
         type: object
     query_parameters: []
@@ -14002,6 +14701,30 @@ frontend_operations:
     query_parameters: []
 
 routes:
+  - route: /admin/data
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables: []
+  - route: /admin/data/overview
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables: []
+  - route: /admin/data/sources
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables: []
+  - route: /admin/data/tables
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables: []
+  - route: /admin/data/exports
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables: []
+  - route: /admin/data/audits
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables: []
   - route: /admin/memory/categories
     dependency_owned: true
     dependency_sdk_family: sdkwork-memory-backend-sdk

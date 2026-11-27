@@ -5,6 +5,12 @@ import type { UpstreamSupplierModelListEntry } from './upstream-supplier-model-l
 export interface UpstreamSupplier {
   /** Adapter code field on upstream supplier. */
   adapterCode: string;
+  /** Balance amount field on upstream supplier. */
+  balanceAmount: string | null;
+  /** Balance currency field on upstream supplier. */
+  balanceCurrency: string | null;
+  /** Balance updated at field on upstream supplier. */
+  balanceUpdatedAt: string | null;
   /** Default base url field on upstream supplier. */
   defaultBaseUrl: string | null;
   /** Default vendor code field on upstream supplier. */

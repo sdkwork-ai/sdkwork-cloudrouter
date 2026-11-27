@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BadgeCheck,
   FileCheck2,
@@ -18,6 +18,7 @@ import {
   resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons';
 
+import { DomainPaginationFooter } from '../components/DomainPaginationFooter';
 import {
   DomainField,
   DomainFormDialog,
@@ -30,6 +31,7 @@ import {
   DomainStateRows,
   DomainStatusPill,
   DomainTableHead,
+  DomainTableRefreshingBar,
   DomainTextInput,
 } from '../components/domainUi';
 import { VerificationFilesDialog } from '../components/VerificationFilesDialog';
@@ -47,7 +49,10 @@ import {
 } from '../domainLabels';
 import type { DomainCloudAccount, DomainZone, DomainZoneStatus } from '../domainTypes';
 import type { DomainCenterSectionId } from '../domainTypes';
-import { useDomainCloudAccounts, useDomainZones } from '../hooks/useDomainResources';
+import { useDomainDebouncedValue } from '../hooks/useDomainDebouncedValue';
+import { useDomainPagedList } from '../hooks/useDomainPagedList';
+import { useDomainCloudAccounts } from '../hooks/useDomainResources';
+import { useDomainTableScrollReset } from '../hooks/useDomainTableScrollReset';
 import {
   toCreateZoneInput,
   validateZoneForm,
@@ -73,9 +78,9 @@ export function DomainZonesPage({
   onNavigate: (section: DomainCenterSectionId, zoneId?: string) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const zones = useDomainZones();
   const accounts = useDomainCloudAccounts();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDomainDebouncedValue(search);
   const [scopeFilter, setScopeFilter] = useState<'USER' | 'ALL'>('USER');
   const [statusFilter, setStatusFilter] = useState<DomainZoneStatus | 'ALL'>('ALL');
   const [formState, setFormState] = useState<ZoneFormState | null>(null);
@@ -84,48 +89,61 @@ export function DomainZonesPage({
   const [busyZoneId, setBusyZoneId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const locale = i18n.resolvedLanguage ?? 'en-US';
+  const keyword = debouncedSearch.trim();
 
+  const zones = useDomainPagedList<DomainZone>({
+    queryKey: `zones|${keyword}|${scopeFilter}|${statusFilter}`,
+    load: (page, pageSize) =>
+      domainCenterService.listZones({
+        page,
+        pageSize,
+        ...(keyword ? { keyword } : {}),
+        ...(scopeFilter === 'USER' ? { scope: 'USER' as const } : {}),
+        ...(statusFilter === 'ALL' ? {} : { status: statusFilter }),
+      }),
+  });
+  const viewportRef = useDomainTableScrollReset(zones.page);
+  const filtersActive = keyword.length > 0 || statusFilter !== 'ALL';
+
+  // A deep link from another section carries only the zone id. Resolving it to an
+  // apex gives the operator the zone they clicked even when it is not on page 1.
   useEffect(() => {
     if (!initialZoneId) {
       return;
     }
-    const match = zones.data.find((zone) => zone.id === initialZoneId);
-    if (!match) {
-      return;
-    }
-    // Seed the search from the deep-linked zone once; a later reload must not
-    // overwrite what the operator has typed.
-    setSearch((current) => (current.trim().length === 0 ? match.apexHostname : current));
-  }, [initialZoneId, zones.data]);
+    let active = true;
+    domainCenterService
+      .retrieveZone(initialZoneId)
+      .then((zone) => {
+        if (!active) {
+          return;
+        }
+        setSearch((current) => (current.trim().length === 0 ? zone.apexHostname : current));
+      })
+      .catch(() => {
+        // The zone vanished between navigation and load; the list stays unfiltered.
+      });
+    return () => {
+      active = false;
+    };
+  }, [initialZoneId]);
 
-  const filteredZones = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    return zones.data.filter((zone) => {
-      if (scopeFilter === 'USER' && zone.scope !== 'USER') {
-        return false;
-      }
-      if (statusFilter !== 'ALL' && zone.status !== statusFilter) {
-        return false;
-      }
-      if (keyword.length === 0) {
-        return true;
-      }
-      return (
-        zone.apexHostname.toLowerCase().includes(keyword)
-        || (zone.displayName ?? '').toLowerCase().includes(keyword)
-        || (zone.dnsProvider ?? '').toLowerCase().includes(keyword)
-      );
-    });
-  }, [zones.data, search, scopeFilter, statusFilter]);
+  const clearFilters = () => {
+    setSearch('');
+    setScopeFilter('USER');
+    setStatusFilter('ALL');
+  };
 
   const toggleZoneStatus = async (zone: DomainZone) => {
     setBusyZoneId(zone.id);
     setActionError(null);
     try {
-      await domainCenterService.updateZone(zone.id, {
+      const updated = await domainCenterService.updateZone(zone.id, {
         status: zone.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
       });
-      zones.reload();
+      // The command answers the new row: patch it in place so the table does not
+      // flash a loading state for a change the operator just made.
+      zones.updateItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
     } catch (cause) {
       setActionError(
         resolveProblemMessage(
@@ -147,7 +165,11 @@ export function DomainZonesPage({
     setActionError(null);
     try {
       await domainCenterService.deleteZone(deleteTarget.id);
+      const removedId = deleteTarget.id;
       setDeleteTarget(null);
+      zones.updateItems((items) => items.filter((item) => item.id !== removedId));
+      // `pageInfo` changed with the deletion; the reload also walks back to the
+      // last surviving page when this was its only row.
       zones.reload();
     } catch (cause) {
       setActionError(
@@ -184,45 +206,67 @@ export function DomainZonesPage({
 
       <AdminTableShell
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
+        aria-busy={zones.isRefreshing ? true : undefined}
+        viewportRef={viewportRef}
         header={
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={t('admin.domainCenter.zones.search', 'Search root domain, name, or provider')}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
-                />
-              </div>
-              <div className="w-full shrink-0 md:w-40">
-                <DomainSelect
-                  value={scopeFilter}
-                  onChange={setScopeFilter}
-                  options={[
-                    { value: 'USER', label: t('admin.domainCenter.zones.filter.operator', 'Operator domains') },
-                    { value: 'ALL', label: t('admin.domainCenter.zones.filter.allScopes', 'All scopes') },
-                  ]}
-                />
-              </div>
-              <div className="w-full shrink-0 md:w-40">
-                <DomainSelect
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  options={[
-                    { value: 'ALL', label: t('admin.domainCenter.filters.allStatuses', 'All statuses') },
-                    { value: 'ACTIVE', label: t('admin.domainCenter.status.active', 'Active') },
-                    { value: 'PAUSED', label: t('admin.domainCenter.status.paused', 'Paused') },
-                  ]}
-                />
+          <>
+            {zones.isRefreshing ? (
+              <DomainTableRefreshingBar label={t('admin.domainCenter.pagination.loadingPage', 'Loading page')} />
+            ) : null}
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder={t('admin.domainCenter.zones.search', 'Search root domain or display name')}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+                  />
+                </div>
+                <div className="w-full shrink-0 md:w-40">
+                  <DomainSelect
+                    value={scopeFilter}
+                    onChange={setScopeFilter}
+                    options={[
+                      { value: 'USER', label: t('admin.domainCenter.zones.filter.operator', 'Operator domains') },
+                      { value: 'ALL', label: t('admin.domainCenter.zones.filter.allScopes', 'All scopes') },
+                    ]}
+                  />
+                </div>
+                <div className="w-full shrink-0 md:w-40">
+                  <DomainSelect
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                      { value: 'ALL', label: t('admin.domainCenter.filters.allStatuses', 'All statuses') },
+                      { value: 'ACTIVE', label: t('admin.domainCenter.status.active', 'Active') },
+                      { value: 'PAUSED', label: t('admin.domainCenter.status.paused', 'Paused') },
+                    ]}
+                  />
+                </div>
               </div>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {t('admin.domainCenter.zones.count', '{{count}} root domains', { count: filteredZones.length })}
-            </div>
-          </div>
+          </>
+        }
+        footer={
+          <DomainPaginationFooter
+            page={zones.page}
+            pageSize={zones.pageSize}
+            pageRowCount={zones.items.length}
+            totalItems={zones.totalItems}
+            totalPages={zones.totalPages}
+            hasMore={zones.hasMore}
+            disabled={zones.status === 'loading' || zones.isRefreshing}
+            totalSummary={zones.totalItems !== null
+              ? t('admin.domainCenter.zones.count', '{{count}} root domains', { count: zones.totalItems })
+              : undefined}
+            onPreviousPage={zones.goToPreviousPage}
+            onNextPage={zones.goToNextPage}
+            onPageSelect={zones.goToPage}
+            onPageSizeChange={zones.changePageSize}
+          />
         }
       >
         <table className="w-full min-w-[1180px] whitespace-nowrap text-left text-sm">
@@ -239,7 +283,7 @@ export function DomainZonesPage({
             ]}
           />
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:divide-white/5 dark:text-slate-300">
-            {zones.status === 'loading' || zones.status === 'idle' ? (
+            {zones.status === 'loading' ? (
               <DomainStateRows
                 colSpan={8}
                 kind="loading"
@@ -254,19 +298,31 @@ export function DomainZonesPage({
                 onRetry={zones.reload}
                 retryLabel={t('common.actions.retry', 'Retry')}
               />
-            ) : filteredZones.length === 0 ? (
+            ) : zones.items.length === 0 ? (
               <DomainStateRows
                 colSpan={8}
                 kind="empty"
-                title={t('admin.domainCenter.zones.empty', 'No root domain found')}
-                description={t('admin.domainCenter.zones.emptyDesc', 'Register a root domain or adjust the filters.')}
-                action={{
-                  label: t('admin.domainCenter.actions.addZone', 'Register root domain'),
-                  onClick: () => setFormState({ mode: 'create' }),
-                }}
+                title={filtersActive
+                  ? t('admin.domainCenter.zones.emptyFiltered', 'No root domain matches these filters')
+                  : t('admin.domainCenter.zones.empty', 'No root domain found')}
+                description={filtersActive
+                  ? t(
+                      'admin.domainCenter.zones.emptyFilteredDesc',
+                      'Clear the search and status filters to see the whole inventory.',
+                    )
+                  : t('admin.domainCenter.zones.emptyDesc', 'Register the first root domain for this deployment.')}
+                action={filtersActive
+                  ? {
+                      label: t('admin.domainCenter.pagination.clearFilters', 'Clear filters'),
+                      onClick: clearFilters,
+                    }
+                  : {
+                      label: t('admin.domainCenter.actions.addZone', 'Register root domain'),
+                      onClick: () => setFormState({ mode: 'create' }),
+                    }}
               />
             ) : (
-              filteredZones.map((zone) => {
+              zones.items.map((zone) => {
                 const rate = Math.round(zoneVerificationRate(zone) * 100);
                 // The platform publishing zone is provisioned by the deployment and shared by
                 // every tenant; pausing or deleting it from an operator surface would break
@@ -384,7 +440,14 @@ export function DomainZonesPage({
           accounts={accounts.data}
           onClose={() => setFormState(null)}
           onSaved={() => {
+            const created = formState.mode === 'create';
             setFormState(null);
+            if (created) {
+              // A new apex sorts into the list the server returns; land on its
+              // first page instead of leaving the operator on the page they were
+              // browsing when they opened the dialog.
+              zones.goToPage(1);
+            }
             zones.reload();
           }}
         />

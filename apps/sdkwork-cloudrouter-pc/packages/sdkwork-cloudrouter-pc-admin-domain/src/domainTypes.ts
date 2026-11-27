@@ -12,6 +12,7 @@
 
 import type {
   CertificateArchiveRetryResult,
+  CertificateArtifactResponse,
   CertificateChallengePresentationList,
   CertificateChallengePresentationResponse,
   CertificateChallengeReleaseResult,
@@ -112,6 +113,9 @@ export type DomainCertificateChallengeReleaseResult = CertificateChallengeReleas
  * until it settles on `ARCHIVED` or `FAILED`.
  */
 export type DomainCertificateArchiveRetryResult = CertificateArchiveRetryResult;
+
+/** `GET .../artifact` result: public PEM bundle encoded as a ZIP. */
+export type DomainCertificateArtifact = CertificateArtifactResponse;
 
 export type DomainRenewalStatus = 'NONE' | 'PLANNED' | 'PROCESSING' | 'FAILED';
 export type DomainValidityPhase = 'NOT_YET_VALID' | 'VALID' | 'EXPIRING_SOON' | 'EXPIRED';

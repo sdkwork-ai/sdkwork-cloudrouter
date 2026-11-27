@@ -151,6 +151,90 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/data
+  package: '@sdkwork/cloudrouter-pc-admin-data'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/data
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/data/overview
+  package: '@sdkwork/cloudrouter-pc-admin-data'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/data/overview
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/data/sources
+  package: '@sdkwork/cloudrouter-pc-admin-data'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/data/sources
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/data/tables
+  package: '@sdkwork/cloudrouter-pc-admin-data'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/data/tables
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/data/exports
+  package: '@sdkwork/cloudrouter-pc-admin-data'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/data/exports
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/data/audits
+  package: '@sdkwork/cloudrouter-pc-admin-data'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/data/audits
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-data/src/dataCenterService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/record
   package: '@sdkwork/cloudrouter-pc-admin-record'
   owner: admin-control-plane
@@ -193,7 +277,7 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-service-nodes/src/serviceNodeService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
-- route: /admin/settings
+- route: /admin/iam/auth-settings
   package: '@sdkwork/cloudrouter-pc-admin-site'
   owner: admin-control-plane
   route_scope: admin
@@ -205,6 +289,22 @@ routes:
   - /admin/settings
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/settings
+  package: '@sdkwork/cloudrouter-pc-admin-site'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/iam/auth-settings
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
 - route: /admin/site

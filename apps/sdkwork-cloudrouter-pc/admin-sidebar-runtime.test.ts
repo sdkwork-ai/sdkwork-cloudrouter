@@ -130,6 +130,39 @@ test("identity directory exposes the cloud account center beside the principals"
   );
 });
 
+test("identity and access owns an independent authentication settings group", () => {
+  const iamMenu = getAdminModuleMenu("iam");
+  const authenticationGroup = iamMenu.groups.find(
+    (group) => group.groupKey === "admin.menu.iam.authentication",
+  );
+
+  assert.ok(authenticationGroup, "the authentication and access group must exist");
+  assert.deepEqual(
+    authenticationGroup.items.map((item) => item.path),
+    ["/admin/iam/auth-settings"],
+  );
+  assert.equal(
+    authenticationGroup.items[0]?.labelKey,
+    "admin.menu.iam.authSettings",
+  );
+  assert.equal(getActiveModuleFromPath("/admin/iam/auth-settings"), "iam");
+
+  const withoutAdminAccess = getFilteredAdminModuleMenu("iam", ["iam.users.read"]);
+  assert.equal(
+    withoutAdminAccess.groups.some(
+      (group) => group.groupKey === "admin.menu.iam.authentication",
+    ),
+    false,
+  );
+  const withAdminAccess = getFilteredAdminModuleMenu("iam", ["cloudrouter.admin.access"]);
+  assert.deepEqual(
+    withAdminAccess.groups.find(
+      (group) => group.groupKey === "admin.menu.iam.authentication",
+    )?.items.map((item) => item.path),
+    ["/admin/iam/auth-settings"],
+  );
+});
+
 test("admin module manager catalog mirrors the header registry order", () => {
   assert.deepEqual(
     ADMIN_MODULES.map((module) => module.id),

@@ -1,6 +1,6 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcePricesRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountCredentialSecret, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupResourcePriceCollection, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRechargeOrderRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcePricesRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountCredentialSecret, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupResourcePriceCollection, UpstreamAccountGroupResourcePriceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamRechargeOrder, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierRechargeOverview, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
 export interface AiUpstreamSuppliersResourcesUpdateParams {
   ifMatch: string;
 }
@@ -27,6 +27,51 @@ export class AiUpstreamSuppliersResourcesApi {
       {}
     );
     return this.client.request<UpstreamSupplierResourceCollection>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/resources`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export interface AiUpstreamSuppliersRechargeOrdersCreateParams {
+  idempotencyKey: string;
+}
+
+export class AiUpstreamSuppliersRechargeOrdersApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Create upstream supplier recharge order */
+  async create(supplierId: string, body: CreateUpstreamSupplierRechargeOrderRequest, params: AiUpstreamSuppliersRechargeOrdersCreateParams, requestOptions?: ApiRequestOptions): Promise<UpstreamRechargeOrder> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'Idempotency-Key': { value: params.idempotencyKey, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.request<UpstreamRechargeOrder>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/recharge/orders`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'item' });
+  }
+
+/** Get upstream supplier recharge order */
+  async retrieve(supplierId: string, orderId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamRechargeOrder> {
+    return this.client.request<UpstreamRechargeOrder>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/recharge/orders/${serializePathParameter(orderId, { name: 'orderId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class AiUpstreamSuppliersRechargeApi {
+  private client: HttpClient;
+  public readonly orders: AiUpstreamSuppliersRechargeOrdersApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.orders = new AiUpstreamSuppliersRechargeOrdersApi(client);
+  }
+
+
+/** Get upstream supplier recharge */
+  async retrieve(supplierId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamSupplierRechargeOverview> {
+    return this.client.request<UpstreamSupplierRechargeOverview>(backendApiPath(`/ai/upstream_suppliers/${serializePathParameter(supplierId, { name: 'supplierId', style: 'simple', explode: false })}/recharge`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -110,12 +155,14 @@ export class AiUpstreamSuppliersApi {
   private client: HttpClient;
   public readonly authMethods: AiUpstreamSuppliersAuthMethodsApi;
   public readonly endpoints: AiUpstreamSuppliersEndpointsApi;
+  public readonly recharge: AiUpstreamSuppliersRechargeApi;
   public readonly resources: AiUpstreamSuppliersResourcesApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.authMethods = new AiUpstreamSuppliersAuthMethodsApi(client);
     this.endpoints = new AiUpstreamSuppliersEndpointsApi(client);
+    this.recharge = new AiUpstreamSuppliersRechargeApi(client);
     this.resources = new AiUpstreamSuppliersResourcesApi(client);
   }
 
@@ -357,35 +404,6 @@ export class AiUpstreamAccountsApi {
   }
 }
 
-export interface AiUpstreamAccountGroupsPricesUpdateParams {
-  ifMatch: string;
-}
-
-export class AiUpstreamAccountGroupsPricesApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** List account group resource prices */
-  async list(accountGroupId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupResourcePriceCollection> {
-    return this.client.request<UpstreamAccountGroupResourcePriceCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/prices`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
-  }
-
-/** Replace account group resource prices */
-  async update(accountGroupId: string, body: ReplaceUpstreamAccountGroupResourcePricesRequest, params: AiUpstreamAccountGroupsPricesUpdateParams, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupResourcePriceCollection> {
-    const requestHeaders = buildRequestHeaders(
-      {
-        'If-Match': { value: params.ifMatch, style: 'simple', explode: false },
-      },
-      {}
-    );
-    return this.client.request<UpstreamAccountGroupResourcePriceCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/prices`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'data' });
-  }
-}
-
 export interface AiUpstreamAccountGroupsResourcesUpdateParams {
   ifMatch: string;
 }
@@ -412,6 +430,35 @@ export class AiUpstreamAccountGroupsResourcesApi {
       {}
     );
     return this.client.request<UpstreamAccountGroupResourceCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/resources`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export interface AiUpstreamAccountGroupsPricesUpdateParams {
+  ifMatch: string;
+}
+
+export class AiUpstreamAccountGroupsPricesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List upstream account group prices */
+  async list(accountGroupId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupResourcePriceListResponse> {
+    return this.client.request<UpstreamAccountGroupResourcePriceListResponse>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/prices`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Update upstream account group prices */
+  async update(accountGroupId: string, body: ReplaceUpstreamAccountGroupResourcePricesRequest, params: AiUpstreamAccountGroupsPricesUpdateParams, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountGroupResourcePriceCollection> {
+    const requestHeaders = buildRequestHeaders(
+      {
+        'If-Match': { value: params.ifMatch, style: 'simple', explode: false },
+      },
+      {}
+    );
+    return this.client.request<UpstreamAccountGroupResourcePriceCollection>(backendApiPath(`/ai/upstream_account_groups/${serializePathParameter(accountGroupId, { name: 'accountGroupId', style: 'simple', explode: false })}/prices`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -465,14 +512,14 @@ export interface AiUpstreamAccountGroupsUpdateParams {
 export class AiUpstreamAccountGroupsApi {
   private client: HttpClient;
   public readonly members: AiUpstreamAccountGroupsMembersApi;
-  public readonly resources: AiUpstreamAccountGroupsResourcesApi;
   public readonly prices: AiUpstreamAccountGroupsPricesApi;
+  public readonly resources: AiUpstreamAccountGroupsResourcesApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.members = new AiUpstreamAccountGroupsMembersApi(client);
-    this.resources = new AiUpstreamAccountGroupsResourcesApi(client);
     this.prices = new AiUpstreamAccountGroupsPricesApi(client);
+    this.resources = new AiUpstreamAccountGroupsResourcesApi(client);
   }
 
 

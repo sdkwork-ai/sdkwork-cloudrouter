@@ -24,33 +24,6 @@
         ],
         "type": "object"
       },
-      "AgentsListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by agents list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Agents list result schema exposed by Cloud Router.",
-        "x-operation-id": "agents.list"
-      },
       "ApiKeysCreateResult": {
         "allOf": [
           {
@@ -261,6 +234,12 @@
           "rate": {
             "description": "Rate field on app api key item.",
             "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "rawKey": {
+            "description": "Raw key field on app api key item.",
+            "maxLength": 1024,
             "nullable": true,
             "type": "string"
           },
@@ -3021,33 +3000,6 @@
         ],
         "description": "Invocations retrieve result schema exposed by Cloud Router.",
         "x-operation-id": "invocations.retrieve"
-      },
-      "IotDevicesListResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by iot devices list result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/NoData"
-                  }
-                ],
-                "description": "No business data returned by this operation."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Iot devices list result schema exposed by Cloud Router.",
-        "x-operation-id": "iot.devices.list"
       },
       "IotFirmwareListResult": {
         "allOf": [
@@ -7031,58 +6983,6 @@
         ],
         "description": "Users settings update result schema exposed by Cloud Router.",
         "x-operation-id": "users.settings.update"
-      },
-      "RevealApiKeyResponse": {
-        "additionalProperties": false,
-        "description": "Explicitly revealed API key secret; returned only by the audited reveal action.",
-        "name": "RevealApiKeyResponse",
-        "properties": {
-          "item": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AppApiKeyItem"
-              }
-            ],
-            "description": "Item field on reveal api key response."
-          },
-          "rawKey": {
-            "description": "Full raw API key secret, revealed only by this explicit audited action.",
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "item",
-          "rawKey"
-        ],
-        "type": "object"
-      },
-      "ApiKeysRevealResult": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/SdkWorkApiResponse"
-          },
-          {
-            "additionalProperties": false,
-            "description": "Object schema used by api keys reveal result.",
-            "properties": {
-              "data": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/RevealApiKeyResponse"
-                  }
-                ],
-                "description": "Data field on api keys reveal result."
-              }
-            },
-            "required": [
-              "data"
-            ],
-            "type": "object"
-          }
-        ],
-        "description": "Api keys reveal result schema exposed by Cloud Router.",
-        "x-operation-id": "apiKeys.reveal"
       }
     },
     "securitySchemes": {
@@ -7106,94 +7006,6 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "openapi": "3.1.2",
   "paths": {
-    "/app/v3/api/ai/agents": {
-      "get": {
-        "description": "Resolve console hardware agents. Reads ai_agent. Writes none. File targets none.",
-        "operationId": "agents.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AgentsListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Resolve console hardware agents",
-        "tags": [
-          "ai"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "ai_agent"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "agents",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "agents",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "agents",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.agents.read",
-        "x-sdkwork-required-surface": "organizationMember"
-      }
-    },
     "/app/v3/api/ai/dashboard/overview": {
       "get": {
         "description": "List dashboard overview. Reads ai_usage, ai_request_trace, ai_model_rank_snapshot, ops_notification_message, ops_gateway_instance. Writes none. File targets none.",
@@ -9728,94 +9540,6 @@
         "x-sdkwork-required-surface": "organizationMember"
       }
     },
-    "/app/v3/api/iot/devices": {
-      "get": {
-        "description": "Resolve console hardware devices. Reads aiot_device. Writes none. File targets none.",
-        "operationId": "iot.devices.list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IotDevicesListResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "500": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Server Error"
-          },
-          "default": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Error response."
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Resolve console hardware devices",
-        "tags": [
-          "system"
-        ],
-        "x-contract-kind": "read",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "aiot_device"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "system",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "system",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "iot.devices",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-hardware/src/cloudRouterHardwareService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.iot_devices.read",
-        "x-sdkwork-required-surface": "organizationMember"
-      }
-    },
     "/app/v3/api/iot/firmware": {
       "get": {
         "description": "Resolve console hardware firmware. Reads aiot_firmware. Writes none. File targets none.",
@@ -11425,137 +11149,6 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
         "x-sdkwork-permission": "cloudrouter.site_runtime.read"
-      }
-    },
-    "/app/v3/api/iam/api_keys/{apiKeyId}/reveal": {
-      "post": {
-        "description": "Reveal key. Reads iam_gateway_api_key. Writes iam_gateway_api_key, ops_audit_log. File targets none.",
-        "operationId": "apiKeys.reveal",
-        "parameters": [
-          {
-            "description": "Api key id path parameter.",
-            "in": "path",
-            "name": "apiKeyId",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiKeysRevealResult"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Error response.",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "AccessToken": [],
-            "AuthToken": []
-          }
-        ],
-        "summary": "Reveal key",
-        "tags": [
-          "iam"
-        ],
-        "x-contract-kind": "action",
-        "x-file-targets": [],
-        "x-read-sources": [
-          "iam_gateway_api_key"
-        ],
-        "x-route-scope": "console",
-        "x-sdk-domain": "iam",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
-        "x-sdkwork-api-surface": "app-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "iam",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "apiKeys",
-        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
-        "x-write-tables": [
-          "iam_gateway_api_key",
-          "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
       }
     }
   },

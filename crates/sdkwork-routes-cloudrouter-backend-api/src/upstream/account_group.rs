@@ -523,8 +523,7 @@ async fn list_prices(
         .list_account_group_resource_prices(subject(scoped), group_id)
         .await
     {
-        Ok(items) => collection_item_response(
-            group_id,
+        Ok(items) => bounded_list_response(
             items.into_iter().map(PriceResponse::from).collect(),
         ),
         Err(error) => domain_error(error),

@@ -119,6 +119,7 @@ const client = new SdkworkAiClient({
 - `client.models` - model API
 - `client.moderations` - moderation API
 - `client.realtime` - realtime API
+- `client.recharge` - recharge API
 - `client.responses` - response API
 - `client.threads` - thread API
 - `client.tool` - tool API
@@ -1071,6 +1072,13 @@ const body = {
   session: 'session',
 };
 const result = await client.realtime.calls.create(body);
+```
+
+### recharge
+
+```typescript
+// Relay recharge balance
+const result = await client.recharge.balance.list();
 ```
 
 ### response

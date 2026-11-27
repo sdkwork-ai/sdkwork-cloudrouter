@@ -1,0 +1,20 @@
+[package]
+name = "sdkwork-cloudrouter-open-recharge-repository-sqlx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license-file.workspace = true
+
+[lib]
+name = "sdkwork_cloudrouter_open_recharge_repository_sqlx"
+
+[dependencies]
+sdkwork-cloudrouter-router-service.workspace = true
+sdkwork_contract_service.workspace = true
+sdkwork_order_repository_sqlx.workspace = true
+sdkwork_order_service.workspace = true
+sdkwork-utils-rust.workspace = true
+sqlx.workspace = true
+
+[lints]
+workspace = true

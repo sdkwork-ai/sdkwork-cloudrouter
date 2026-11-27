@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Pencil,
   Plus,
@@ -15,6 +15,7 @@ import {
   resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons';
 
+import { DomainPaginationFooter } from '../components/DomainPaginationFooter';
 import {
   DomainField,
   DomainFormDialog,
@@ -27,6 +28,7 @@ import {
   DomainStateRows,
   DomainStatusPill,
   DomainTableHead,
+  DomainTableRefreshingBar,
   DomainTextInput,
 } from '../components/domainUi';
 import { domainCenterService } from '../domainService';
@@ -37,7 +39,10 @@ import type {
   DomainDnsRecord,
   DomainDnsRecordType,
 } from '../domainTypes';
+import { useDomainDebouncedValue } from '../hooks/useDomainDebouncedValue';
+import { useDomainPagedList } from '../hooks/useDomainPagedList';
 import { useDomainZones } from '../hooks/useDomainResources';
+import { useDomainTableScrollReset } from '../hooks/useDomainTableScrollReset';
 import {
   DOMAIN_DNS_RECORD_TYPES,
   toDnsRecordInput,
@@ -67,12 +72,9 @@ export function DomainDnsRecordsPage({
   const { t, i18n } = useTranslation();
   const zones = useDomainZones();
   const [selectedZoneId, setSelectedZoneId] = useState(initialZoneId ?? '');
-  const [records, setRecords] = useState<DomainDnsRecord[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const [reloadToken, setReloadToken] = useState(0);
   const [typeFilter, setTypeFilter] = useState<RecordTypeFilter>('ALL');
   const [hostSearch, setHostSearch] = useState('');
+  const debouncedHostSearch = useDomainDebouncedValue(hostSearch);
   const [editorState, setEditorState] = useState<
     { mode: 'create' } | { mode: 'edit'; record: DomainDnsRecord } | null
   >(null);
@@ -93,50 +95,26 @@ export function DomainDnsRecordsPage({
     }
   }, [selectedZoneId, zones.data, zones.status]);
 
-  useEffect(() => {
-    if (!selectedZoneId) {
-      setRecords([]);
-      return;
-    }
-    let active = true;
-    setLoading(true);
-    setError(null);
-    domainCenterService
-      .listDnsRecords(selectedZoneId, {
-        ...(typeFilter !== 'ALL' ? { recordType: typeFilter } : {}),
-        ...(hostSearch.trim() ? { host: hostSearch.trim() } : {}),
-      })
-      .then((page) => {
-        if (active) {
-          setRecords(page.items);
-        }
-      })
-      .catch((cause: unknown) => {
-        if (active) {
-          setError(cause);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedZoneId, typeFilter, reloadToken]);
+  const keyword = debouncedHostSearch.trim();
+  const records = useDomainPagedList<DomainDnsRecord>({
+    queryKey: `dns|${selectedZoneId}|${typeFilter}|${keyword}`,
+    load: (page, pageSize) =>
+      domainCenterService.listDnsRecords(selectedZoneId, {
+        page,
+        pageSize,
+        ...(typeFilter === 'ALL' ? {} : { recordType: typeFilter }),
+        ...(keyword ? { host: keyword } : {}),
+      }),
+    enabled: Boolean(selectedZoneId),
+  });
+  const viewportRef = useDomainTableScrollReset(records.page);
 
   const selectedZone = zones.zoneById.get(selectedZoneId);
-  const rows = useMemo(() => {
-    const keyword = hostSearch.trim().toLowerCase();
-    if (keyword.length === 0) {
-      return records;
-    }
-    return records.filter((record) => {
-      const owner = dnsRecordOwner(record, selectedZone?.apexHostname ?? '');
-      return owner.toLowerCase().includes(keyword) || record.recordValue.toLowerCase().includes(keyword);
-    });
-  }, [records, hostSearch, selectedZone]);
+  const filtersActive = keyword.length > 0 || typeFilter !== 'ALL';
+  const clearFilters = () => {
+    setHostSearch('');
+    setTypeFilter('ALL');
+  };
 
   const sync = async () => {
     if (!selectedZoneId) {
@@ -154,7 +132,8 @@ export function DomainDnsRecordsPage({
           time: formatDomainDateTime(result.syncedAt, locale),
         }),
       );
-      setReloadToken((token) => token + 1);
+      records.goToPage(1);
+      records.reload();
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.dns.errors.sync', 'DNS records could not be synced')),
@@ -173,7 +152,7 @@ export function DomainDnsRecordsPage({
         record.id,
         record.recordStatus === 'ENABLED' ? 'DISABLED' : 'ENABLED',
       );
-      setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      records.updateItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.dns.errors.status', 'Record status could not be changed')),
@@ -191,8 +170,10 @@ export function DomainDnsRecordsPage({
     setActionError(null);
     try {
       await domainCenterService.deleteDnsRecord(selectedZoneId, deleteTarget.id);
-      setRecords((current) => current.filter((item) => item.id !== deleteTarget.id));
+      const removedId = deleteTarget.id;
       setDeleteTarget(null);
+      records.updateItems((items) => items.filter((item) => item.id !== removedId));
+      records.reload();
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.dns.errors.delete', 'DNS record could not be deleted')),
@@ -212,8 +193,8 @@ export function DomainDnsRecordsPage({
         )}
         actions={
           <>
-            <DomainSecondaryButton onClick={() => setReloadToken((token) => token + 1)} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <DomainSecondaryButton onClick={records.reload} disabled={records.status === 'loading'}>
+              <RefreshCw className={`h-4 w-4 ${records.status === 'loading' ? 'animate-spin' : ''}`} />
               {t('admin.domainCenter.actions.refresh', 'Refresh')}
             </DomainSecondaryButton>
             <DomainSecondaryButton onClick={() => void sync()} disabled={!selectedZoneId || syncing}>
@@ -233,50 +214,67 @@ export function DomainDnsRecordsPage({
 
       <AdminTableShell
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
+        aria-busy={records.isRefreshing ? true : undefined}
+        viewportRef={viewportRef}
         header={
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-              <div className="w-full shrink-0 md:w-64">
-                <DomainSelect
-                  value={selectedZoneId}
-                  onChange={setSelectedZoneId}
-                  options={
-                    zones.data.length === 0
-                      ? [{ value: '', label: t('admin.domainCenter.dns.noZone', 'No root domain') }]
-                      : zones.data.map((zone) => ({ value: zone.id, label: zone.apexHostname }))
-                  }
-                />
-              </div>
-              <div className="w-full shrink-0 md:w-40">
-                <DomainSelect
-                  value={typeFilter}
-                  onChange={setTypeFilter}
-                  options={[
-                    { value: 'ALL', label: t('admin.domainCenter.dns.filter.allTypes', 'All record types') },
-                    ...DOMAIN_DNS_RECORD_TYPES.map((type) => ({ value: type, label: type })),
-                  ]}
-                />
-              </div>
-              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={hostSearch}
-                  onChange={(event) => setHostSearch(event.target.value)}
-                  placeholder={t('admin.domainCenter.dns.search', 'Filter by host or value')}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
-                />
+          <>
+            {records.isRefreshing ? (
+              <DomainTableRefreshingBar label={t('admin.domainCenter.pagination.loadingPage', 'Loading page')} />
+            ) : null}
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                <div className="w-full shrink-0 md:w-64">
+                  <DomainSelect
+                    value={selectedZoneId}
+                    onChange={setSelectedZoneId}
+                    options={
+                      zones.data.length === 0
+                        ? [{ value: '', label: t('admin.domainCenter.dns.noZone', 'No root domain') }]
+                        : zones.data.map((zone) => ({ value: zone.id, label: zone.apexHostname }))
+                    }
+                  />
+                </div>
+                <div className="w-full shrink-0 md:w-40">
+                  <DomainSelect
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    options={[
+                      { value: 'ALL', label: t('admin.domainCenter.dns.filter.allTypes', 'All record types') },
+                      ...DOMAIN_DNS_RECORD_TYPES.map((type) => ({ value: type, label: type })),
+                    ]}
+                  />
+                </div>
+                <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-sm">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={hostSearch}
+                    onChange={(event) => setHostSearch(event.target.value)}
+                    placeholder={t('admin.domainCenter.dns.search', 'Search record name')}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+                  />
+                </div>
               </div>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {selectedZone
-                ? t('admin.domainCenter.dns.zoneHint', '{{count}} records · {{apex}}', {
-                    count: rows.length,
-                    apex: selectedZone.apexHostname,
-                  })
-                : null}
-            </div>
-          </div>
+          </>
+        }
+        footer={
+          <DomainPaginationFooter
+            page={records.page}
+            pageSize={records.pageSize}
+            pageRowCount={records.items.length}
+            totalItems={records.totalItems}
+            totalPages={records.totalPages}
+            hasMore={records.hasMore}
+            disabled={records.status === 'loading' || records.isRefreshing}
+            totalSummary={records.totalItems !== null
+              ? t('admin.domainCenter.dns.count', '{{count}} records', { count: records.totalItems })
+              : undefined}
+            onPreviousPage={records.goToPreviousPage}
+            onNextPage={records.goToNextPage}
+            onPageSelect={records.goToPage}
+            onPageSizeChange={records.changePageSize}
+          />
         }
       >
         <table className="w-full min-w-[1180px] whitespace-nowrap text-left text-sm">
@@ -303,21 +301,6 @@ export function DomainDnsRecordsPage({
                 onRetry={zones.reload}
                 retryLabel={t('common.actions.retry', 'Retry')}
               />
-            ) : loading ? (
-              <DomainStateRows
-                colSpan={9}
-                kind="loading"
-                title={t('admin.domainCenter.dns.loading', 'Loading resolution records...')}
-              />
-            ) : error ? (
-              <DomainStateRows
-                colSpan={9}
-                kind="error"
-                title={t('admin.domainCenter.dns.loadError', 'Resolution records could not be loaded')}
-                description={resolveProblemMessage(error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
-                onRetry={() => setReloadToken((token) => token + 1)}
-                retryLabel={t('common.actions.retry', 'Retry')}
-              />
             ) : !selectedZoneId ? (
               <DomainStateRows
                 colSpan={9}
@@ -329,19 +312,49 @@ export function DomainDnsRecordsPage({
                   onClick: () => onNavigate('zones'),
                 }}
               />
-            ) : rows.length === 0 ? (
+            ) : records.status === 'loading' ? (
+              <DomainStateRows
+                colSpan={9}
+                kind="loading"
+                title={t('admin.domainCenter.dns.loading', 'Loading resolution records...')}
+              />
+            ) : records.status === 'error' ? (
+              <DomainStateRows
+                colSpan={9}
+                kind="error"
+                title={t('admin.domainCenter.dns.loadError', 'Resolution records could not be loaded')}
+                description={resolveProblemMessage(records.error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
+                onRetry={records.reload}
+                retryLabel={t('common.actions.retry', 'Retry')}
+              />
+            ) : records.items.length === 0 ? (
               <DomainStateRows
                 colSpan={9}
                 kind="empty"
-                title={t('admin.domainCenter.dns.empty', 'No resolution record')}
-                description={t(
-                  'admin.domainCenter.dns.emptyDesc',
-                  'Sync the provider inventory, or add the first record for this zone.',
-                )}
-                action={{ label: t('admin.domainCenter.dns.actions.create', 'Add record'), onClick: () => setEditorState({ mode: 'create' }) }}
+                title={filtersActive
+                  ? t('admin.domainCenter.dns.emptyFiltered', 'No record matches these filters')
+                  : t('admin.domainCenter.dns.empty', 'No resolution record')}
+                description={filtersActive
+                  ? t(
+                      'admin.domainCenter.dns.emptyFilteredDesc',
+                      'Clear the record-type and name filters to see the whole snapshot.',
+                    )
+                  : t(
+                      'admin.domainCenter.dns.emptyDesc',
+                      'Sync the provider inventory, or add the first record for this zone.',
+                    )}
+                action={filtersActive
+                  ? {
+                      label: t('admin.domainCenter.pagination.clearFilters', 'Clear filters'),
+                      onClick: clearFilters,
+                    }
+                  : {
+                      label: t('admin.domainCenter.dns.actions.create', 'Add record'),
+                      onClick: () => setEditorState({ mode: 'create' }),
+                    }}
               />
             ) : (
-              rows.map((record) => (
+              records.items.map((record) => (
                 <tr key={record.id} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="font-mono text-[12px] font-semibold text-slate-900 dark:text-white">
@@ -416,8 +429,14 @@ export function DomainDnsRecordsPage({
           state={editorState}
           onClose={() => setEditorState(null)}
           onSaved={() => {
+            const created = editorState.mode === 'create';
             setEditorState(null);
-            setReloadToken((token) => token + 1);
+            if (created) {
+              // The snapshot is ordered by sync time, newest first: a record the
+              // operator just wrote belongs on the first page.
+              records.goToPage(1);
+            }
+            records.reload();
           }}
         />
       ) : null}

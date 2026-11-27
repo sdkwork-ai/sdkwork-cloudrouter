@@ -9,7 +9,7 @@ import {
 import { formatOriginLines, parseOriginLines } from './CorsOriginLines';
 
 /**
- * `/admin/settings` → 系统配置 → CORS 跨域设置.
+ * `/admin/iam/auth-settings` → 认证与访问 → CORS 跨域设置.
  *
  * The panel edits the platform-scoped framework CORS row. It is independent
  * from the auth settings form (own load/save lifecycle), because saving the

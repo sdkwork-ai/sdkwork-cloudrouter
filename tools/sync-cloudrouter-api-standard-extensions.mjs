@@ -163,12 +163,17 @@ function inferExternalProtocolId(routePath) {
 }
 
 /// Whether a route is a genuine vendor-compatible external wire protocol
-/// surface. Every gateway `/v1` route (including SDKWork-owned endpoints such
-/// as `/v1/user/balance`, which uses the OpenAI-compatible error and payload
-/// style) and partner relay prefix is external wire protocol; there are no
-/// SDKWork-envelope business resources on the open-api surface.
+/// surface. Every gateway `/v1` route (except the SDKWork-owned recharge
+/// operations) and partner relay prefix is external wire protocol.
 function isExternalWireProtocolRoute(routePath) {
   const normalized = String(routePath ?? "").replace(/\\/g, "/");
+  // SDKWork-owned relay recharge operations live under `/v1` for parity with
+  // the rest of the gateway, but they answer the standard `SdkWorkApiResponse`
+  // envelope and `application/problem+json` failures. They are business
+  // open-api operations, not OpenAI-compatible wire mirrors (API_SPEC §4.5.2).
+  if (normalized.startsWith("/v1/recharge/")) {
+    return false;
+  }
   if (normalized.startsWith("/v1/")) {
     return true;
   }
@@ -417,7 +422,7 @@ function buildRouteEntries(document, target) {
         path: routePath,
         operationId: operation.operationId ?? null,
         tags: Array.isArray(operation.tags) ? operation.tags : [],
-        ...(target.apiSurface === "open-api"
+        ...(target.apiSurface === "open-api" && isExternalWireProtocolRoute(routePath)
           ? {
               "x-sdkwork-wire-protocol": "external",
               "x-sdkwork-external-protocol-id":

@@ -11,6 +11,7 @@ use axum::response::Response;
 use axum::Router;
 use sdkwork_cloudrouter_admin_analytics_repository_sqlx::PostgresAdminAnalyticsReadStore;
 use sdkwork_cloudrouter_admin_dashboard_repository_sqlx::PostgresAdminDashboardReadStore;
+use sdkwork_cloudrouter_admin_data_center_repository_sqlx::PostgresAdminDataCenterStore;
 use sdkwork_cloudrouter_admin_monitor_repository_sqlx::PostgresAdminMonitorReadStore;
 use sdkwork_cloudrouter_config::{
     ApiKeySecretStorageMode, ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig,
@@ -55,7 +56,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore, AdminModelRateLimitStore,
     AdminModuleEntryStore, AdminMonitorReadStore, AdminPricingStore, AdminRecordStore,
     AdminReferralStore, AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
-    AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
+    AdminUpstreamAccountVerifier, AdminUpstreamStore, DataCenterStore, GatewayApiKeyCommandStore,
     ModelRankingRefreshStore, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
     OfficialPricingRefreshStore, RuntimeRegionSettingsStore, SiteSettingsStore,
     UpstreamAccountRouteCatalog,
@@ -119,6 +120,7 @@ type AdminTransactionCenterRuntimeStore = Arc<dyn AdminTransactionCenterStore + 
 type AdminDashboardRuntimeReadStore = Arc<dyn AdminDashboardReadStore + Send + Sync>;
 type AdminAnalyticsRuntimeReadStore = Arc<dyn AdminAnalyticsReadStore + Send + Sync>;
 type AdminMonitorRuntimeReadStore = Arc<dyn AdminMonitorReadStore + Send + Sync>;
+type AdminDataCenterRuntimeStore = Arc<dyn DataCenterStore + Send + Sync>;
 type AdminRecordRuntimeStore = Arc<dyn AdminRecordStore + Send + Sync>;
 type ModelRankingsRuntimeStore = Arc<dyn ModelRankingsReadModelStore + Send + Sync>;
 type ModelRankingRefreshRuntimeStore = Arc<dyn ModelRankingRefreshStore + Send + Sync>;
@@ -199,6 +201,7 @@ struct AdminRouterRuntime<'a> {
     dashboard_read_store: Option<AdminDashboardRuntimeReadStore>,
     analytics_read_store: Option<AdminAnalyticsRuntimeReadStore>,
     monitor_read_store: Option<AdminMonitorRuntimeReadStore>,
+    data_center_store: Option<AdminDataCenterRuntimeStore>,
     record_store: Option<AdminRecordRuntimeStore>,
     model_rankings_store: Option<ModelRankingsRuntimeStore>,
     model_ranking_refresh_store: Option<ModelRankingRefreshRuntimeStore>,
@@ -356,6 +359,7 @@ where
         record_store,
         model_rankings_store,
         model_ranking_refresh_store,
+        data_center_store,
         cache_manager,
         database_installer,
         trusted_subject_config,
@@ -562,12 +566,22 @@ where
         if let Some(store) = upstream_store {
             let verifier = upstream_verifier
                 .expect("upstream verifier must be configured with the upstream store");
+            // One stateless relay-recharge client per composed router: it holds
+            // only a connection pool, while each call receives the supplier's
+            // resolved origin and API key.
+            let recharge_client: Arc<
+                dyn sdkwork_cloudrouter_upstream_recharge::UpstreamRechargeClient,
+            > = Arc::new(
+                sdkwork_cloudrouter_upstream_recharge::HttpUpstreamRechargeClient::new()
+                    .expect("the relay recharge HTTP client must build"),
+            );
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
                 crate::upstream::admin_upstream_router_with_store(
                     store,
                     verifier,
                     upstream_resource_store,
+                    recharge_client,
                 ),
             ));
         }
@@ -716,6 +730,12 @@ where
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
                 sdkwork_cloudrouter_router_service::api::admin_record_router_with_store(store),
+            ));
+        }
+        if let Some(store) = data_center_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_cloudrouter_router_service::api::admin_data_center_router_with_store(store),
             ));
         }
     }
@@ -920,6 +940,8 @@ pub async fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminMonitorReadStore::new(pool.clone()));
     let record_store: AdminRecordRuntimeStore =
         Arc::new(PostgresAdminRecordStore::new(commerce_pool.clone()));
+    let data_center_store: AdminDataCenterRuntimeStore =
+        Arc::new(PostgresAdminDataCenterStore::new(pool.clone()));
     let model_rankings_store: ModelRankingsRuntimeStore =
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
     // The model ranking refresh store reads `ai_metering_usage` (ai-metering
@@ -1014,6 +1036,7 @@ pub async fn router_with_postgres_shared_runtime(
             record_store: Some(record_store),
             model_rankings_store: Some(model_rankings_store),
             model_ranking_refresh_store: Some(model_ranking_refresh_store),
+            data_center_store: Some(data_center_store),
             cache_manager: Some(cache_manager),
             database_installer: Some(database_installer),
             trusted_subject_config: Some(trusted_subject_config),
@@ -1239,6 +1262,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         model_rankings_service(Arc::new(PostgresModelRankingsReadStore::new(pool.clone())));
     let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
         Arc::new(PostgresModelRankingRefreshStore::new(pool.clone()));
+    let data_center_store: AdminDataCenterRuntimeStore =
+        Arc::new(PostgresAdminDataCenterStore::new(pool.clone()));
     let admin_access_checker = AdminAccessChecker(pool.clone());
     Ok(router_with_product_catalog_and_runtime(
                 Arc::new(snapshot),
@@ -1278,6 +1303,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     record_store: Some(record_store),
                             model_rankings_store: Some(model_rankings_store),
                     model_ranking_refresh_store: Some(model_ranking_refresh_store),
+                    data_center_store: Some(data_center_store),
                     cache_manager: Some(cache_manager),
                     database_installer: Some(Arc::clone(&database_installer)),
                     trusted_subject_config: Some(trusted_subject_config),

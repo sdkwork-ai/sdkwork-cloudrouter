@@ -2607,8 +2607,9 @@ async fn build_gateway_router_from_all_in_one_context(
     let account_store = Arc::new(PostgresCommerceAccountStore::new(
         resolve_account_pool().await?,
     ));
-    let gateway_balance_store =
-        Arc::new(PostgresGatewayBalanceStore::new(Arc::clone(&account_store)));
+    let gateway_balance_store: Arc<
+        dyn sdkwork_cloudrouter_router_service::api::GatewayBalanceStore,
+    > = Arc::new(PostgresGatewayBalanceStore::new(Arc::clone(&account_store)));
     let billing_store: Arc<
         dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync,
     > = Arc::new(PostgresGatewayBillingStore::new(
@@ -2623,7 +2624,7 @@ async fn build_gateway_router_from_all_in_one_context(
         )
         .await;
 
-    router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
+    let router = router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
         base_router: router_with_database_status_and_passthrough_placeholder(
             Some(&context.database_config),
             // The static passthrough placeholder must not shadow the
@@ -2638,7 +2639,7 @@ async fn build_gateway_router_from_all_in_one_context(
             Some(context.deployment_mode),
         ),
         catalog: Arc::clone(&context.catalog),
-        api_key_hasher,
+        api_key_hasher: Arc::clone(&api_key_hasher),
         provider_secret_resolver: context.provider_secret_resolver.clone(),
         invocation_sticky_store: Some(Arc::new(InvocationStickyObjectRouteStore::postgres(
             pool.clone(),
@@ -2657,7 +2658,7 @@ async fn build_gateway_router_from_all_in_one_context(
         runtime_toml: runtime_toml.as_ref(),
         request_limits_config: context.request_limits_config,
         call_chain,
-        gateway_balance_store: Some(gateway_balance_store),
+        gateway_balance_store: Some(Arc::clone(&gateway_balance_store)),
         billing_store,
         billing_subject_resolver: Some(billing_subject_resolver),
         // Resolves non-API-key bearer credentials (SDKWork login auth tokens)
@@ -2671,7 +2672,25 @@ async fn build_gateway_router_from_all_in_one_context(
                 .with_cache(resolve_auth_token_cache(runtime_toml.as_ref()).await),
         )),
     })
-    .map_err(anyhow::Error::new)
+    .map_err(anyhow::Error::new)?;
+    // API-key relay recharge surface (`/v1/recharge/*`). It is mounted next to
+    // the gateway-native balance endpoint: another Cloud Router deployment uses
+    // its supplier account API key against these routes, and the management
+    // console reaches the same contract through the backend recharge handlers.
+    let recharge_store: Arc<dyn sdkwork_cloudrouter_router_service::api::OpenRechargeStore> =
+        Arc::new(
+            sdkwork_cloudrouter_open_recharge_repository_sqlx::PostgresOpenRechargeStore::new(
+                context.commerce_pool.clone(),
+            ),
+        );
+    Ok(router.merge(
+        sdkwork_cloudrouter_router_service::api::open_recharge_router(
+            Arc::clone(&context.catalog),
+            api_key_hasher,
+            recharge_store,
+            gateway_balance_store,
+        ),
+    ))
 }
 
 /// Bootstraps the account-domain service host and returns its PostgreSQL
