@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 6b2b4b02576ebd6eccae955658f01c7f4a0d2c40c63bb1897cb824ed81889b72.
+-- Registry SHA-256: ea595b61127842a4510be4e58f764c5a147abbacb6380d6743cbac7a532a9281.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -39,9 +39,9 @@ CREATE TABLE IF NOT EXISTS pricing_default_region (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_uuid ON pricing_default_region (uuid) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_scope_id ON pricing_default_region (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key) WHERE deleted_at IS NULL AND BTRIM(resource_key) <> '';
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_default_region_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key, default_region_code, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_book_reference ON pricing_default_region (tenant_id, organization_id, id, price_book_id);
+CREATE INDEX IF NOT EXISTS idx_pricing_rate_resolve ON pricing_default_region (tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id);
 
 CREATE TABLE IF NOT EXISTS pricing_import_run (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -162,6 +162,11 @@ CREATE TABLE IF NOT EXISTS pricing_rate (
     billability VARCHAR(32) NOT NULL,
     charge_timing VARCHAR(32) NOT NULL,
     calculation_mode VARCHAR(32) NOT NULL,
+    price_item_type VARCHAR(16) NOT NULL DEFAULT 'usage',
+    metering_mode VARCHAR(16) NOT NULL DEFAULT 'per_quantity',
+    quantity_source VARCHAR(24) NOT NULL DEFAULT 'provider_usage',
+    rounding_mode VARCHAR(16) NOT NULL DEFAULT 'half_up',
+    included_quantity NUMERIC(38, 12) NOT NULL DEFAULT 0,
     quantity_aggregation VARCHAR(32) NOT NULL,
     unit_size NUMERIC(38, 12) NOT NULL,
     unit_price NUMERIC(38, 12) NOT NULL,
@@ -207,3 +212,4 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_book_hash ON pricing_rate (ten
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_reference ON pricing_rate (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_book_reference ON pricing_rate (tenant_id, organization_id, id, price_book_id);
 CREATE INDEX IF NOT EXISTS idx_pricing_rate_resolve ON pricing_rate (tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id);
+CREATE INDEX IF NOT EXISTS idx_pricing_rate_charge_model ON pricing_rate (tenant_id, organization_id, price_item_type, quantity_source, status, id);

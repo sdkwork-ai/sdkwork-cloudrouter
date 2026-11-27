@@ -322,7 +322,12 @@ impl AdminStorageStore for TestAdminStorageStore {
         &'a self,
         query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
-        collection("vendor-asset-ttl-1", vendor_asset_ttl_record, query.limit, None)
+        collection(
+            "vendor-asset-ttl-1",
+            vendor_asset_ttl_record,
+            query.limit,
+            None,
+        )
     }
 
     fn upsert_vendor_asset_ttl<'a>(
@@ -336,7 +341,11 @@ impl AdminStorageStore for TestAdminStorageStore {
         &'a self,
         _query: ResolveGenerationDeliveryQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageJsonRecord> {
-        Box::pin(async move { Ok(generation_delivery_policy_record("delivery-policy-resolved")) })
+        Box::pin(async move {
+            Ok(generation_delivery_policy_record(
+                "delivery-policy-resolved",
+            ))
+        })
     }
 }
 

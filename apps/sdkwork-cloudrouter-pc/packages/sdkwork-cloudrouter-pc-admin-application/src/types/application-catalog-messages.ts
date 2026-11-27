@@ -210,6 +210,13 @@ export interface ApplicationCatalogMessages {
     ownerships: Record<DeployOwnershipMessageKey, string>;
   };
   countTemplate: string;
+  /**
+   * Row action label of the deployment application detail page.
+   *
+   * The detail page is a route (`/admin/applications/deploy/:appId`), so the
+   * list offers it as a command that navigates instead of a drawer.
+   */
+  detailAction: string;
   emptyDescription: string;
   emptyTitle: string;
   groups: {

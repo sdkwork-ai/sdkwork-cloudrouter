@@ -4,8 +4,10 @@
 -- module: pricing
 -- purpose: No-op rollback. The holiday keys are required by the 0009 payload
 --   guard, so stripping them again would make every schedule invalid.
+--   This paired script exists only to satisfy the paired-migration layout; it
+--   changes nothing, and the real recovery strategy stays forward-fix.
 -- reversible: true
--- rollback: forward-fix
+-- rollback: down-migration (paired no-op; real recovery is forward-fix)
 -- transactional: true
 -- lock: table
 -- lock_timeout: 5s

@@ -1067,6 +1067,7 @@ mod tests {
             pricing_plan_code: "standard".to_owned(),
             billing_components: "[]".to_owned(),
             pricing_snapshot: "{}".to_owned(),
+            pricing_layer: String::new(),
             official_rate: Some(GatewayOfficialRateReference {
                 record_identity: Some(crate::ports::GatewayRatingRecordIdentity {
                     price_book_tenant_id: 0,

@@ -669,7 +669,12 @@ fn list_models_reports_no_group_membership_while_no_account_route_is_callable() 
         "OpenAI",
     ));
     catalog.add_model(AiModel::new("gpt-4o", "GPT-4o", "openai", vec!["chat"]));
-    catalog.add_model(AiModel::new("gpt-4o-mini", "GPT-4o mini", "openai", vec!["chat"]));
+    catalog.add_model(AiModel::new(
+        "gpt-4o-mini",
+        "GPT-4o mini",
+        "openai",
+        vec!["chat"],
+    ));
     // Configured groups without a single callable upstream account route.
     catalog.add_upstream_account_group(UpstreamAccountGroup::new(
         10,

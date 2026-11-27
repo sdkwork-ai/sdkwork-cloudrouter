@@ -9,7 +9,9 @@
 
 import type { DomainTone } from './components/domainUi';
 import type {
+  DomainCertificateArchiveStatus,
   DomainCertificateCaProfile,
+  DomainCertificatePresentationMode,
   DomainCertificateScope,
   DomainCertificateSource,
   DomainCertificateStatus,
@@ -147,6 +149,36 @@ export function validationMethodLabel(method: DomainCertificateValidationMethod)
       return label('dns01', 'DNS-01');
     default:
       return label('auto', 'Automatic');
+  }
+}
+
+/**
+ * Presentation mode, defaulted the way the deployments contract defaults it:
+ * a certificate without the field was issued by a platform that presented the
+ * challenge itself, so `MANAGED` is the honest reading of "absent".
+ */
+export function presentationModeLabel(
+  mode: DomainCertificatePresentationMode | undefined,
+): DomainLabel {
+  return mode === 'MANUAL'
+    ? label('presentationManual', 'Manual DNS')
+    : label('presentationManaged', 'Automatic DNS');
+}
+
+export function archiveStatusLabel(status: DomainCertificateArchiveStatus | undefined): DomainLabel {
+  switch (status) {
+    case 'ARCHIVED':
+      return label('archiveArchived', 'Archived to drive');
+    case 'STORING':
+      return label('archiveStoring', 'Archiving');
+    case 'FAILED':
+      return label('archiveFailed', 'Archive failed');
+    case 'SKIPPED':
+      return label('archiveSkipped', 'Archive skipped');
+    case 'PENDING':
+      return label('archivePending', 'Archive pending');
+    default:
+      return label('unknown', 'Unknown');
   }
 }
 

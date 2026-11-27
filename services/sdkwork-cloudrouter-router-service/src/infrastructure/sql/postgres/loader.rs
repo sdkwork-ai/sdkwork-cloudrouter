@@ -22,6 +22,10 @@ use crate::ports::{
     GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, UpstreamRouteGateDiagnosis,
 };
 
+/// Catalog scope of the pricing generation counter (migration
+/// `0007_pricing_catalog_generation`).
+const PRICING_CATALOG_SCOPE: &str = "pricing_catalog";
+
 pub struct PostgresPricingCatalogLoader {
     pool: PgPool,
     credential_secret_codec:
@@ -174,6 +178,11 @@ impl PostgresPricingCatalogLoader {
                     PricingCatalogSql::load_upstream_account_group_metric_snapshots(),
                 )
                 .await?,
+            group_resource_prices: row_mapping::load_group_resource_prices(
+                &mut *tx,
+                PricingCatalogSql::load_group_resource_prices(),
+            )
+            .await?,
             prices: database_rows.prices,
             default_regions: row_mapping::load_pricing_default_regions(
                 &mut *tx,
@@ -218,6 +227,41 @@ impl PostgresPricingCatalogLoader {
     /// High-frequency tables (health state, metric snapshots, sticky object
     /// routes, metering) are deliberately excluded so routine request traffic
     /// never forces a full reload.
+    /// Returns the pricing-catalog generation for one partition.
+    ///
+    /// This is the cheap probe that decides whether a snapshot reload is
+    /// needed. It reads a single indexed row maintained by database triggers on
+    /// every price-affecting write, instead of aggregating `MAX(updated_at)`
+    /// across the 23 tables that feed the snapshot:
+    ///
+    /// * one row instead of 23 full-table aggregates per probe interval;
+    /// * monotonic by construction, so an equal-timestamp write or a clock skew
+    ///   can never hide a real change;
+    /// * never pulled backwards by a row carrying an older timestamp.
+    ///
+    /// A missing counter yields `None` so callers keep the previous
+    /// "probe failed, attempt a full refresh" behaviour.
+    pub async fn load_pricing_catalog_generation(
+        &self,
+        partition_key: &str,
+    ) -> Result<Option<i64>, PostgresCatalogLoadError> {
+        sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT generation
+            FROM cloudrouter_catalog_generation
+            WHERE config_scope = $1
+              AND partition_key = $2
+              AND deleted_at IS NULL
+            LIMIT 1
+            "#,
+        )
+        .bind(PRICING_CATALOG_SCOPE)
+        .bind(partition_key)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(PostgresCatalogLoadError::from)
+    }
+
     pub async fn load_routing_config_version(&self) -> Result<String, PostgresCatalogLoadError> {
         sqlx::query_scalar(
             r#"

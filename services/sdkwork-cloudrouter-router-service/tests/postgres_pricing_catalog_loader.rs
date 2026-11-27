@@ -268,3 +268,57 @@ async fn postgres_executes_the_authoritative_upstream_account_route_query() {
     assert!(rows.is_empty());
     pool.close().await;
 }
+
+/// The catalog generation probe is a single indexed row read, and a price write
+/// must move it forward. This asserts the two properties the refresh worker
+/// depends on: the probe reads the partition counter, and a bump is monotonic.
+#[tokio::test]
+async fn postgres_loader_reads_a_monotonic_catalog_generation() {
+    let database_url = match std::env::var(POSTGRES_TEST_DATABASE_URL) {
+        Ok(value) if !value.trim().is_empty() => value,
+        _ => {
+            eprintln!(
+                "skipping Postgres catalog generation test; set {POSTGRES_TEST_DATABASE_URL} to run it"
+            );
+            return;
+        }
+    };
+    let pool = PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&database_url)
+        .await
+        .unwrap();
+
+    // A missing counter is reported as "no generation", never as zero: the
+    // worker must keep its previous behaviour when the counter is absent.
+    let loader = PostgresPricingCatalogLoader::new(pool.clone());
+    let absent = loader
+        .load_pricing_catalog_generation("partition-that-does-not-exist")
+        .await
+        .unwrap();
+    assert_eq!(None, absent);
+
+    // The seeded whole-catalog counter is present and readable.
+    let seeded = loader.load_pricing_catalog_generation("").await.unwrap();
+    if let Some(first) = seeded {
+        let second = sqlx::query_scalar::<_, i64>(
+            "SELECT cloudrouter_bump_catalog_generation('pricing_catalog', '', 0, 0, 'test', 'assert')",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(
+            second > first,
+            "a catalog bump must move the generation forward ({first} -> {second})"
+        );
+
+        let reloaded = loader.load_pricing_catalog_generation("").await.unwrap();
+        assert_eq!(
+            Some(second),
+            reloaded,
+            "the probe must observe the bumped generation"
+        );
+    }
+
+    pool.close().await;
+}

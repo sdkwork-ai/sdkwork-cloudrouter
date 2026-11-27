@@ -363,7 +363,10 @@ async fn openai_compatible_relay_does_not_replay_a_non_idempotent_post_after_5xx
         "provider_temporarily_unavailable",
         response.body["error"]["code"].as_str().unwrap()
     );
-    assert!(!response.body.to_string().contains("sk-upstream-provider-secret"));
+    assert!(!response
+        .body
+        .to_string()
+        .contains("sk-upstream-provider-secret"));
 
     let state = state.lock().unwrap();
     assert_eq!(1, state.requests.len());

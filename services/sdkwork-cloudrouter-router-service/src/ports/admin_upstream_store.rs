@@ -186,7 +186,53 @@ pub struct AdminUpstreamResourceItem {
     pub status: i32,
 }
 
+/// One per-resource price an account group defines.
+///
+/// `price_mode` is the closed set `multiplier | markup | unit_price | free`;
+/// only the payload of the selected mode is meaningful, mirroring the
+/// database payload constraint.
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminGroupResourcePriceItem {
+    pub id: i64,
+    pub uuid: String,
+    pub account_group_id: i64,
+    pub account_group_code_snapshot: String,
+    pub resource_type: String,
+    pub catalog_key: String,
+    pub operation_code: String,
+    pub meter_code: String,
+    pub region_code: String,
+    pub provider_code: String,
+    pub price_mode: String,
+    pub multiplier: String,
+    pub markup_amount: String,
+    pub unit_price_override: Option<String>,
+    pub currency_code: String,
+    pub effective_from: String,
+    pub effective_to: Option<String>,
+    pub status: i32,
+}
+
+/// A price definition supplied by the admin surface. `id` is absent for a new
+/// row and present to update an existing one in place.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminGroupResourcePriceInput {
+    pub id: Option<i64>,
+    pub resource_type: String,
+    pub catalog_key: String,
+    pub operation_code: String,
+    pub meter_code: String,
+    pub region_code: String,
+    pub provider_code: String,
+    pub price_mode: String,
+    pub multiplier: String,
+    pub markup_amount: String,
+    pub unit_price_override: Option<String>,
+    pub currency_code: String,
+    pub effective_from: String,
+    pub effective_to: Option<String>,
+}
+
 pub struct AdminUpstreamResourceInput {
     pub resource_code: String,
     pub resource_group_code: String,
@@ -550,6 +596,19 @@ pub trait AdminUpstreamStore: Send + Sync {
         subject: AdminUpstreamSubject,
         account_group_id: i64,
     ) -> AdminUpstreamFuture<'a, Vec<AdminUpstreamResourceItem>>;
+    fn list_account_group_resource_prices<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_group_id: i64,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminGroupResourcePriceItem>>;
+    fn replace_account_group_resource_prices<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_group_id: i64,
+        expected_version: i64,
+        items: Vec<AdminGroupResourcePriceInput>,
+    ) -> AdminUpstreamFuture<'a, Vec<AdminGroupResourcePriceItem>>;
+
     fn replace_account_group_resources<'a>(
         &'a self,
         subject: AdminUpstreamSubject,

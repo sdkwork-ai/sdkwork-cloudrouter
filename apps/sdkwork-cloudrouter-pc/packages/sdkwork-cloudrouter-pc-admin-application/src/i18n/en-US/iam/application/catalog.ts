@@ -216,6 +216,7 @@ export const en: ApplicationCatalogMessages = {
     },
   },
   countTemplate: "{count} applications",
+  detailAction: "Detail",
   emptyDescription: "No applications are available in this application system yet.",
   emptyTitle: "No applications",
   groups: {

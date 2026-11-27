@@ -14,7 +14,9 @@ import {
   toVmInstanceExpiresAtUtc,
   toggleVmInstanceCapability,
   validateVmInstanceDraft,
+  vmInstanceAssurancesForRuntimeKind,
   vmInstanceDraftFromInstance,
+  vmInstanceRuntimeKindSatisfies,
   vmInstanceTotalItems,
 } from './vmInstancesModel.ts';
 
@@ -31,6 +33,7 @@ function instance(overrides: Partial<SandboxInstance> = {}): SandboxInstance {
     sandboxInstanceDiskMb: 20480,
     sandboxInstanceRequiredCapabilities: ['git', 'terminal'],
     sandboxInstanceMinimumAssurance: 'container',
+    sandboxInstanceRuntimeKind: 'docker',
     sandboxInstanceAutoStart: false,
     sandboxVersion: '7',
     ...overrides,
@@ -122,6 +125,7 @@ describe('vm instance draft mapping', () => {
       sandboxInstanceDiskMb: 20480,
       sandboxInstanceMemoryMb: 4096,
       sandboxInstanceMinimumAssurance: 'container',
+    sandboxInstanceRuntimeKind: 'docker',
       sandboxInstanceName: 'agent-vm-01',
       sandboxInstanceProfile: 'standard',
       sandboxInstanceRequiredCapabilities: ['git', 'terminal'],
@@ -202,5 +206,61 @@ describe('vm instance listing helpers', () => {
   test('toggling a capability keeps the canonical vocabulary order', () => {
     expect(toggleVmInstanceCapability(['git'], 'terminal')).toEqual(['terminal', 'git']);
     expect(toggleVmInstanceCapability(['terminal', 'git'], 'git')).toEqual(['terminal']);
+  });
+
+  // The engine/assurance matrix is a billing and security decision, so the page
+  // must agree with the server on every pair rather than on a sample.
+  test('an engine satisfies exactly the assurance tiers it can provide', () => {
+    const ladder = ['host_user', 'container', 'user_space_kernel', 'micro_vm', 'dedicated_vm'] as const;
+    const engineFloor: Record<string, string> = {
+      sandbox: 'host_user',
+      docker: 'container',
+      gvisor: 'user_space_kernel',
+      kata: 'micro_vm',
+      firecracker: 'micro_vm',
+      qemu: 'dedicated_vm',
+    };
+    for (const [engine, floor] of Object.entries(engineFloor)) {
+      for (const assurance of ladder) {
+        expect(
+          `${engine}:${assurance}=${vmInstanceRuntimeKindSatisfies(engine as never, assurance)}`,
+        ).toBe(`${engine}:${assurance}=${ladder.indexOf(assurance) <= ladder.indexOf(floor as never)}`);
+      }
+    }
+  });
+
+  test('docker cannot be sold as a microVM or dedicated VM', () => {
+    expect(vmInstanceRuntimeKindSatisfies('docker', 'micro_vm')).toBe(false);
+    expect(vmInstanceRuntimeKindSatisfies('docker', 'dedicated_vm')).toBe(false);
+    expect(vmInstanceRuntimeKindSatisfies('docker', 'container')).toBe(true);
+    expect(vmInstanceRuntimeKindSatisfies('qemu', 'dedicated_vm')).toBe(true);
+    // A stronger engine may still serve a weaker request.
+    expect(vmInstanceRuntimeKindSatisfies('qemu', 'container')).toBe(true);
+  });
+
+  test('the assurance picker narrows to the tiers the selected engine can serve', () => {
+    expect(vmInstanceAssurancesForRuntimeKind('sandbox')).toEqual(['host_user']);
+    expect(vmInstanceAssurancesForRuntimeKind('docker')).toEqual(['host_user', 'container']);
+    expect(vmInstanceAssurancesForRuntimeKind('qemu')).toEqual([
+      'host_user',
+      'container',
+      'user_space_kernel',
+      'micro_vm',
+      'dedicated_vm',
+    ]);
+  });
+
+  test('an engine that cannot meet the draft assurance is rejected before submit', () => {
+    const errors = validateVmInstanceDraft(
+      createVmInstanceDraft({ assurance: 'dedicated_vm', name: 'agent-vm-01', runtimeKind: 'docker' }),
+      { requireBaseImage: true },
+    );
+    expect(errors.runtimeKind).toBe('runtimeKind.insufficientAssurance');
+  });
+
+  test('the default draft is internally consistent and submits its engine', () => {
+    const draft = createVmInstanceDraft({ name: 'agent-vm-01' });
+    expect(validateVmInstanceDraft(draft, { requireBaseImage: true })).toEqual({});
+    expect(toCreateSandboxInstanceInput(draft).sandboxInstanceRuntimeKind).toBe('docker');
   });
 });

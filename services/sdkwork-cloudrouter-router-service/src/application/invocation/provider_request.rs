@@ -154,7 +154,10 @@ fn normalize_host(value: &str) -> String {
     let value = value.split(['/', '?', '#']).next().unwrap_or(value);
     // Strip the port; IPv6 literals keep their brackets.
     if value.starts_with('[') {
-        let end = value.find(']').map(|index| index + 1).unwrap_or(value.len());
+        let end = value
+            .find(']')
+            .map(|index| index + 1)
+            .unwrap_or(value.len());
         return value[..end].to_ascii_lowercase();
     }
     value
@@ -973,18 +976,15 @@ mod tests {
     #[test]
     fn rewriting_model_preserves_large_integers_and_decimal_precision() {
         let body = br#"{"model":"alias","seed":9007199254740993,"temperature":0.12345678901234567890123456789}"#;
-        let rewritten = super::rewrite_json_body_model(
-            InvocationBody::Bytes(body.to_vec()),
-            "provider-model",
-        );
+        let rewritten =
+            super::rewrite_json_body_model(InvocationBody::Bytes(body.to_vec()), "provider-model");
         let InvocationBody::Bytes(rewritten) = rewritten else {
             panic!("rewritten JSON must remain bytes");
         };
         let rewritten = String::from_utf8(rewritten).expect("valid JSON bytes");
         assert!(rewritten.contains("\"seed\":9007199254740993"));
         assert!(rewritten.contains("0.12345678901234567890123456789"));
-        let parsed: serde_json::Value =
-            serde_json::from_str(&rewritten).expect("rewritten JSON");
+        let parsed: serde_json::Value = serde_json::from_str(&rewritten).expect("rewritten JSON");
         assert_eq!("provider-model", parsed["model"]);
     }
 }

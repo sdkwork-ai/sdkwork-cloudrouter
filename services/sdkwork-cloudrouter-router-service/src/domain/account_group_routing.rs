@@ -284,12 +284,11 @@ pub fn select_session_account_group_with_user_routing_and_support(
         .iter()
         .map(|group| (*group).clone())
         .collect::<Vec<_>>();
-    select_default_session_account_group(&fallback_groups, tenant_id, organization_id, modality).map(
-        |selection| SessionAccountGroupRoutingSelection {
+    select_default_session_account_group(&fallback_groups, tenant_id, organization_id, modality)
+        .map(|selection| SessionAccountGroupRoutingSelection {
             selection,
             matched_rule: None,
-        },
-    )
+        })
 }
 
 /// Groups the subject may route through (same predicate the account-level
@@ -371,7 +370,12 @@ fn matching_rules_for_scope(
         })
         .cloned()
         .collect::<Vec<_>>();
-    rules.sort_by_key(|rule| (rule.priority, rule_specificity(rule, requested_vendor_codes)));
+    rules.sort_by_key(|rule| {
+        (
+            rule.priority,
+            rule_specificity(rule, requested_vendor_codes),
+        )
+    });
     rules
 }
 
@@ -441,10 +445,7 @@ fn model_basename(value: &str) -> &str {
     value.rsplit('/').next().unwrap_or(value)
 }
 
-fn rule_specificity(
-    rule: &UserAccountGroupRoute,
-    requested_vendor_codes: &[String],
-) -> (u8, i64) {
+fn rule_specificity(rule: &UserAccountGroupRoute, requested_vendor_codes: &[String]) -> (u8, i64) {
     let vendor_specific = rule
         .vendor_code
         .trim()
@@ -472,9 +473,7 @@ pub fn select_api_key_account_group_override(
     let group = groups
         .iter()
         .find(|group| group_matches_override(group, raw))?;
-    bound_group_ids
-        .contains(&group.id)
-        .then(|| group.clone())
+    bound_group_ids.contains(&group.id).then(|| group.clone())
 }
 
 /// Converts a stored modality/group-type string into the selection enum.
@@ -577,9 +576,30 @@ mod tests {
     #[test]
     fn model_rule_wins_over_vendor_and_modality_rules() {
         let routes = vec![
-            rule(AccountGroupRouteScope::Modality, "text", "", "", 10, "default-group"),
-            rule(AccountGroupRouteScope::Vendor, "text", "openai", "", 30, "llm-pool"),
-            rule(AccountGroupRouteScope::Model, "text", "openai", "gpt-4o", 20, "video-pool"),
+            rule(
+                AccountGroupRouteScope::Modality,
+                "text",
+                "",
+                "",
+                10,
+                "default-group",
+            ),
+            rule(
+                AccountGroupRouteScope::Vendor,
+                "text",
+                "openai",
+                "",
+                30,
+                "llm-pool",
+            ),
+            rule(
+                AccountGroupRouteScope::Model,
+                "text",
+                "openai",
+                "gpt-4o",
+                20,
+                "video-pool",
+            ),
         ];
         let selection = select_session_account_group_with_user_routing(
             &groups(),
@@ -605,9 +625,30 @@ mod tests {
     #[test]
     fn model_rule_wins_when_the_group_serves_the_modality() {
         let routes = vec![
-            rule(AccountGroupRouteScope::Modality, "text", "", "", 10, "default-group"),
-            rule(AccountGroupRouteScope::Vendor, "text", "openai", "", 20, "video-pool"),
-            rule(AccountGroupRouteScope::Model, "text", "openai", "gpt-4o", 30, "llm-pool"),
+            rule(
+                AccountGroupRouteScope::Modality,
+                "text",
+                "",
+                "",
+                10,
+                "default-group",
+            ),
+            rule(
+                AccountGroupRouteScope::Vendor,
+                "text",
+                "openai",
+                "",
+                20,
+                "video-pool",
+            ),
+            rule(
+                AccountGroupRouteScope::Model,
+                "text",
+                "openai",
+                "gpt-4o",
+                30,
+                "llm-pool",
+            ),
         ];
         let selection = select_session_account_group_with_user_routing(
             &groups(),
@@ -790,23 +831,25 @@ mod tests {
 
     #[test]
     fn api_key_override_requires_a_bound_group() {
-        let groups = vec![group(10, "default-group", true), group(20, "video-pool", false)];
+        let groups = vec![
+            group(10, "default-group", true),
+            group(20, "video-pool", false),
+        ];
         assert_eq!(
             20,
             select_api_key_account_group_override(&[10, 20], &groups, Some("video-pool"))
                 .expect("bound group")
                 .id
         );
-        assert!(select_api_key_account_group_override(&[10], &groups, Some("video-pool")).is_none());
+        assert!(
+            select_api_key_account_group_override(&[10], &groups, Some("video-pool")).is_none()
+        );
     }
 
     #[test]
     fn blank_and_overlong_headers_are_ignored() {
         assert!(normalize_account_group_header(Some("   ")).is_none());
         assert!(normalize_account_group_header(Some(&"x".repeat(129))).is_none());
-        assert_eq!(
-            Some("pool"),
-            normalize_account_group_header(Some(" pool "))
-        );
+        assert_eq!(Some("pool"), normalize_account_group_header(Some(" pool ")));
     }
 }

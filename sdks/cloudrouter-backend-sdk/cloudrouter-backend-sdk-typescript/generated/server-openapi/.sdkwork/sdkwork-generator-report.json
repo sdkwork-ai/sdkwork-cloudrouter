@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "a975c9aa6b39c6a8461a3bf2272f6f1b8777606a361123e8c2ac5956910be5ee",
+  "changeFingerprint": "e2cfcd728dd8fce6cb3d3c676ca9e222f92869a06082e58d20101011b35fae0e",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -33,8 +33,6 @@
           "src/api/base.ts",
           "src/api/billing.ts",
           "src/api/index.ts",
-          "src/api/mcp.ts",
-          "src/api/memory.ts",
           "src/api/paths.ts",
           "src/api/payments.ts",
           "src/api/pricing.ts",
@@ -189,6 +187,7 @@
           "src/types/recharge-package-page.ts",
           "src/types/recharge-settings-update-request.ts",
           "src/types/replace-upstream-account-group-members-request.ts",
+          "src/types/replace-upstream-account-group-resource-prices-request.ts",
           "src/types/replace-upstream-account-group-resources-request.ts",
           "src/types/replace-upstream-account-resources-request.ts",
           "src/types/replace-upstream-supplier-auth-methods-request.ts",
@@ -224,6 +223,9 @@
           "src/types/upstream-account-group-resource-collection-response.ts",
           "src/types/upstream-account-group-resource-collection.ts",
           "src/types/upstream-account-group-resource-list-response.ts",
+          "src/types/upstream-account-group-resource-price-collection.ts",
+          "src/types/upstream-account-group-resource-price-input.ts",
+          "src/types/upstream-account-group-resource-price.ts",
           "src/types/upstream-account-group-route-explanation-response.ts",
           "src/types/upstream-account-group-route-explanation.ts",
           "src/types/upstream-account-group.ts",
@@ -427,10 +429,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 386,
-    "models": 354,
-    "apis": 9,
-    "types": 356
+    "totalFiles": 376,
+    "models": 346,
+    "apis": 7,
+    "types": 348
   },
   "warnings": [
     {
@@ -448,14 +450,6 @@
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/ai.ts"
-    },
-    {
-      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/mcp.ts"
-    },
-    {
-      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
-      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/memory.ts"
     },
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -489,12 +483,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 242,
+    "writtenFiles": 244,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "a975c9aa6b39c6a8461a3bf2272f6f1b8777606a361123e8c2ac5956910be5ee",
+    "changeFingerprint": "e2cfcd728dd8fce6cb3d3c676ca9e222f92869a06082e58d20101011b35fae0e",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -511,8 +505,6 @@
         "src/api/base.ts",
         "src/api/billing.ts",
         "src/api/index.ts",
-        "src/api/mcp.ts",
-        "src/api/memory.ts",
         "src/api/paths.ts",
         "src/api/payments.ts",
         "src/api/pricing.ts",
@@ -665,6 +657,7 @@
         "src/types/recharge-package-page.ts",
         "src/types/recharge-settings-update-request.ts",
         "src/types/replace-upstream-account-group-members-request.ts",
+        "src/types/replace-upstream-account-group-resource-prices-request.ts",
         "src/types/replace-upstream-account-group-resources-request.ts",
         "src/types/replace-upstream-account-resources-request.ts",
         "src/types/replace-upstream-supplier-auth-methods-request.ts",
@@ -700,6 +693,9 @@
         "src/types/upstream-account-group-resource-collection-response.ts",
         "src/types/upstream-account-group-resource-collection.ts",
         "src/types/upstream-account-group-resource-list-response.ts",
+        "src/types/upstream-account-group-resource-price-collection.ts",
+        "src/types/upstream-account-group-resource-price-input.ts",
+        "src/types/upstream-account-group-resource-price.ts",
         "src/types/upstream-account-group-route-explanation-response.ts",
         "src/types/upstream-account-group-route-explanation.ts",
         "src/types/upstream-account-group.ts",
@@ -768,8 +764,6 @@
             "src/api/base.ts",
             "src/api/billing.ts",
             "src/api/index.ts",
-            "src/api/mcp.ts",
-            "src/api/memory.ts",
             "src/api/paths.ts",
             "src/api/payments.ts",
             "src/api/pricing.ts",
@@ -924,6 +918,7 @@
             "src/types/recharge-package-page.ts",
             "src/types/recharge-settings-update-request.ts",
             "src/types/replace-upstream-account-group-members-request.ts",
+            "src/types/replace-upstream-account-group-resource-prices-request.ts",
             "src/types/replace-upstream-account-group-resources-request.ts",
             "src/types/replace-upstream-account-resources-request.ts",
             "src/types/replace-upstream-supplier-auth-methods-request.ts",
@@ -959,6 +954,9 @@
             "src/types/upstream-account-group-resource-collection-response.ts",
             "src/types/upstream-account-group-resource-collection.ts",
             "src/types/upstream-account-group-resource-list-response.ts",
+            "src/types/upstream-account-group-resource-price-collection.ts",
+            "src/types/upstream-account-group-resource-price-input.ts",
+            "src/types/upstream-account-group-resource-price.ts",
             "src/types/upstream-account-group-route-explanation-response.ts",
             "src/types/upstream-account-group-route-explanation.ts",
             "src/types/upstream-account-group.ts",

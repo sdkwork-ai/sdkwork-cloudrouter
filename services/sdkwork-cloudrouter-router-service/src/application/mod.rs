@@ -108,7 +108,7 @@ pub use iam_runtime_context::IamRuntimeContext;
 pub(crate) use invocation::is_token_meter;
 pub use invocation::{
     apply_pricing_identity, canonical_provider_native_catalog_key, normalize_standard_api_path,
-    provider_native_api_code_from_normalized_path, resolve_pricing_identity,
+    peek_requested_model, provider_native_api_code_from_normalized_path, resolve_pricing_identity,
     result_gate_for_api_code, result_gate_satisfied, sum_anthropic_batch_usage,
     sum_openai_batch_usage, waived_reason, AccountBillingMode, AccountResolutionInterceptor,
     BatchUsageBucket, BatchUsageKind, BatchUsageTotals, BillingMode, BillingPolicyInterceptor,
@@ -128,8 +128,7 @@ pub use invocation::{
     InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
     InvocationSubject, InvocationSurface, InvocationTelemetry, InvocationUsage,
     InvocationUsageLine, InvocationUsageLineRole, MetricsInterceptor, OpenAiResourceClassifier,
-    PayloadExtractionInterceptor, peek_requested_model, PipelineAsyncPollTransport,
-    PricingFinalizationInterceptor,
+    PayloadExtractionInterceptor, PipelineAsyncPollTransport, PricingFinalizationInterceptor,
     PricingPreflightInterceptor, PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
     ProviderNativeResourceClassifier, RequestTransformInterceptor, ResolvedProviderSecret,
     ResourceType, ResponseNormalizationInterceptor, RouteKind, RoutePlanningInterceptor,
@@ -141,11 +140,12 @@ pub use invocation::{
 };
 pub use model_group_catalog::{
     account_route_is_callable_for_group, build_model_group_catalog, group_model_access_forbids,
-    model_group_options, model_group_options_for_context, model_primary_modality,
-    model_reachable_via_routes, model_supported_group_ids, model_modalities, resolve_catalog_model,
+    model_group_options, model_group_options_for_context, model_modalities, model_primary_modality,
+    model_reachable_via_routes, model_supported_group_ids, resolve_catalog_model,
     route_is_callable, scope_serves_modality, ModelGroupRoutingIndex,
 };
-pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};pub use payment_adapter::{
+pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};
+pub use payment_adapter::{
     PaymentAdapterFuture, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,
     PaymentCancelRefundRequest, PaymentCapturePaymentIntentRequest,
     PaymentConfirmPaymentIntentRequest, PaymentCreateIntentRequest, PaymentCreateRefundRequest,
@@ -233,14 +233,15 @@ pub use runtime_invocation_reaper::{RuntimeInvocationReaper, RuntimeInvocationRe
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
-    BillingStrategyKind, BillingStrategyRegistry, BillingStructure, ListModelCatalogQuery,
-    ModelCatalogGroup, ModelCatalogItem, ModelCatalogPage, ModelCatalogPriceView,
-    ModelCatalogQueryService, ModelCatalogReferencePriceView, ModelRankingRefreshWorker,
-    ModelRankingRefreshWorkerConfig, ModelRankingsService, PriceAvailability, PriceResolution,
-    PriceResolutionFailure, PriceResolutionFailureCode, PriceResolutionStatus, PriceService,
-    PricingAuditSnapshot, PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice,
-    ResolvedPriceSource, ResolvedRateIdentity, ResourceBillability,
-    MODEL_RANKING_REFRESH_TRIGGER_MANUAL, MODEL_RANKING_REFRESH_TRIGGER_SCHEDULED,
+    BillingStrategyKind, BillingStrategyRegistry, BillingStructure, CustomerPriceLayer,
+    ListModelCatalogQuery, ModelCatalogGroup, ModelCatalogItem, ModelCatalogPage,
+    ModelCatalogPriceView, ModelCatalogQueryService, ModelCatalogReferencePriceView,
+    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
+    PriceAvailability, PriceResolution, PriceResolutionFailure, PriceResolutionFailureCode,
+    PriceResolutionStatus, PriceService, PricingAuditSnapshot, PricingResolver,
+    ResolveModelPriceQuery, ResolvedModelPrice, ResolvedPriceSource, ResolvedRateIdentity,
+    ResourceBillability, MODEL_RANKING_REFRESH_TRIGGER_MANUAL,
+    MODEL_RANKING_REFRESH_TRIGGER_SCHEDULED,
 };
 pub use site_settings_cache::{
     cached_site_settings_store, CachedSiteSettingsStore, SiteSettingsCacheMetrics,

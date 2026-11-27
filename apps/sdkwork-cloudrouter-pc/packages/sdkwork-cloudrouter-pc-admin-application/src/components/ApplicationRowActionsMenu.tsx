@@ -1,12 +1,5 @@
-import { CreditCard, GitBranch, KeyRound, MessageCircle, RefreshCw, Settings2, Smartphone, Wrench } from "lucide-react";
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@sdkwork/ui-pc-react";
+import { CreditCard, ExternalLink, GitBranch, KeyRound, MessageCircle, RefreshCw, Settings2, Smartphone, Wrench } from "lucide-react";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@sdkwork/ui-pc-react";
 
 import type { ApplicationCatalogMessages } from "../i18n";
 import { resolveApplicationIntegrationSurface } from "../services/application-integration-requirements";
@@ -21,6 +14,10 @@ import type { ApplicationIntegrationKind } from "../types/application-integratio
  * room for the application name, and it only offers the bindings the row's
  * application kind can actually use (an iOS app has no official account, an API
  * service has no channel at all).
+ *
+ * The menu also carries the two commands that open a *page* rather than a
+ * drawer: the deployment application's detail page (its consumption and
+ * delivery record) and the delegated access-token drawer.
  */
 export function ApplicationRowActionsMenu({
   appKind,
@@ -31,6 +28,7 @@ export function ApplicationRowActionsMenu({
   messages,
   onAccessToken,
   onCorrectKind,
+  onDetail,
   onIntegration,
   onRetryIdentity,
   onSource,
@@ -43,6 +41,8 @@ export function ApplicationRowActionsMenu({
   messages: ApplicationCatalogMessages;
   onAccessToken: () => void;
   onCorrectKind?: () => void;
+  /** Open the deployment application's detail page; absent for non-deploy rows. */
+  onDetail?: () => void;
   onIntegration: (kind: ApplicationIntegrationKind) => void;
   onRetryIdentity: () => void;
   onSource: () => void;
@@ -86,6 +86,18 @@ export function ApplicationRowActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        {onDetail ? (
+          <>
+            <DropdownMenuItem
+              data-application-detail-action="open"
+              onSelect={() => onDetail()}
+            >
+              <ExternalLink className="h-4 w-4" />
+              {messages.detailAction}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         {miniProgramFirst ? miniProgramItem : officialAccountItem}
         {miniProgramFirst ? officialAccountItem : miniProgramItem}
         {showPayment ? (

@@ -16493,6 +16493,278 @@
         ],
         "description": "Billing decision diagnostics schema exposed by Cloud Router.",
         "x-operation-id": "decision.retrieve"
+      },
+      "UpstreamAccountGroupResourcePriceInput": {
+        "additionalProperties": false,
+        "description": "One per-resource price an account group defines. Exactly one pricing mode applies; the database enforces the same payload exclusivity.",
+        "type": "object",
+        "required": [
+          "resourceType",
+          "catalogKey",
+          "operationCode",
+          "meterCode",
+          "regionCode",
+          "priceMode",
+          "currencyCode",
+          "effectiveFrom"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Existing row to update in place; omitted for a new row."
+          },
+          "resourceType": {
+            "type": "string",
+            "enum": [
+              "model",
+              "image",
+              "video",
+              "api",
+              "audio",
+              "other"
+            ],
+            "description": "Resource class the price applies to."
+          },
+          "catalogKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "operationCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "meterCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          },
+          "regionCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "providerCode": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Blank prices every provider of the resource."
+          },
+          "priceMode": {
+            "type": "string",
+            "enum": [
+              "multiplier",
+              "markup",
+              "unit_price",
+              "free"
+            ]
+          },
+          "multiplier": {
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string",
+            "description": "Required when priceMode is multiplier."
+          },
+          "markupAmount": {
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string",
+            "description": "Required when priceMode is markup."
+          },
+          "unitPriceOverride": {
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string",
+            "description": "Required when priceMode is unit_price."
+          },
+          "currencyCode": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3
+          },
+          "effectiveFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "effectiveTo": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          }
+        }
+      },
+      "UpstreamAccountGroupResourcePrice": {
+        "additionalProperties": false,
+        "description": "One account group per-resource price row exposed by Cloud Router.",
+        "type": "object",
+        "required": [
+          "id",
+          "accountGroupId",
+          "accountGroupCodeSnapshot",
+          "resourceType",
+          "catalogKey",
+          "operationCode",
+          "meterCode",
+          "regionCode",
+          "providerCode",
+          "priceMode",
+          "multiplier",
+          "markupAmount",
+          "currencyCode",
+          "effectiveFrom",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "uuid": {
+            "type": "string"
+          },
+          "accountGroupId": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+          },
+          "accountGroupCodeSnapshot": {
+            "type": "string"
+          },
+          "resourceType": {
+            "type": "string"
+          },
+          "catalogKey": {
+            "type": "string"
+          },
+          "operationCode": {
+            "type": "string"
+          },
+          "meterCode": {
+            "type": "string"
+          },
+          "regionCode": {
+            "type": "string"
+          },
+          "providerCode": {
+            "type": "string"
+          },
+          "priceMode": {
+            "type": "string",
+            "enum": [
+              "multiplier",
+              "markup",
+              "unit_price",
+              "free"
+            ]
+          },
+          "multiplier": {
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "markupAmount": {
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "unitPriceOverride": {
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "type": "string"
+          },
+          "effectiveTo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "integer"
+          }
+        }
+      },
+      "UpstreamAccountGroupResourcePriceCollection": {
+        "additionalProperties": false,
+        "description": "Account group resource price collection payload.",
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpstreamAccountGroupResourcePrice"
+            }
+          }
+        }
+      },
+      "ReplaceUpstreamAccountGroupResourcePricesRequest": {
+        "additionalProperties": false,
+        "description": "Replace the per-resource price set of one account group.",
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/UpstreamAccountGroupResourcePriceInput"
+            }
+          }
+        }
+      },
+      "UpstreamAccountGroupsPricesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamAccountGroupResourcePriceCollection"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Upstream account groups prices list result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamAccountGroups.prices.list"
+      },
+      "UpstreamAccountGroupsPricesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamAccountGroupResourcePriceCollection"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Upstream account groups prices update result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamAccountGroups.prices.update"
       }
     },
     "securitySchemes": {
@@ -32200,6 +32472,228 @@
         "x-write-tables": [],
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
         "x-source-file": "crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs"
+      }
+    },
+    "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/prices": {
+      "get": {
+        "description": "Lists the per-resource prices an account group defines. Each row prices one (resource, operation, meter, region, provider) tuple and overrides the group price multiplier for that tuple.",
+        "operationId": "upstreamAccountGroups.prices.list",
+        "parameters": [
+          {
+            "description": "Account group id path parameter.",
+            "in": "path",
+            "name": "accountGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamAccountGroupsPricesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List account group resource prices",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account_group",
+          "ai_resource_binding",
+          "ai_resource",
+          "ai_resource_group"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-max-items": 100,
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "upstreamAccountGroups.resources",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": []
+      },
+      "put": {
+        "description": "Atomically replaces the per-resource price set of one account group. Rows absent from the request are retired. Each price uses exactly one mode: multiplier, markup, unit price, or free.",
+        "operationId": "upstreamAccountGroups.prices.update",
+        "parameters": [
+          {
+            "description": "Account group id path parameter.",
+            "in": "path",
+            "name": "accountGroupId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Required entity version precondition for this conditional write.",
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceUpstreamAccountGroupResourcePricesRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for replacing the account group resource price set.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamAccountGroupsPricesUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Replace account group resource prices",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account_group",
+          "ai_resource_binding",
+          "ai_resource",
+          "ai_resource_group"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-conditional-write": true,
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "upstreamAccountGroups.resources",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": [
+          "ai_upstream_account_group",
+          "ai_resource_binding",
+          "ai_resource",
+          "ai_resource_group",
+          "ops_audit_log",
+          "ops_config_snapshot"
+        ]
       }
     }
   },

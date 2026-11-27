@@ -371,7 +371,9 @@ async fn non_idempotent_chat_post_fails_over_after_dead_credential() {
     );
     invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
         .with_request_id("req-post-401-failover")
-        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+        .with_body(InvocationBody::json(
+            json!({"model": "gpt-4o-mini", "messages": []}),
+        ));
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -407,7 +409,9 @@ async fn non_idempotent_chat_post_fails_over_after_rate_limit() {
     );
     invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
         .with_request_id("req-post-429-failover")
-        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+        .with_body(InvocationBody::json(
+            json!({"model": "gpt-4o-mini", "messages": []}),
+        ));
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -433,7 +437,9 @@ async fn non_idempotent_chat_post_does_not_replay_after_server_error() {
     );
     invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
         .with_request_id("req-post-503-no-replay")
-        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+        .with_body(InvocationBody::json(
+            json!({"model": "gpt-4o-mini", "messages": []}),
+        ));
 
     DispatchExecutor::new(Arc::new(dispatcher.clone()))
         .before(&mut invocation)
@@ -1208,7 +1214,9 @@ async fn retries_keep_the_same_credential_until_the_provider_rejects_it() {
     );
     invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
         .with_request_id("req-post-401-credential-rotation")
-        .with_body(InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})));
+        .with_body(InvocationBody::json(
+            json!({"model": "gpt-4o-mini", "messages": []}),
+        ));
 
     DispatchExecutor::with_secret_resolver(Arc::new(dispatcher.clone()), secret_resolver)
         .before(&mut invocation)

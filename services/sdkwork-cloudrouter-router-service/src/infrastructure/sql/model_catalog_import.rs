@@ -127,20 +127,48 @@ impl From<sdkwork_models::CatalogError> for CatalogImportError {
 }
 
 pub(crate) fn load_runtime_model_catalog() -> Result<ModelCatalog, CatalogImportError> {
-    let catalog_root = std::env::var("SDKWORK_MODELS_CATALOG_ROOT")
-        .ok()
-        .map(|value| value.trim().to_owned())
-        .filter(|value| !value.is_empty());
+    let catalog_root = pinned_catalog_root();
     load_catalog_root_with_pin(catalog_root.as_deref(), None)
 }
 
+/// Process-wide cache of the projected bundled dictionary rows.
+///
+/// The bundled catalog is 1,600+ JSON files (~4 MB). Every catalog refresh used
+/// to re-read, re-parse and re-project all of them, so a refresh cycle paid a
+/// full filesystem walk even when the catalog had not changed. The projection
+/// is immutable for the life of the process — a deployment ships one catalog
+/// version, and pointing `SDKWORK_MODELS_CATALOG_ROOT` at a different tree is a
+/// restart-level change — so it is built once and cloned per refresh.
+///
+/// A root pinned through the environment is NOT cached: that mode exists so a
+/// developer can edit the tree and see the change on the next refresh.
+static RUNTIME_DICTIONARY_CACHE: std::sync::OnceLock<BundledPricingDictionaryRows> =
+    std::sync::OnceLock::new();
+
 pub(crate) fn runtime_pricing_dictionary_rows(
 ) -> Result<BundledPricingDictionaryRows, CatalogImportError> {
-    Ok(bundled_pricing_dictionary_rows(
-        &load_runtime_model_catalog()?,
-    ))
+    if pinned_catalog_root().is_some() {
+        return Ok(bundled_pricing_dictionary_rows(
+            &load_runtime_model_catalog()?,
+        ));
+    }
+    if let Some(cached) = RUNTIME_DICTIONARY_CACHE.get() {
+        return Ok(cached.clone());
+    }
+    // Projecting twice under a race is harmless: both results are identical
+    // because the bundled catalog is immutable, and `set` keeps the first.
+    let built = bundled_pricing_dictionary_rows(&load_runtime_model_catalog()?);
+    let _ = RUNTIME_DICTIONARY_CACHE.set(built.clone());
+    Ok(built)
 }
 
+/// The catalog root pinned through the environment, when one is set.
+fn pinned_catalog_root() -> Option<String> {
+    std::env::var("SDKWORK_MODELS_CATALOG_ROOT")
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
 pub(crate) fn load_catalog_root_with_pin(
     catalog_root: Option<&str>,
     catalog_version: Option<&str>,
@@ -2285,6 +2313,7 @@ pub(crate) fn json_array(values: &[String]) -> String {
     serde_json::to_string(values).unwrap_or_else(|_| "[]".to_owned())
 }
 
+#[derive(Clone)]
 pub(crate) struct BundledPricingDictionaryRows {
     pub vendors: Vec<crate::infrastructure::sql::rows::ModelVendorRow>,
     pub models: Vec<crate::infrastructure::sql::rows::AiModelRow>,

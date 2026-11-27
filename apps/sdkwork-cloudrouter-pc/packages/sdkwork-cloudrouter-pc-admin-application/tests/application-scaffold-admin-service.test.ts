@@ -9,15 +9,20 @@ import {
 
 const updateScaffold = vi.fn();
 const listCategories = vi.fn();
+const listAppCategories = vi.fn();
 const createCategory = vi.fn();
 const updateCategory = vi.fn();
 const deleteCategory = vi.fn();
 
 const transport: ApplicationScaffoldAdminTransport = {
+  appCategories: {
+    list: listAppCategories,
+  },
   app: {
     scaffolds: {
       update: updateScaffold,
       categories: {
+        // Reads must never reach the backend-admin plane; this must stay unused.
         list: listCategories,
         create: createCategory,
         update: updateCategory,
@@ -49,8 +54,8 @@ describe("application scaffold admin service", () => {
     );
   });
 
-  it("lists and sorts scaffold categories", async () => {
-    listCategories.mockResolvedValue({
+  it("lists and sorts scaffold categories from the app plane", async () => {
+    listAppCategories.mockResolvedValue({
       items: [
         { id: "cat-2", categoryKey: "b", displayName: "B", sortOrder: 2, status: "ACTIVE" },
         { id: "cat-1", category_key: "a", display_name: "A", sort_order: 1, status: "DISABLED" },
@@ -59,7 +64,11 @@ describe("application scaffold admin service", () => {
     const service = createApplicationScaffoldAdminService(transport);
 
     const categories = await service.listCategories();
-    expect(listCategories).toHaveBeenCalledWith({ page: 1, pageSize: 200, includeDisabled: true });
+    // Regression: reading through the backend-admin plane returned 401 in
+    // deployments that do not route it, which cleared the operator's session and
+    // redirected to /auth/login. Reads must use the app plane only.
+    expect(listAppCategories).toHaveBeenCalledWith({ includeDisabled: true });
+    expect(listCategories).not.toHaveBeenCalled();
     expect(categories.map((category) => category.id)).toEqual(["cat-1", "cat-2"]);
     expect(categories[0]).toEqual(expect.objectContaining({ id: "cat-1", categoryKey: "a", status: "DISABLED" }));
   });

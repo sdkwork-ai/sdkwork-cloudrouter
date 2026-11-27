@@ -108,6 +108,7 @@ const IamOrganizationStructureAdmin = lazyAdminRoute(() => import('@sdkwork/clou
 const IamInstallationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterInstallationsPage');
 const IamOrganizationApplicationsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterOrganizationApplicationsPage');
 const ApplicationCenterAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterApplicationCenterPage');
+const DeployApplicationDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'CloudRouterDeployApplicationDetailPage');
 const AppCenterOverviewAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterOverviewPage');
 const AppCenterAnalyticsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'AppCenterAnalyticsPage');
 const ApplicationScaffoldManagementAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-application'), 'ApplicationScaffoldManagementPage');
@@ -359,6 +360,12 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   // sidebar is the single left menu. The wildcard keeps one catalog instance
   // mounted while its view changes.
   route('applications', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-iam-backend-sdk', 'sdkwork-deployments-app-sdk', 'sdkwork-appstore-app-sdk', 'sdkwork-appstore-backend-sdk'], 'cloudrouter.admin.access', <AppCenterOverviewAdmin />),
+  // Deployment application detail: identity, metered consumption (traffic,
+  // service calls, storage), publish readiness, hostnames, and delivery
+  // history for one deploy application. It is registered before the wildcard so
+  // it wins over the catalog switch and wins the sidebar highlight for the
+  // `/admin/applications/deploy` entry.
+  route('applications/deploy/:appId', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-application', ['sdkwork-deployments-app-sdk', 'cloudrouter-app-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DeployApplicationDetailAdmin />),
   // The operator URL named in the refactor request renders the scaffold
   // library directly, and the scaffold-vocabulary URLs remain canonical for
   // links and the shell menu. Both paths resolve to the same surface.

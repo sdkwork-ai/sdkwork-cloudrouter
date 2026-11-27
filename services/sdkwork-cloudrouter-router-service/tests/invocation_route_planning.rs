@@ -757,7 +757,10 @@ async fn sticky_preference_keeps_regular_candidates_as_failover() {
 
     let plan = invocation.routing.route_plan.expect("route plan");
     assert_eq!(0, plan.selected_index);
-    assert_eq!(InvocationRouteCandidateKind::Sticky, plan.candidates[0].kind);
+    assert_eq!(
+        InvocationRouteCandidateKind::Sticky,
+        plan.candidates[0].kind
+    );
     assert_eq!("sticky-preferred", plan.candidates[0].supplier_code);
     assert!(
         plan.candidates.len() >= 2,
@@ -820,7 +823,10 @@ async fn lookup_sticky_remains_a_hard_pin() {
 
     let plan = invocation.routing.route_plan.expect("route plan");
     assert_eq!(1, plan.candidates.len(), "a lookup must stay a hard pin");
-    assert_eq!(InvocationRouteCandidateKind::Sticky, plan.candidates[0].kind);
+    assert_eq!(
+        InvocationRouteCandidateKind::Sticky,
+        plan.candidates[0].kind
+    );
     assert_eq!("sticky-preferred", plan.candidates[0].supplier_code);
 }
 

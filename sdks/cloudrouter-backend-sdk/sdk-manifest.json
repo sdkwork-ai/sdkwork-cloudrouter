@@ -148,28 +148,6 @@
       "packageByLanguage": {
         "typescript": "@sdkwork/messaging-backend-sdk"
       }
-    },
-    {
-      "workspace": "sdkwork-mcp-backend-sdk",
-      "role": "mcp-backend-admin-capability",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/backend/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/mcp-backend-sdk"
-      }
-    },
-    {
-      "workspace": "sdkwork-memory-backend-sdk",
-      "role": "memory-backend-admin-capability",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/backend/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/memory-backend-sdk"
-      }
     }
   ],
   "languages": [

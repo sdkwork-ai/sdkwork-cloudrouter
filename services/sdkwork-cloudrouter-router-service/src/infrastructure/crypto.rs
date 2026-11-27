@@ -307,9 +307,10 @@ impl ApiKeySecretCodec for RingAeadApiKeySecretCodec {
         })?;
         let nonce = Nonce::assume_unique_for_key(nonce_bytes);
         let mut in_out = secret.as_bytes().to_vec();
-        let key = self.keys.get(&self.active_key_id).ok_or_else(|| {
-            DomainError::new("api key secret codec active key is unavailable")
-        })?;
+        let key = self
+            .keys
+            .get(&self.active_key_id)
+            .ok_or_else(|| DomainError::new("api key secret codec active key is unavailable"))?;
         key.seal_in_place_append_tag(nonce, Aad::from(context.aad().as_bytes()), &mut in_out)
             .map_err(|_| DomainError::new("failed to encrypt api key secret"))?;
         Ok(EncodedApiKeySecret {
@@ -544,9 +545,8 @@ mod tests {
         let legacy = HmacSha256ApiKeySecretHasher::new(retired).unwrap();
         let legacy_hash = legacy.hash_secret("sk-legacy").unwrap();
 
-        let hasher =
-            HmacSha256ApiKeySecretHasher::with_key_ring(active, vec![retired.to_owned()])
-                .expect("key ring");
+        let hasher = HmacSha256ApiKeySecretHasher::with_key_ring(active, vec![retired.to_owned()])
+            .expect("key ring");
 
         assert_eq!(1, hasher.previous_pepper_count());
         assert_ne!(
@@ -618,11 +618,7 @@ mod tests {
             "new ciphertexts adopt the active generation"
         );
         assert!(codec
-            .decode_secret(
-                api_key_context(400001),
-                "key-unknown",
-                &encoded.ciphertext
-            )
+            .decode_secret(api_key_context(400001), "key-unknown", &encoded.ciphertext)
             .is_err());
     }
 

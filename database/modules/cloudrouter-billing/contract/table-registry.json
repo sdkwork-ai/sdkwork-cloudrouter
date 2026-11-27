@@ -11,11 +11,27 @@
       "system_of_record": true
     },
     {
+      "table_name": "cloudrouter_catalog_generation",
+      "owner": "cloudrouter-rating-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "cloudrouter_charge_line",
       "owner": "cloudrouter-charging-service",
       "compliance_level": "L3",
       "lifecycle_status": "active",
       "profile": "ledger_source_fact",
+      "system_of_record": true
+    },
+    {
+      "table_name": "cloudrouter_group_resource_price",
+      "owner": "cloudrouter-rating-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
       "system_of_record": true
     },
     {

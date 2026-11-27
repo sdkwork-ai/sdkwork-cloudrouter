@@ -1,4 +1,4 @@
-import { getSdkworkDeploymentsBackendSdkClient } from "@sdkwork/cloudroutes-pc-commons/runtime";
+import { getSdkworkDeploymentsAppSdkClient, getSdkworkDeploymentsBackendSdkClient } from "@sdkwork/cloudroutes-pc-commons/runtime";
 
 export type { ScaffoldCategory } from "../types/application-scaffolds";
 
@@ -46,17 +46,40 @@ export interface ApplicationScaffoldAdminService {
 }
 
 /**
- * Transport derived from the generated Deploy backend client.
+ * Transport derived from the generated Deploy backend (admin) client.
  *
  * Every method below is a subset of the real `AppApi.scaffolds` surface the SDK
  * exposes, so the compiler — not a comment — proves the operation names and
  * payload shapes match `/backend/v3/api/scaffolds` and
  * `/backend/v3/api/scaffold_categories` (`deploy.scaffolds.write`,
- * `deploy.scaffoldCategories.read|write`).
+ * `deploy.scaffoldCategories.write`).
  */
 type DeployBackendSdkClient = ReturnType<typeof getSdkworkDeploymentsBackendSdkClient>;
 
+/**
+ * Transport for the scaffold-taxonomy surfaces.
+ *
+ * Two Deploy planes answer scaffold categories and they are NOT interchangeable
+ * in every deployment:
+ *
+ * - the app plane (`GET /app/v3/api/scaffold_categories`) ships in every Deploy
+ *   build and returns the same `items` + `pageInfo` page;
+ * - the backend-admin plane (`/backend/v3/api/scaffold_categories`) owns the
+ *   writes and is the only plane that can PATCH/DELETE a category.
+ *
+ * Reads therefore go to the app plane and writes to the backend-admin plane.
+ * Reading through the backend-admin plane logged operators out: when that plane
+ * is not routable for the tenant, the 401 trips the shared session-auth boundary
+ * before the panel's app-plane fallback can run, which clears the session and
+ * navigates to `/auth/login`. Writes stay on the admin plane because only an
+ * operator action can reach them, and a failure there now degrades to a notice.
+ */
 export interface ApplicationScaffoldAdminTransport {
+  /** App-plane reads (`GET /app/v3/api/scaffold_categories`). */
+  appCategories: {
+    list(params?: { includeDisabled?: boolean }): Promise<unknown>;
+  };
+  /** Backend-admin writes (`/backend/v3/api/scaffold_categories`). */
   app: {
     scaffolds: Pick<DeployBackendSdkClient["app"]["scaffolds"], "update" | "categories">;
   };
@@ -106,6 +129,7 @@ export function createApplicationScaffoldAdminService(
   transport: ApplicationScaffoldAdminTransport,
 ): ApplicationScaffoldAdminService {
   const scaffoldApi = transport.app.scaffolds;
+  const appCategoriesApi = transport.appCategories;
 
   return {
     async updateScaffold(scaffoldId, input) {
@@ -127,28 +151,20 @@ export function createApplicationScaffoldAdminService(
     },
 
     async listCategories() {
-      const records: unknown[] = [];
-      for (let pageNumber = 1; pageNumber <= 10; pageNumber += 1) {
-        const payload = await call("listCategories", () =>
-          scaffoldApi.categories.list({ page: pageNumber, pageSize: 200, includeDisabled: true }),
-        );
-        const record = asRecord(payload);
-        const data = asRecord(record.data);
-        const items = Array.isArray(record.items)
-          ? record.items
-          : Array.isArray(data.items)
-            ? data.items
-            : [];
-        records.push(...items);
-        const pageInfo = asRecord(record.pageInfo ?? data.pageInfo);
-        const totalPages = readNumber(pageInfo.totalPages ?? pageInfo.total_pages);
-        const hasMore = readBoolean(pageInfo.hasMore ?? pageInfo.has_more)
-          ?? (totalPages === undefined ? items.length >= 200 : pageNumber < totalPages);
-        if (!hasMore || items.length === 0) {
-          break;
-        }
-      }
-      return records
+      // The app plane returns the whole taxonomy in one page (it declares no
+      // offset paging), so a single read is authoritative. Reading it here keeps
+      // the panel's initial load on the plane every Deploy build serves.
+      const payload = await call("listCategories", () =>
+        appCategoriesApi.list({ includeDisabled: true }),
+      );
+      const record = asRecord(payload);
+      const data = asRecord(record.data);
+      const items = Array.isArray(record.items)
+        ? record.items
+        : Array.isArray(data.items)
+          ? data.items
+          : [];
+      return items
         .map((item) => mapCategory(item))
         .filter((item): item is ScaffoldCategory => item !== undefined)
         .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0) || left.displayName.localeCompare(right.displayName));
@@ -195,7 +211,12 @@ let defaultService: ApplicationScaffoldAdminService | null = null;
 
 export function getApplicationScaffoldAdminService(): ApplicationScaffoldAdminService {
   if (!defaultService) {
-    defaultService = createApplicationScaffoldAdminService(getSdkworkDeploymentsBackendSdkClient());
+    const backendClient = getSdkworkDeploymentsBackendSdkClient();
+    const appClient = getSdkworkDeploymentsAppSdkClient();
+    defaultService = createApplicationScaffoldAdminService({
+      appCategories: appClient.app.scaffolds.categories,
+      app: { scaffolds: backendClient.app.scaffolds },
+    });
   }
   return defaultService;
 }

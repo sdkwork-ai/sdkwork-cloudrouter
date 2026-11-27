@@ -4018,7 +4018,8 @@ async fn openai_chat_completions_accepts_large_chunks_composed_of_bounded_sse_ev
 }
 
 #[tokio::test]
-async fn openai_chat_completions_forwards_an_oversized_single_sse_event_without_failing_the_stream() {
+async fn openai_chat_completions_forwards_an_oversized_single_sse_event_without_failing_the_stream()
+{
     // A single provider frame may legitimately be very large (a non-streamed tool
     // call, a long delta, an inline attachment). Usage always arrives in a small
     // terminal frame, so an oversized content frame must be forwarded byte for

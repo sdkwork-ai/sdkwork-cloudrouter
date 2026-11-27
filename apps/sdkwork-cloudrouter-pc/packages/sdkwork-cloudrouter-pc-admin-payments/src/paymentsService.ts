@@ -25,9 +25,17 @@ import type {
   RetryRefundCommand,
   SandboxTriggerCommand,
   TestPayment,
+  TestPaymentActionResult,
+  TestPaymentCancelCommand,
+  TestPaymentSettleCommand,
   UpdatePaymentChannelCommand,
   UpdatePaymentDomainSettingRequest,
   UpdatePaymentMethodCommand,
+  TestPaymentNotificationCommand,
+  TestPaymentNotificationResult,
+  TestPaymentProducts,
+  TestPaymentRefundCommand,
+  TestPaymentRefundResult,
   UpdateRouteRuleCommand,
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 
@@ -265,6 +273,94 @@ export async function backendPaymentDevCheckAttemptStatus(body: CheckAttemptStat
   return getSdkworkPaymentBackendSdkClient().payments.dev.checkAttemptStatus(
     body,
     createIdempotencyParams('check-attempt-status'),
+  );
+}
+
+/**
+ * Settles a one-cent test payment whose product cannot be completed from an
+ * admin browser (the local sandbox and wallet payload products). The backend
+ * ingests the event through the PSP webhook pipeline, so the attempt status,
+ * webhook event record, and refund eligibility match a real callback.
+ */
+export async function backendPaymentDevSettleTestPayment(
+  body: TestPaymentSettleCommand,
+): Promise<TestPaymentActionResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.settleTestPayment(
+    body,
+    createIdempotencyParams('settle-test-payment'),
+  );
+}
+
+/**
+ * Remaining payer inputs a product needs, derived from the product coverage
+ * contract: the backend declares `openid` / `client_ip` / `buyer_id` per
+ * product, and a missing input is a configuration finding the console must
+ * collect before creating the checkout.
+ */
+export type TestPaymentPayerFieldName = 'openid' | 'client_ip' | 'buyer_id';
+
+/** Products whose layout takes the payer identity proactively. */
+export function testPaymentPayerFieldLabel(field: TestPaymentPayerFieldName): string {
+  switch (field) {
+    case 'openid':
+      return 'Payer openid (the WeChat user paying)';
+    case 'client_ip':
+      return 'Payer client IP (the browser paying)';
+    case 'buyer_id':
+      return 'Alipay buyer user id (the Alipay user paying)';
+    default:
+      return field;
+  }
+}
+
+/**
+ * Closes a one-cent test payment's provider trade and closes the local attempt,
+ * so an abandoned QR code, an unapproved hosted checkout, or a launcher that
+ * cannot complete leaves nothing open on either side.
+ */
+export async function backendPaymentDevCancelTestPayment(
+  body: TestPaymentCancelCommand,
+): Promise<TestPaymentActionResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.cancelTestPayment(
+    body,
+    createIdempotencyParams('cancel-test-payment'),
+  );
+}
+
+/**
+ * Service-provider × product coverage matrix: every product the shipped
+ * adapters declare, plus the configuration still missing before a one-cent
+ * test can run against it.
+ */
+export async function backendPaymentDevTestPaymentProducts(): Promise<TestPaymentProducts> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.testPaymentProducts.list();
+}
+
+/**
+ * Refunds a settled one-cent test payment through the production refund path
+ * (domain rules, captured-total cap, provider submission, status machine), so
+ * the console can prove the refund link of the chain too.
+ */
+export async function backendPaymentDevRefundTestPayment(
+  body: TestPaymentRefundCommand,
+): Promise<TestPaymentRefundResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.refundTestPayment(
+    body,
+    createIdempotencyParams('refund-test-payment'),
+  );
+}
+
+/**
+ * Delivers a notification the deployment signed with the provider account's own
+ * stored credential through the real verification and ingest pipeline, so
+ * notification handling is testable without a public callback URL.
+ */
+export async function backendPaymentDevNotificationTest(
+  body: TestPaymentNotificationCommand,
+): Promise<TestPaymentNotificationResult> {
+  return getSdkworkPaymentBackendSdkClient().payments.dev.notificationTest(
+    body,
+    createIdempotencyParams('notification-test'),
   );
 }
 

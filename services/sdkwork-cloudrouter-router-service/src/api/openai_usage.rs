@@ -361,6 +361,7 @@ impl GatewayUsageRecordCommandBuilder {
             pricing_plan_code: pricing.pricing_plan_code,
             billing_components: pricing.billing_components,
             pricing_snapshot: openai_pricing_snapshot(self, &resolution),
+            pricing_layer: pricing.pricing_layer,
             official_rate: pricing.official_rate,
         })
     }

@@ -200,13 +200,13 @@ INSERT INTO cloudrouter_rating_decision
      pricing_plan_id, pricing_rule_id,
      measured_quantity, rated_quantity, unit_size, reference_unit_price,
      cost_unit_price, unit_price, reference_amount, cost_amount, amount,
-     currency_code, billing_components, pricing_snapshot, decided_at)
+     currency_code, billing_components, pricing_snapshot, pricing_layer, decided_at)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, $8, 1, $9::jsonb, $10, $11, $12, $13,
      $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
      $27, $28, $29, $30::numeric, $31::numeric, $32::numeric, $33::numeric,
      $34::numeric, $35::numeric, $36::numeric, $37::numeric, $38::numeric, $39,
-     $40::jsonb, $41::jsonb, to_timestamp($42::double precision / 1000.0))
+     $40::jsonb, $41::jsonb, NULLIF($43::text, '')::varchar(32), to_timestamp($42::double precision / 1000.0))
 ON CONFLICT (tenant_id, organization_id, measurement_id)
 DO UPDATE SET measurement_id = cloudrouter_rating_decision.measurement_id
 WHERE cloudrouter_rating_decision.idempotency_key IS NOT DISTINCT FROM excluded.idempotency_key
@@ -244,6 +244,7 @@ WHERE cloudrouter_rating_decision.idempotency_key IS NOT DISTINCT FROM excluded.
   AND cloudrouter_rating_decision.currency_code IS NOT DISTINCT FROM excluded.currency_code
   AND cloudrouter_rating_decision.billing_components = excluded.billing_components
   AND cloudrouter_rating_decision.pricing_snapshot = excluded.pricing_snapshot
+  AND cloudrouter_rating_decision.pricing_layer IS NOT DISTINCT FROM excluded.pricing_layer
 RETURNING id, decision_status, billability
 "#;
 
@@ -408,6 +409,9 @@ struct ActivePricingPlanRow {
 struct PersistedRatingDecisionRow {
     id: i64,
     decision_status: String,
+    /// Pricing layer reported by the decision
+    /// (`plan_reference`, `plan_rule`, `group_resource`, `group_multiplier`).
+    pricing_layer: String,
     billability: String,
 }
 
@@ -770,6 +774,7 @@ async fn upsert_usage_fact(
         .bind(&command.currency)
         .bind(&command.pricing_plan_code)
         .bind(&command.pricing_snapshot)
+        .bind(&command.pricing_layer)
         .bind(context.ended_at_epoch_millis)
         .bind(SETTLEMENT_PENDING)
         .bind(usage_idempotency_key(command))
@@ -1558,6 +1563,7 @@ mod tests {
                 pricing_plan_code: String::new(),
                 billing_components: String::new(),
                 pricing_snapshot: String::new(),
+                pricing_layer: String::new(),
                 official_rate: None,
             }
         }

@@ -365,10 +365,7 @@ fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationErro
             );
             return Err(InvocationError::new(
                 InvocationErrorKind::InvalidRequest,
-                format!(
-                    "request body is empty for {}",
-                    invocation.resource.api_code
-                ),
+                format!("request body is empty for {}", invocation.resource.api_code),
             ));
         }
         tracing::warn!(
@@ -409,10 +406,7 @@ fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationErro
             );
             return Err(InvocationError::new(
                 InvocationErrorKind::InvalidRequest,
-                format!(
-                    "request body is empty for {}",
-                    invocation.resource.api_code
-                ),
+                format!("request body is empty for {}", invocation.resource.api_code),
             ));
         }
         return Err(InvocationError::new(

@@ -241,11 +241,8 @@ async fn required_model_missing_fails_before_routing() {
 /// dropped the payload.
 #[tokio::test]
 async fn empty_body_is_reported_as_an_empty_body_not_a_missing_model() {
-    let mut invocation = classified_invocation(
-        Method::POST,
-        "/v1/chat/completions",
-        InvocationBody::Empty,
-    );
+    let mut invocation =
+        classified_invocation(Method::POST, "/v1/chat/completions", InvocationBody::Empty);
 
     let error = PayloadExtractionInterceptor
         .before(&mut invocation)

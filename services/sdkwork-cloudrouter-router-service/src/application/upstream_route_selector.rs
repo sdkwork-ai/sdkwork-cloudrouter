@@ -1559,7 +1559,10 @@ pub(crate) struct RoutePricingProbe<'a> {
     pub billing_meter: &'a BillingMeter,
 }
 
-pub(crate) fn ensure_route_is_priced<C>(catalog: &C, probe: &RoutePricingProbe<'_>) -> DomainResult<()>
+pub(crate) fn ensure_route_is_priced<C>(
+    catalog: &C,
+    probe: &RoutePricingProbe<'_>,
+) -> DomainResult<()>
 where
     C: UpstreamAccountRouteCatalog,
 {
@@ -3058,13 +3061,8 @@ mod procurement_cost_ordering_tests {
         }
     }
 
-    fn account_order(
-        routes: &[(Option<RouteProcurementCost>, ModelUpstreamRoute)],
-    ) -> Vec<i64> {
-        routes
-            .iter()
-            .map(|(_, route)| route.account_id)
-            .collect()
+    fn account_order(routes: &[(Option<RouteProcurementCost>, ModelUpstreamRoute)]) -> Vec<i64> {
+        routes.iter().map(|(_, route)| route.account_id).collect()
     }
 
     #[test]

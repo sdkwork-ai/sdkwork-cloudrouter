@@ -193,29 +193,35 @@ tables:
         columns: *id003
         unique: true
         where: deleted_at IS NULL AND BTRIM(resource_key) <> ''
-      - name: uq_pricing_default_region_scope_reference
+      - name: uq_pricing_rate_scope_reference
         columns:
           - tenant_id
           - organization_id
           - id
         unique: true
         where: null
-      - name: idx_pricing_default_region_catalog_key
+      - name: uq_pricing_rate_scope_book_reference
         columns:
           - tenant_id
           - organization_id
-          - vendor_code
-          - catalog_key
-          - default_region_code
           - id
-        unique: false
+          - price_book_id
+        unique: true
         where: null
-      - name: idx_pricing_default_region_resource_key
+      - name: idx_pricing_rate_resolve
         columns:
           - tenant_id
           - organization_id
-          - resource_key
-          - default_region_code
+          - catalog_key
+          - product_code
+          - operation_code
+          - meter_code
+          - provider_code
+          - region_code
+          - billability
+          - status
+          - priority
+          - effective_from
           - id
         unique: false
         where: null
@@ -951,6 +957,31 @@ tables:
         required: true
         postgres_type: VARCHAR(32)
         constraints: NOT NULL
+      price_item_type:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'usage'
+      metering_mode:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'per_quantity'
+      quantity_source:
+        type: string(24)
+        required: true
+        postgres_type: VARCHAR(24)
+        constraints: NOT NULL DEFAULT 'provider_usage'
+      rounding_mode:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL DEFAULT 'half_up'
+      included_quantity:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL DEFAULT 0
       quantity_aggregation:
         type: string(32)
         required: true
@@ -1217,6 +1248,16 @@ tables:
           - status
           - priority
           - effective_from
+          - id
+        unique: false
+        where: null
+      - name: idx_pricing_rate_charge_model
+        columns:
+          - tenant_id
+          - organization_id
+          - price_item_type
+          - quantity_source
+          - status
           - id
         unique: false
         where: null

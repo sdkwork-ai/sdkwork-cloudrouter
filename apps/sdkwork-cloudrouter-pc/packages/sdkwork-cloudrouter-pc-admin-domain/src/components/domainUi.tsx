@@ -8,6 +8,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { useId } from 'react';
 
 import { BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons';
 
@@ -317,6 +318,7 @@ export function DomainFormDialog({
   busy = false,
   onClose,
   wide = false,
+  onCloseBlocked,
 }: {
   title: string;
   description: string;
@@ -325,13 +327,19 @@ export function DomainFormDialog({
   busy?: boolean;
   onClose: () => void;
   wide?: boolean;
+  /** Called instead of `onClose` when `busy` blocks dismissal. */
+  onCloseBlocked?: () => void;
 }) {
   return (
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-sm"
       onPointerDown={(event) => {
-        if (!busy && event.target === event.currentTarget) {
-          onClose();
+        if (event.target === event.currentTarget) {
+          if (busy) {
+            onCloseBlocked?.();
+          } else {
+            onClose();
+          }
         }
       }}
     >
@@ -425,5 +433,262 @@ export function DomainTableHead({ columns }: { columns: readonly string[] }) {
         ))}
       </tr>
     </thead>
+  );
+}
+
+/**
+ * Moves focus to the first element a caller marked with `data-domain-field`.
+ *
+ * Validation lives in plain functions here, not in a form library, so "focus
+ * the first invalid field on submit" has to be expressed explicitly. Marking
+ * the wrappers (rather than passing refs through every primitive) keeps the
+ * primitive signatures unchanged and works for composite controls such as the
+ * hostname chip input or the radio group, where the focus target is not the
+ * first DOM node of the block.
+ *
+ * `container` may be the dialog element itself; the search is scoped to it so
+ * a second dialog cannot capture focus.
+ */
+export function focusDomainField(container: HTMLElement | null, field: string): boolean {
+  if (!container) {
+    return false;
+  }
+  const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+    ? CSS.escape(field)
+    : field.replace(/["\\]/g, '\\$&');
+  const target = container.querySelector<HTMLElement>(`[data-domain-field="${escaped}"]`);
+  if (!target) {
+    return false;
+  }
+  target.focus();
+  return true;
+}
+
+export interface DomainChip {
+  value: string;
+  label?: string;
+  invalid?: boolean;
+  title?: string;
+}
+
+/**
+ * Removable value chips (the certificate hostname list).
+ *
+ * The list is a real `list` so a screen reader announces "N items"; every chip
+ * carries its own named remove button, and an invalid chip additionally carries
+ * `aria-invalid` plus a visible warning glyph so the state never depends on the
+ * red tint alone.
+ */
+export function DomainChipList({
+  chips,
+  onRemove,
+  removeLabel,
+  emptyLabel,
+  disabled = false,
+}: {
+  chips: readonly DomainChip[];
+  onRemove: (value: string) => void;
+  /** Produces the accessible name of one chip's remove button. */
+  removeLabel: (chip: DomainChip) => string;
+  emptyLabel?: string;
+  disabled?: boolean;
+}) {
+  if (chips.length === 0) {
+    return emptyLabel ? (
+      <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">{emptyLabel}</span>
+    ) : null;
+  }
+  return (
+    <ul className="flex flex-wrap gap-1.5" aria-label={emptyLabel ?? undefined}>
+      {chips.map((chip) => (
+        <li key={chip.value}>
+          <span
+            title={chip.title}
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[11px] ${
+              chip.invalid
+                ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300'
+                : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200'
+            }`}
+          >
+            <span className="break-all">{chip.label ?? chip.value}</span>
+            <button
+              type="button"
+              disabled={disabled}
+              aria-label={removeLabel(chip)}
+              title={removeLabel(chip)}
+              onClick={() => onRemove(chip.value)}
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition hover:bg-white hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              {/* Rendered as text so the primitive needs no icon dependency. */}
+              <span aria-hidden="true">×</span>
+            </button>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export interface DomainRadioOption<T extends string> {
+  value: T;
+  label: string;
+  /** Always rendered when present, in every state, so a disabled reason stays readable. */
+  description?: string;
+  disabled?: boolean;
+  /** Reason rendered (and linked through `aria-describedby`) when `disabled` is set. */
+  disabledReason?: string;
+}
+
+/**
+ * Themed radio group.
+ *
+ * Composed locally like the rest of this file: a native `<input type="radio">`
+ * per option inside a real `radiogroup`, with a roving tab stop so arrow keys
+ * follow the ARIA radio pattern. The accent is the console's lobster red, and
+ * the selected row carries a ring and a bold label as well, so selection is
+ * never signalled by colour alone.
+ *
+ * A disabled option keeps its label visible and states its reason — a silently
+ * greyed-out choice is the most common source of "why can I not pick this".
+ */
+export function DomainRadioGroup<T extends string>({
+  name,
+  legend,
+  options,
+  value,
+  onChange,
+  disabled = false,
+  describedById,
+  error,
+  fieldName,
+}: {
+  name: string;
+  legend: string;
+  options: readonly DomainRadioOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  disabled?: boolean;
+  describedById?: string;
+  error?: string;
+  /** Marks the group so `focusDomainField` can land on the selected radio. */
+  fieldName?: string;
+}) {
+  const generatedId = useId();
+  const groupId = `domain-radio-${name}-${generatedId}`;
+  // DOM order is the roving order: enabled options as rendered.
+  const focusableValues = options.filter((option) => !option.disabled).map((option) => option.value);
+
+  const moveSelection = (direction: 1 | -1) => {
+    if (focusableValues.length === 0) {
+      return;
+    }
+    const currentIndex = focusableValues.indexOf(value);
+    const nextIndex =
+      currentIndex < 0
+        ? 0
+        : (currentIndex + direction + focusableValues.length) % focusableValues.length;
+    const next = focusableValues[nextIndex];
+    if (next === undefined) {
+      return;
+    }
+    onChange(next);
+    const group = document.getElementById(`${groupId}-group`);
+    const target = group?.querySelector<HTMLInputElement>(
+      `input[name="${name}"][value="${next}"]`,
+    );
+    target?.focus();
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{legend}</span>
+      <div
+        id={`${groupId}-group`}
+        role="radiogroup"
+        aria-label={legend}
+        aria-describedby={describedById}
+        aria-invalid={error ? true : undefined}
+        className="flex flex-col gap-1.5"
+      >
+        {options.map((option) => {
+          const optionId = `${groupId}-${option.value}`;
+          const reasonId = `${optionId}-reason`;
+          const checked = option.value === value;
+          const optionDisabled = disabled || option.disabled === true;
+          return (
+            <div
+              key={option.value}
+              data-domain-field={fieldName && checked ? fieldName : undefined}
+              className={`rounded-lg border px-3 py-2 transition ${
+                checked
+                  ? 'border-lobster-500 bg-lobster-50/60 ring-1 ring-lobster-500/40 dark:border-lobster-500/60 dark:bg-lobster-500/10'
+                  : 'border-slate-200 bg-white dark:border-white/10 dark:bg-[#1a1a1a]'
+              } ${optionDisabled ? 'opacity-70' : ''}`}
+            >
+              <label
+                htmlFor={optionId}
+                className={`flex items-start gap-2 text-xs ${
+                  optionDisabled
+                    ? 'cursor-not-allowed text-slate-400 dark:text-slate-500'
+                    : 'cursor-pointer text-slate-700 dark:text-slate-200'
+                }`}
+              >
+                <input
+                  id={optionId}
+                  type="radio"
+                  name={name}
+                  value={option.value}
+                  checked={checked}
+                  disabled={optionDisabled}
+                  onChange={() => onChange(option.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+                      event.preventDefault();
+                      moveSelection(1);
+                    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+                      event.preventDefault();
+                      moveSelection(-1);
+                    }
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 cursor-inherit accent-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 dark:accent-red-500"
+                  aria-describedby={
+                    [
+                      option.description ? `${optionId}-description` : undefined,
+                      optionDisabled && option.disabledReason ? reasonId : undefined,
+                    ]
+                      .filter(Boolean)
+                      .join(' ') || undefined
+                  }
+                />
+                <span className="min-w-0">
+                  <span className="block font-medium leading-5">{option.label}</span>
+                  {option.description ? (
+                    <span
+                      id={`${optionId}-description`}
+                      className="block text-[11px] font-normal leading-4 text-slate-500 dark:text-slate-400"
+                    >
+                      {option.description}
+                    </span>
+                  ) : null}
+                  {optionDisabled && option.disabledReason ? (
+                    <span
+                      id={reasonId}
+                      className="block text-[11px] font-normal leading-4 text-amber-700 dark:text-amber-300"
+                    >
+                      {option.disabledReason}
+                    </span>
+                  ) : null}
+                </span>
+              </label>
+            </div>
+          );
+        })}
+      </div>
+      {error ? (
+        <span role="alert" className="text-[11px] font-normal text-red-600 dark:text-red-400">
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }

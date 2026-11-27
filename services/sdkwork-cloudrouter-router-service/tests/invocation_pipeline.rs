@@ -241,16 +241,15 @@ impl InvocationInterceptor for ResponseFinalizerInterceptor {
                 .as_ref()
                 .map(|response| response.status_code)
                 .unwrap_or(0);
-            invocation.telemetry.normalized_response =
-                Some(InvocationNormalizedResponse {
-                    status_code,
-                    body: Some(serde_json::json!({"id": "provider-ok"})),
-                    body_bytes: None,
-                    content_type: Some("application/json".to_owned()),
-                    headers: axum::http::HeaderMap::new(),
-                    stream_body: Mutex::new(None),
-                    memory_guard: None,
-                });
+            invocation.telemetry.normalized_response = Some(InvocationNormalizedResponse {
+                status_code,
+                body: Some(serde_json::json!({"id": "provider-ok"})),
+                body_bytes: None,
+                content_type: Some("application/json".to_owned()),
+                headers: axum::http::HeaderMap::new(),
+                stream_body: Mutex::new(None),
+                memory_guard: None,
+            });
             Ok(())
         })
     }
@@ -285,8 +284,10 @@ async fn accounting_failure_keeps_the_successful_provider_response() {
         .with_interceptor(ResponseFinalizerInterceptor)
         .with_interceptor(FailingAccountingInterceptor);
     let mut invocation = test_invocation();
-    invocation.dispatch.response =
-        Some(InvocationDispatchResponse::json(200, serde_json::json!({"id": "provider-ok"})));
+    invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+        200,
+        serde_json::json!({"id": "provider-ok"}),
+    ));
 
     let error = pipeline.execute(&mut invocation).await.unwrap_err();
 

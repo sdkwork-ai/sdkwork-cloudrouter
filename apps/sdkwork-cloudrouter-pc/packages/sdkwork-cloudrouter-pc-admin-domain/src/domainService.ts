@@ -20,7 +20,11 @@ import type {
   CreateDomainVerificationFileInput,
   CreateDomainZoneInput,
   DomainCertificate,
+  DomainCertificateArchiveRetryResult,
+  DomainCertificateChallengePresentation,
+  DomainCertificateChallengeReleaseResult,
   DomainCertificateRenewal,
+  DomainCertificateResponse,
   DomainCloudAccount,
   DomainCloudAccountRegistration,
   DomainDnsRecord,
@@ -36,6 +40,15 @@ import type {
   UpdateDomainHostnameInput,
   UpdateDomainZoneInput,
 } from './domainTypes';
+
+/**
+ * Widened create request: the two pending contract fields ride along with the
+ * generated ones, so the call site expresses the real wire body without a cast.
+ */
+export type DomainCertificateRequestPayload = CreateDomainCertificateInput & {
+  requestedIdentifiers?: string[];
+  challengePresentation?: 'MANAGED' | 'MANUAL';
+};
 
 const PAGE_SIZE = 200;
 const MAX_PAGES = 25;
@@ -73,6 +86,98 @@ export interface DomainPage<T> {
 
 function client() {
   return getSdkworkDeploymentsAppSdkClient();
+}
+
+/**
+ * The challenge resource of the generated certificate client, as this surface
+ * expects it.
+ *
+ * Declared structurally rather than imported because the shape lands in
+ * `@sdkwork/deployments-app-sdk` only when the SDK is regenerated from the
+ * updated `deploy-app-api` OpenAPI. The runtime guard below is what makes the
+ * call sites honest: a build against an older SDK reports the capability as
+ * absent instead of reaching for `undefined`.
+ */
+interface SdkCertificateChallengesApi {
+  list(
+    certificateId: string,
+    requestOptions?: { signal?: AbortSignal },
+  ): Promise<DomainCertificateChallengePresentation>;
+  verify(
+    certificateId: string,
+    params: { idempotencyKey: string },
+    requestOptions?: { signal?: AbortSignal },
+  ): Promise<DomainCertificateChallengeReleaseResult>;
+}
+
+/**
+ * The archive command resource of the generated certificate client.
+ *
+ * `retry` answers the retry result (`accepted` + the new `archiveStatus`), not
+ * the certificate: the command re-arms the row and returns immediately, so the
+ * console polls `retrieve` until the archive settles.
+ */
+interface SdkCertificateArchiveApi {
+  retry(
+    certificateId: string,
+    params: { idempotencyKey: string },
+  ): Promise<DomainCertificateArchiveRetryResult>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function resolveCertificateChallengesApi(): SdkCertificateChallengesApi | undefined {
+  const certificate: unknown = client().certificate;
+  if (!isRecord(certificate)) {
+    return undefined;
+  }
+  const challenges: unknown = certificate.challenges;
+  if (!isRecord(challenges)) {
+    return undefined;
+  }
+  const list = challenges.list;
+  const verify = challenges.verify;
+  if (typeof list !== 'function' || typeof verify !== 'function') {
+    return undefined;
+  }
+  return challenges as unknown as SdkCertificateChallengesApi;
+}
+
+function resolveCertificateArchiveApi(): SdkCertificateArchiveApi {
+  const certificate: unknown = client().certificate;
+  if (!isRecord(certificate)) {
+    throw new DomainSdkCapabilityError('certificate');
+  }
+  const archive: unknown = certificate.archive;
+  if (!isRecord(archive)) {
+    throw new DomainSdkCapabilityError('certificate.archive');
+  }
+  const retry = archive.retry;
+  if (typeof retry !== 'function') {
+    throw new DomainSdkCapabilityError('certificate.archive.retry');
+  }
+  return archive as unknown as SdkCertificateArchiveApi;
+}
+
+/**
+ * Raised when the applied `@sdkwork/deployments-app-sdk` does not carry an
+ * operation this surface needs. Typed so the UI can say "the control plane
+ * client is outdated" instead of surfacing a `TypeError` from a property read.
+ */
+export class DomainSdkCapabilityError extends Error {
+  readonly capability: string;
+
+  constructor(capability: string) {
+    super(`deployments app SDK does not expose ${capability}`);
+    this.name = 'DomainSdkCapabilityError';
+    this.capability = capability;
+  }
+}
+
+function requestOptionsOf(options: { signal?: AbortSignal }): { signal?: AbortSignal } {
+  return options.signal ? { signal: options.signal } : {};
 }
 
 /**
@@ -287,6 +392,23 @@ export const domainCenterService = {
     );
   },
 
+  /**
+   * Submits a create request that carries the pending contract fields
+   * (`requestedIdentifiers`, `challengePresentation`) the applied generated
+   * request type does not describe yet.
+   *
+   * The generated `create` serializes the body as JSON, so the wire shape is
+   * decided by the deployments contract rather than by this facade.
+   */
+  async createCertificateRequest(
+    payload: DomainCertificateRequestPayload,
+  ): Promise<DomainCertificate> {
+    return client().certificate.create(
+      payload,
+      createIdempotencyParams('domain-certificate-create'),
+    );
+  },
+
   async renewCertificate(certificateId: string): Promise<DomainCertificate> {
     return client().certificate.renew(
       certificateId,
@@ -304,6 +426,62 @@ export const domainCenterService = {
       pageSize: PAGE_SIZE,
     });
     return result.items;
+  },
+
+  /**
+   * The manual DNS-01 instructions for a certificate's current order.
+   *
+   * Returns nothing when the deployments app SDK applied here predates the
+   * challenge surface: the console then shows "自动" with an explicit notice
+   * instead of pretending the certificate is waiting for a TXT record nobody
+   * can read. A transient failure is still thrown so the caller can retry.
+   */
+  async retrieveCertificateChallenges(
+    certificateId: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<DomainCertificateChallengePresentation | null> {
+    const challenges = resolveCertificateChallengesApi();
+    if (!challenges) {
+      return null;
+    }
+    return challenges.list(certificateId, requestOptionsOf(options));
+  },
+
+  /** Records the operator's "I published the TXT records" command. */
+  async verifyCertificateChallenges(
+    certificateId: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<DomainCertificateChallengeReleaseResult> {
+    const challenges = resolveCertificateChallengesApi();
+    if (!challenges) {
+      return { accepted: false };
+    }
+    return challenges.verify(certificateId, createIdempotencyParams('domain-certificate-verify'), requestOptionsOf(options));
+  },
+
+  /**
+   * Re-arms the drive archive of an issued certificate (idempotent command).
+   *
+   * Asynchronous by contract: the command answers whether the row was queued and
+   * the status it now carries. Callers re-read the certificate until
+   * `archiveStatus` settles on `ARCHIVED` or `FAILED`; assuming this call means
+   * "archived" is exactly the claim the archive read model exists to avoid.
+   */
+  async retryCertificateArchive(certificateId: string): Promise<DomainCertificateArchiveRetryResult> {
+    const archive = resolveCertificateArchiveApi();
+    return archive.retry(
+      certificateId,
+      createIdempotencyParams('domain-certificate-archive-retry'),
+    );
+  },
+  /** `true` when the applied SDK really carries the challenge surface. */
+  supportsCertificateChallenges(): boolean {
+    return resolveCertificateChallengesApi() !== undefined;
+  },
+
+  /** `true` when the applied SDK really carries the archive retry command. */
+  supportsCertificateArchiveRetry(): boolean {
+    return resolveCertificateArchiveApi() !== undefined;
   },
 
   // ---- DNS automation accounts ------------------------------------------

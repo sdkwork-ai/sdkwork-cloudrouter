@@ -54,10 +54,7 @@ impl ModelGroupRoutingIndex {
     /// user rules instead of the snapshot's copy. The console uses this so a
     /// saved default is reflected immediately, before the routing snapshot
     /// refresh picks it up for traffic.
-    pub fn build_with_user_routes<C>(
-        catalog: &C,
-        user_routes: Vec<UserAccountGroupRoute>,
-    ) -> Self
+    pub fn build_with_user_routes<C>(catalog: &C, user_routes: Vec<UserAccountGroupRoute>) -> Self
     where
         C: UpstreamAccountRouteCatalog + ?Sized,
     {
@@ -352,9 +349,7 @@ where
                                         .model
                                         .as_deref()
                                         .is_some_and(|value| value.eq_ignore_ascii_case(key))
-                                    || entitlement
-                                        .resource_code
-                                        .eq_ignore_ascii_case(key)
+                                    || entitlement.resource_code.eq_ignore_ascii_case(key)
                                     || entitlement
                                         .api_code
                                         .as_deref()
@@ -606,17 +601,19 @@ where
 
     let mut by_modality: Vec<ModelGroupCatalogModality> = Vec::new();
     for (modality_code, vendor_code, vendor_name, model) in catalog_rows {
-        let modality_entry =
-            match by_modality.iter_mut().find(|entry| entry.modality == modality_code) {
-                Some(entry) => entry,
-                None => {
-                    by_modality.push(ModelGroupCatalogModality {
-                        modality: modality_code.clone(),
-                        vendors: Vec::new(),
-                    });
-                    by_modality.last_mut().expect("just pushed")
-                }
-            };
+        let modality_entry = match by_modality
+            .iter_mut()
+            .find(|entry| entry.modality == modality_code)
+        {
+            Some(entry) => entry,
+            None => {
+                by_modality.push(ModelGroupCatalogModality {
+                    modality: modality_code.clone(),
+                    vendors: Vec::new(),
+                });
+                by_modality.last_mut().expect("just pushed")
+            }
+        };
         let vendor_entry = match modality_entry
             .vendors
             .iter_mut()
@@ -644,8 +641,9 @@ where
                 .sort_by(|left, right| left.display_name.cmp(&right.display_name));
         }
     }
-    by_modality
-        .sort_by(|left, right| modality_order(&left.modality).cmp(&modality_order(&right.modality)));
+    by_modality.sort_by(|left, right| {
+        modality_order(&left.modality).cmp(&modality_order(&right.modality))
+    });
     by_modality
 }
 
@@ -829,15 +827,17 @@ mod tests {
 
     /// A route that carries only `ai_resource_binding` entitlements (the SQL
     /// snapshot shape: no explicit model-route projection).
-    fn entitlement_route(account_id: i64, group_id: i64, catalog_key: &str) -> UpstreamAccountRoute {
+    fn entitlement_route(
+        account_id: i64,
+        group_id: i64,
+        catalog_key: &str,
+    ) -> UpstreamAccountRoute {
         let entitlement =
             UpstreamResourceEntitlement::new(catalog_key, "model").with_route_kind("model");
         let mut route = UpstreamAccountRoute::new("openai", account_id)
             .with_upstream_endpoint(Some("https://api.openai.com"), Some("vault://openai"));
-        route.account_group_bindings = vec![
-            UpstreamAccountGroupBinding::new(group_id, 10, 100)
-                .with_resource_entitlements(vec![entitlement]),
-        ];
+        route.account_group_bindings = vec![UpstreamAccountGroupBinding::new(group_id, 10, 100)
+            .with_resource_entitlements(vec![entitlement])];
         route
     }
 
@@ -852,14 +852,8 @@ mod tests {
         catalog.add_model(model.clone());
         catalog.add_upstream_account_group(group(10, "default-group", true));
         catalog.add_upstream_account_group(group(20, "backup-group", false));
-        catalog.set_upstream_account_group_modality_scope(
-            10,
-            AccountGroupModalityScope::mixed(),
-        );
-        catalog.set_upstream_account_group_modality_scope(
-            20,
-            AccountGroupModalityScope::mixed(),
-        );
+        catalog.set_upstream_account_group_modality_scope(10, AccountGroupModalityScope::mixed());
+        catalog.set_upstream_account_group_modality_scope(20, AccountGroupModalityScope::mixed());
         // Account 1001 only reaches the model through resource entitlements.
         catalog.add_upstream_account_route(entitlement_route(1001, 10, "openai/gpt-4o"));
         catalog.add_upstream_account_route(entitlement_route(1002, 20, "openai/gpt-4o"));
@@ -900,7 +894,10 @@ mod tests {
         let groups = index.groups_for_model(&catalog, &model, TENANT_ID, 0, None, None);
         assert_eq!(
             vec![10, 20],
-            groups.iter().map(|group| group.group_id).collect::<Vec<_>>()
+            groups
+                .iter()
+                .map(|group| group.group_id)
+                .collect::<Vec<_>>()
         );
     }
 
@@ -929,7 +926,10 @@ mod tests {
         );
         let model_entry = &catalog_entries[0].vendors[0].models[0];
         assert_eq!(vec!["backup-group"], model_entry.default_group_codes);
-        assert_eq!(Some("user-model-default"), model_entry.default_source.as_deref());
+        assert_eq!(
+            Some("user-model-default"),
+            model_entry.default_source.as_deref()
+        );
 
         // No rule: the account default is the inherited source, not a user
         // selection, so `defaultGroupCodes` stays empty.
@@ -948,14 +948,8 @@ mod tests {
     #[test]
     fn api_key_default_group_is_marked_when_it_serves_the_model() {
         let (catalog, model) = catalog();
-        let groups = model_group_options_for_context(
-            &catalog,
-            &model,
-            TENANT_ID,
-            0,
-            None,
-            Some(20),
-        );
+        let groups =
+            model_group_options_for_context(&catalog, &model, TENANT_ID, 0, None, Some(20));
         assert_eq!(1, groups.iter().filter(|group| group.selected).count());
         assert!(groups
             .iter()

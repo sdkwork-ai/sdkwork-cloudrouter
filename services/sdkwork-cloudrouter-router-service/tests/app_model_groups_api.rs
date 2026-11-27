@@ -37,7 +37,12 @@ fn group(code: &str, selected: bool) -> ModelGroupOption {
     ModelGroupOption {
         group_id: if code == "cheap" { 1 } else { 2 },
         group_code: code.to_owned(),
-        group_name: if code == "cheap" { "Cheap pool" } else { "Premium pool" }.to_owned(),
+        group_name: if code == "cheap" {
+            "Cheap pool"
+        } else {
+            "Premium pool"
+        }
+        .to_owned(),
         is_default: code == "cheap",
         selected,
     }
@@ -164,11 +169,17 @@ fn put(body: &str) -> Request<Body> {
 #[tokio::test]
 async fn lists_the_groups_that_serve_one_model() {
     let store = Arc::new(RecordingStore::answering());
-    let (status, payload) = send(store, get(&format!("{ROUTE_GROUPS}?model=deepseek%2Fdeepseek-flash"))).await;
+    let (status, payload) = send(
+        store,
+        get(&format!("{ROUTE_GROUPS}?model=deepseek%2Fdeepseek-flash")),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(payload["code"], 0);
     assert_eq!(payload["data"]["item"]["model"], MODEL);
-    let groups = payload["data"]["item"]["groups"].as_array().expect("groups");
+    let groups = payload["data"]["item"]["groups"]
+        .as_array()
+        .expect("groups");
     assert_eq!(groups.len(), 2);
     assert_eq!(groups[0]["groupCode"], "cheap");
     assert_eq!(groups[0]["selected"], true);
@@ -183,7 +194,8 @@ async fn rejects_a_missing_model_and_an_unknown_model() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(payload["code"], 40001);
 
-    let (status, payload) = send(store, get(&format!("{ROUTE_GROUPS}?model=unknown%2Fmodel"))).await;
+    let (status, payload) =
+        send(store, get(&format!("{ROUTE_GROUPS}?model=unknown%2Fmodel"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert!(payload["detail"].as_str().is_some());
 }
@@ -192,7 +204,9 @@ async fn rejects_a_missing_model_and_an_unknown_model() {
 async fn lists_the_callers_stored_rules() {
     let (status, payload) = send(Arc::new(RecordingStore::answering()), get(ROUTE_DEFAULTS)).await;
     assert_eq!(status, StatusCode::OK);
-    let defaults = payload["data"]["item"]["defaults"].as_array().expect("defaults");
+    let defaults = payload["data"]["item"]["defaults"]
+        .as_array()
+        .expect("defaults");
     assert_eq!(defaults.len(), 1);
     assert_eq!(defaults[0]["scope"], "model");
     assert_eq!(defaults[0]["model"], MODEL);
@@ -259,8 +273,15 @@ async fn requires_an_authenticated_subject() {
 
 #[tokio::test]
 async fn reports_store_failures_as_problems() {
-    let store = Arc::new(RecordingStore { fail: true, ..RecordingStore::default() });
-    let (status, payload) = send(store, get(&format!("{ROUTE_GROUPS}?model=deepseek%2Fdeepseek-flash"))).await;
+    let store = Arc::new(RecordingStore {
+        fail: true,
+        ..RecordingStore::default()
+    });
+    let (status, payload) = send(
+        store,
+        get(&format!("{ROUTE_GROUPS}?model=deepseek%2Fdeepseek-flash")),
+    )
+    .await;
     assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
     assert_eq!(payload["code"], 50001);
     // Internal store diagnostics never reach the caller.

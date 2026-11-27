@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { SdkworkI18nProvider } from "@sdkwork/i18n-pc-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -20,6 +20,12 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
+
+/** Prints the active location so a navigation assertion reads one element. */
+function RouteProbe() {
+  const location = useLocation();
+  return <div>{`application-detail:${location.pathname}${location.search}`}</div>;
+}
 
 const iamApplication: ApplicationRecord = {
   domain: "console.example.com",
@@ -74,16 +80,24 @@ function renderPage(props: {
   return render(
     <SdkworkI18nProvider locale="zh-CN">
       <MemoryRouter>
-        <ApplicationManagementPage
-          backTo="/admin/iam/tenants"
-          correctKind={props.correctKind as never}
-          issueToken={props.issueToken as never}
-          loaders={props.loaders}
-          organizationId={props.organizationId}
-          permissionScope={props.permissionScope}
-          resolveContext={props.resolveContext}
-          tenantId={props.tenantId}
-        />
+        <Routes>
+          <Route
+            element={(
+              <ApplicationManagementPage
+                backTo="/admin/iam/tenants"
+                correctKind={props.correctKind as never}
+                issueToken={props.issueToken as never}
+                loaders={props.loaders}
+                organizationId={props.organizationId}
+                permissionScope={props.permissionScope}
+                resolveContext={props.resolveContext}
+                tenantId={props.tenantId}
+              />
+            )}
+            path="*"
+          />
+        </Routes>
+        <RouteProbe />
       </MemoryRouter>
     </SdkworkI18nProvider>,
   );
@@ -99,6 +113,11 @@ function openAppConfigMenu(): void {
   const trigger = screen.getAllByRole("button", { name: "应用配置" })[0];
   fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
   fireEvent.click(trigger);
+}
+
+/** Open the config menu of the first row in the currently active group. */
+function openFirstAppConfigMenu(): void {
+  openAppConfigMenu();
 }
 
 function expectText(text: string): void {
@@ -260,6 +279,34 @@ describe("application management page", () => {
     expect(actions).not.toBeNull();
     // One configuration trigger keeps the name and the config actions visible.
     expect(within(actions as HTMLElement).getAllByRole("button")).toHaveLength(1);
+  });
+
+  it("offers the detail page as a row command and navigates to it", async () => {
+    const loaders = createLoaders();
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Storefront");
+    clickGroup("deploy");
+    await screen.findAllByText("Storefront");
+    openFirstAppConfigMenu();
+    fireEvent.click(screen.getByRole("menuitem", { name: "详情" }));
+
+    // The route is the deploy application's uuid, never the decimal id.
+    await screen.findByText((_content, element) =>
+      element?.textContent === `application-detail:/admin/applications/deploy/${deployApplication.id}`);
+  });
+
+  it("does not offer a deployment detail page on a non-deploy row", async () => {
+    const loaders = createLoaders();
+    const resolveContext = vi.fn().mockResolvedValue({ tenantId: "tenant-1", tenantName: "Acme" });
+    renderPage({ loaders, resolveContext, tenantId: "tenant-1" });
+
+    await screen.findAllByText("Storefront");
+    clickGroup("app-store");
+    await screen.findByText("sdkwork-birdcoder");
+    openFirstAppConfigMenu();
+    expect(screen.queryByRole("menuitem", { name: "详情" })).toBeNull();
   });
 
   it("corrects a draft application's endpoint type from the row menu", async () => {

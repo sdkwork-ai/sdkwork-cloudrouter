@@ -13,6 +13,8 @@ import {
 import { getCloudRouterPaymentBackendService } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import {
   backendPaymentDevCheckAttemptStatus,
+  backendPaymentDevNotificationTest,
+  backendPaymentDevRefundTestPayment,
   backendPaymentDevSandboxTrigger,
   backendPaymentDevTestPayment,
   backendPaymentsAttemptsList,
@@ -85,7 +87,22 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [createAttempt, setCreateAttempt] = useState(0);
   const [cashierCopied, setCashierCopied] = useState(false);
+  // Refund and notification delivery are the last two links of the one-cent
+  // chain; each keeps its own outcome so a regression is attributable.
+  const [refunding, setRefunding] = useState(false);
+  const [refundNotice, setRefundNotice] = useState<string | null>(null);
   const createSequenceRef = useRef(0);
+
+  // Payer inputs the product addresses (`openid`, client IP, buyer id). The
+  // backend declares them per product and refuses a checkout without them, so
+  // the dialog collects exactly what this product needs instead of guessing.
+  const requiredPayerFields = (testPayment?.requiredPayerFields ?? [])
+    .map((field) => field.field)
+    .filter((field): field is 'openid' | 'client_ip' | 'buyer_id' => (
+      field === 'openid' || field === 'client_ip' || field === 'buyer_id'
+    ));
+  const [payerIdentity, setPayerIdentity] = useState<Record<string, string>>({});
+  const missingPayerFields = requiredPayerFields.filter((field) => !(payerIdentity[field] ?? '').trim());
 
   useEffect(() => {
     let mounted = true;
@@ -96,9 +113,23 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
     setPhase('creating');
     setError(null);
     setSimulateNotice(null);
+    setRefundNotice(null);
     setRemainingSeconds(null);
 
-    void backendPaymentDevTestPayment({ methodKey, amount: '0.01', currencyCode })
+    void backendPaymentDevTestPayment({
+      methodKey,
+      amount: '0.01',
+      currencyCode,
+      ...(Object.keys(payerIdentity).length > 0
+        ? {
+            payerIdentity: {
+              openid: payerIdentity.openid || undefined,
+              clientIp: payerIdentity.client_ip || undefined,
+              buyerId: payerIdentity.buyer_id || undefined,
+            },
+          }
+        : {}),
+    })
       .then((payment) => {
         if (!mounted || createSequenceRef.current !== sequence) {
           return;
@@ -132,6 +163,10 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
     return () => {
       mounted = false;
     };
+    // `payerIdentity` is read once per create attempt: the dialog re-creates the
+    // payment only when the operator retries, so typing a payer value never
+    // silently replaces a live QR code.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createAttempt, currencyCode, methodKey, t]);
 
   // Expiry countdown from the provider checkout expiration.
@@ -321,6 +356,46 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 
+  /**
+   * Refunds the settled test payment through the production refund path. Only
+   * offered once the payment is actually settled — a refund against a pending
+   * trade is rejected by the domain and would teach the operator nothing.
+   */
+  async function refundTestPayment() {
+    if (!testPayment || refunding) {
+      return;
+    }
+    setRefunding(true);
+    setRefundNotice(null);
+    setError(null);
+    try {
+      const result = await backendPaymentDevRefundTestPayment({
+        paymentIntentId: testPayment.paymentIntentId,
+      });
+      setRefundNotice(
+        t(
+          'admin.commerce.payments.methods.testPayment.refundDone',
+          'Refund {{status}} · {{refundNo}} · {{amount}} {{currencyCode}}. {{nextStep}}',
+          {
+            status: result.status,
+            refundNo: result.refundNo,
+            amount: result.amount,
+            currencyCode: result.currencyCode,
+            nextStep: result.nextStep,
+          },
+        ),
+      );
+    } catch (cause) {
+      setError(resolveProblemMessage(
+        cause,
+        t,
+        t('admin.commerce.payments.methods.testPayment.error.refund', 'The test payment could not be refunded.'),
+      ));
+    } finally {
+      setRefunding(false);
+    }
+  }
+
   function openPayUrl(url: string) {
     const opened = window.open(url, '_blank', 'noopener,noreferrer');
     if (!opened) {
@@ -407,6 +482,35 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
           {error && phase === 'failed' && !testPayment ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <div className="text-sm text-red-600 dark:text-red-400" role="alert">{error}</div>
+              {missingPayerFields.length > 0 ? (
+                // The backend refused the checkout because the product
+                // addresses a specific payer. Collect exactly those inputs so
+                // the retry can succeed instead of looping the same error.
+                <div className="w-full max-w-sm space-y-3 text-left">
+                  {requiredPayerFields.map((field) => (
+                    <label className="block" key={field}>
+                      <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
+                        {t(
+                          `admin.commerce.payments.methods.testPayment.payer.${field}`,
+                          field === 'openid'
+                            ? 'Payer openid'
+                            : field === 'client_ip'
+                              ? 'Payer client IP'
+                              : 'Alipay buyer user id',
+                        )}
+                      </span>
+                      <input
+                        className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setPayerIdentity((current) => ({ ...current, [field]: value }));
+                        }}
+                        value={payerIdentity[field] ?? ''}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ) : null}
               <button
                 className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600"
                 onClick={() => setCreateAttempt((value) => value + 1)}
@@ -670,6 +774,28 @@ export function PaymentTestDialog({ record, onClose }: PaymentTestDialogProps) {
               <div className="text-sm font-medium text-slate-900 dark:text-white">
                 {t('admin.commerce.payments.methods.testPayment.success', 'Payment succeeded, test passed.')}
               </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                {t(
+                  'admin.commerce.payments.methods.testPayment.refundHint',
+                  'Refund the settled test payment to verify the refund link of the same provider.',
+                )}
+              </div>
+              <button
+                className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+                disabled={refunding}
+                onClick={() => void refundTestPayment()}
+                type="button"
+              >
+                <RotateCcw className="h-4 w-4" />
+                {refunding
+                  ? t('admin.commerce.payments.dialog.saving', 'Saving...')
+                  : t('admin.commerce.payments.methods.testPayment.refund', 'Refund the test payment')}
+              </button>
+              {refundNotice ? (
+                <div className="text-sm text-emerald-600 dark:text-emerald-400" role="status">
+                  {refundNotice}
+                </div>
+              ) : null}
             </div>
           ) : null}
 

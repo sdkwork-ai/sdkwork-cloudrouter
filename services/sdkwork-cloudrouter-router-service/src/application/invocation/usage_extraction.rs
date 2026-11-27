@@ -161,8 +161,7 @@ fn extract_composite_usage_from_body(
     // 估算合成一条 usage 体（输入按请求体、输出按响应文本），宁可偏低也不能为 0。
     let provider_usage = body.get("usage").or_else(|| body.get("usageMetadata"));
     let estimated_usage = if provider_usage.is_none() {
-        let estimated =
-            estimated_usage_body_without_provider_usage(&invocation.request.body, body);
+        let estimated = estimated_usage_body_without_provider_usage(&invocation.request.body, body);
         if estimated.is_some() {
             tracing::warn!(
                 stage = "billing_usage_extraction",
