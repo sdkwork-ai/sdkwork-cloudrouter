@@ -210,6 +210,7 @@ describe('form validation', () => {
     expect(toZonePoliceFilingInput({ recordNumber: ' ', recordUrl: '' })).toEqual({});
     expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl: '' })).toEqual({});
     expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl: 'http://example.com/record' })).toEqual({});
+    expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl: 'HTTPS://example.com/%E4%BE%8B' })).toEqual({});
   });
 
   it('rejects over-long or non-HTTP public security filing values', () => {
@@ -221,7 +222,18 @@ describe('form validation', () => {
       recordNumber: '',
       recordUrl: `https://example.com/${'x'.repeat(2048)}`,
     }).recordUrl).toBe('admin.domainCenter.validation.policeFilingRecordUrlTooLong');
-    for (const recordUrl of ['example.com', 'javascript:alert(1)', 'ftp://example.com', 'https://']) {
+    for (const recordUrl of [
+      'example.com',
+      'javascript:alert(1)',
+      'ftp://example.com',
+      'https://',
+      'https://exa mple.com/record',
+      'https://example.com/%zz',
+      'https://example.com/%',
+      'https://example.com/record\n1',
+      'https://example.com/record\u0000',
+      'https://\\\\example.com/record',
+    ]) {
       expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl }).recordUrl)
         .toBe('admin.domainCenter.validation.invalidPoliceFilingRecordUrl');
     }

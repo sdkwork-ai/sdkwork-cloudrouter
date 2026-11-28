@@ -146,7 +146,15 @@ describe('root-domain filing dialog', () => {
     expect(domainCenterService.updateZone).not.toHaveBeenCalled();
   });
 
-  it.each(['beian.mps.gov.cn', 'javascript:alert(1)', 'ftp://example.com', 'https://'])(
+  it.each([
+    'beian.mps.gov.cn',
+    'javascript:alert(1)',
+    'ftp://example.com',
+    'https://',
+    'https://exa mple.com',
+    'https://example.com/%zz',
+    'https://\\\\example.com',
+  ])(
     'rejects invalid public security filing URL %s without calling the API',
     (recordUrl) => {
       render(<DomainZoneFilingDialog zone={zone} onClose={vi.fn()} onSaved={vi.fn()} />);

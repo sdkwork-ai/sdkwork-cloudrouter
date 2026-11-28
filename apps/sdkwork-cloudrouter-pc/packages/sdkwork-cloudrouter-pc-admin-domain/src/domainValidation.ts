@@ -277,7 +277,13 @@ export interface DomainZonePoliceFilingForm {
 }
 
 export function isValidHttpUrl(value: string): boolean {
-  if (!/^https?:\/\//iu.test(value)) {
+  if (!/^https?:\/\//iu.test(value) || /[\s\u0000-\u001f\u007f-\u009f]/u.test(value) || /%(?![0-9a-f]{2})/iu.test(value)) {
+    return false;
+  }
+  const remainder = value.slice(value.indexOf('://') + 3);
+  const authorityEnd = remainder.search(/[/?#]/u);
+  const authority = authorityEnd < 0 ? remainder : remainder.slice(0, authorityEnd);
+  if (!authority || authority.startsWith('\\')) {
     return false;
   }
   try {
