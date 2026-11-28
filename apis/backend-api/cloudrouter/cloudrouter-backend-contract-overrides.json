@@ -93,6 +93,7 @@
           "items": {
             "type": "string",
             "enum": [
+              "username",
               "email",
               "phone"
             ]
@@ -188,20 +189,19 @@
               "phone"
             ]
           },
-          "description": "recoveryMethods field on AdminAuthSettingsUpdateRequest.",
-          "minItems": 1
+          "description": "recoveryMethods field on AdminAuthSettingsUpdateRequest."
         },
         "registerMethods": {
           "type": "array",
           "items": {
             "type": "string",
             "enum": [
+              "username",
               "email",
               "phone"
             ]
           },
-          "description": "registerMethods field on AdminAuthSettingsUpdateRequest.",
-          "minItems": 1
+          "description": "registerMethods field on AdminAuthSettingsUpdateRequest."
         },
         "verificationPolicy": {
           "type": "object",

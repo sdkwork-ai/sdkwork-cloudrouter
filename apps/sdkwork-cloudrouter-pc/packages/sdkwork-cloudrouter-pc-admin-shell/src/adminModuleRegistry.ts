@@ -17,13 +17,13 @@ import {
   Database,
   DatabaseZap,
   Download,
+  Eye,
   FileText,
   FileClock,
   FolderHeart,
   FolderTree,
   Gauge,
   Globe,
-  Gift,
   Globe2,
   GraduationCap,
   HardDrive,
@@ -176,6 +176,7 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
       '/admin/plugin',
       '/admin/agent',
       '/admin/memory',
+      '/admin/collection',
     ],
   }),
   moduleBlock({
@@ -327,6 +328,17 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         groupBlock('admin.menu.home.agentManagement', [
           itemBlock({ path: '/admin/agent/categories', labelKey: 'admin.menu.agents.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
           itemBlock({ path: '/admin/agent', labelKey: 'admin.menu.agents', icon: Bot }),
+          // Reachability is governed on its own page, not inside the agent
+          // editor: creating an agent never decides who can reach it.
+          itemBlock({ path: '/admin/agent/visibility', labelKey: 'admin.menu.agents.visibility', icon: Eye }),
+        ]),
+        // Collections span the four capability kinds: a mixed collection can
+        // hold any of them, and a single-kind collection holds only its own.
+        // The group therefore sits after the per-kind groups instead of inside
+        // one of them.
+        groupBlock('admin.menu.home.collectionManagement', [
+          itemBlock({ path: '/admin/collection/categories', labelKey: 'admin.menu.collections.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
+          itemBlock({ path: '/admin/collection', labelKey: 'admin.menu.collections', icon: Layers3 }),
         ]),
       ]),
     ],
@@ -394,11 +406,14 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
   {
     moduleId: 'membershipCenter',
     groups: [
+      // Catalog group: the membership catalog has exactly one plan list, one
+      // price list, and one billing-period list. The retired `vipPackages`
+      // entry was a second, identical price list over the same table and is
+      // intentionally absent — old links still resolve to the price catalog.
       groupBlock('admin.menu.memberships.catalog', [
         itemBlock({ path: '/admin/memberships/plans', labelKey: 'admin.menu.memberships.plans', icon: Crown }),
-        itemBlock({ path: '/admin/memberships/packageGroups', labelKey: 'admin.menu.memberships.packageGroups', icon: Boxes }),
         itemBlock({ path: '/admin/memberships/packages', labelKey: 'admin.menu.memberships.packages', icon: Package }),
-        itemBlock({ path: '/admin/memberships/vipPackages', labelKey: 'admin.menu.memberships.vipPackages', icon: Gift }),
+        itemBlock({ path: '/admin/memberships/packageGroups', labelKey: 'admin.menu.memberships.packageGroups', icon: Boxes }),
       ]),
       groupBlock('admin.menu.memberships.users', [
         itemBlock({ path: '/admin/memberships/members', labelKey: 'admin.menu.memberships.members', icon: Users }),

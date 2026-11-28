@@ -10,6 +10,12 @@ import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notif
 import { HARDWARE_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
 import { PRODUCT_CENTER_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-product/contribution';
 import { ENTERPRISE_ADMIN_ROUTE_RECORDS } from '@sdkwork/company-pc-admin-enterprise/contribution';
+/**
+ * Agent visibility route grammar. Imported from the package's side-effect-free
+ * `./route` entry (not its root, which binds runtime and lazy-loads pages), so
+ * the registered path and the catalog's governance action cannot drift.
+ */
+import { AGENT_VISIBILITY_ROUTE_SEGMENT } from '@sdkwork/cloudrouter-pc-admin-agent/route';
 import { ACCOUNT_ADMIN_ROUTE_ELEMENTS } from './accountAdminHostElement.tsx';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 import { EnterpriseCenterHostElement } from './enterpriseCenterHostElement.tsx';
@@ -69,8 +75,16 @@ const McpServerDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-p
 const McpCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpCategoriesAdminPage');
 const AgentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentsAdminPage');
 const AgentCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentCategoriesAdminPage');
+/**
+ * Agent visibility is its own governance surface, not a section of the agent
+ * editor: creating an agent never decides reachability, and this route is where
+ * the scope and visible roles of a managed agent are granted.
+ */
+const AgentVisibilityAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentVisibilityAdminPage');
 const PluginsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginsAdminPage');
 const PluginCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginCategoriesAdminPage');
+const CollectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-collection'), 'CollectionsAdminPage');
+const CollectionCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-collection'), 'CollectionCategoriesAdminPage');
 const MemoryAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memory'), 'MemoryAdminPage');
 const MemoryCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memory'), 'MemoryCategoriesAdminPage');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-record'), 'RecordAdmin');
@@ -406,7 +420,13 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('plugin/categories', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginCategoriesAdmin />),
   route('plugin', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginsAdmin />),
   route('agent/categories', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentCategoriesAdmin />),
+  route(AGENT_VISIBILITY_ROUTE_SEGMENT, 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentVisibilityAdmin />),
   route('agent', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentsAdmin />),
+  // Capability collections (合集) expose the whole AI-foundation catalog through
+  // one ordered list: the backend SDK answers both the category surface and the
+  // collection surface, so the admin package owns both routes.
+  route('collection/categories', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-collection', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CollectionCategoriesAdmin />),
+  route('collection', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-collection', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CollectionsAdmin />),
   route('memory/categories', 'sdkwork-memory', '@sdkwork/cloudrouter-pc-admin-memory', ['sdkwork-memory-backend-sdk'], 'cloudrouter.admin.access', <MemoryCategoriesAdmin />),
   route('memory', 'sdkwork-memory', '@sdkwork/cloudrouter-pc-admin-memory', ['sdkwork-memory-backend-sdk'], 'cloudrouter.admin.access', <MemoryAdmin />),
   route('record', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-record', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RecordAdmin />),

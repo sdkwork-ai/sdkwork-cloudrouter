@@ -1,6 +1,6 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
-import type { CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRechargeOrderRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcePricesRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountCredentialSecret, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupResourcePriceCollection, UpstreamAccountGroupResourcePriceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamRechargeOrder, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierRechargeOverview, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
+import type { AiCollection, AiCollectionCategory, AiCollectionCategoryCreateRequest, AiCollectionCategoryPage, AiCollectionCategoryUpdateRequest, AiCollectionCreateRequest, AiCollectionItemsReplaceRequest, AiCollectionPage, AiCollectionReleasePage, AiCollectionStatusUpdateRequest, AiCollectionUpdateRequest, CreateUpstreamAccountCredentialRequest, CreateUpstreamAccountGroupRequest, CreateUpstreamAccountRequest, CreateUpstreamSupplierRechargeOrderRequest, CreateUpstreamSupplierRequest, ExplainUpstreamAccountGroupRouteRequest, ReplaceUpstreamAccountGroupMembersRequest, ReplaceUpstreamAccountGroupResourcePricesRequest, ReplaceUpstreamAccountGroupResourcesRequest, ReplaceUpstreamAccountResourcesRequest, ReplaceUpstreamSupplierAuthMethodsRequest, ReplaceUpstreamSupplierEndpointsRequest, ReplaceUpstreamSupplierResourcesRequest, UpdateUpstreamAccountGroupRequest, UpdateUpstreamAccountRequest, UpdateUpstreamSupplierRequest, UpstreamAccount, UpstreamAccountCredential, UpstreamAccountCredentialListResponse, UpstreamAccountCredentialSecret, UpstreamAccountGroup, UpstreamAccountGroupListResponse, UpstreamAccountGroupMemberCollection, UpstreamAccountGroupMemberListResponse, UpstreamAccountGroupResourceCollection, UpstreamAccountGroupResourceListResponse, UpstreamAccountGroupResourcePriceCollection, UpstreamAccountGroupResourcePriceListResponse, UpstreamAccountGroupRouteExplanation, UpstreamAccountListResponse, UpstreamAccountResourceCollection, UpstreamAccountResourceListResponse, UpstreamAccountVerification, UpstreamRechargeOrder, UpstreamResourceCatalogResponse, UpstreamSupplier, UpstreamSupplierAuthMethodCollection, UpstreamSupplierAuthMethodListResponse, UpstreamSupplierEndpointCollection, UpstreamSupplierEndpointListResponse, UpstreamSupplierListResponse, UpstreamSupplierRechargeOverview, UpstreamSupplierResourceCollection, UpstreamSupplierResourceListResponse, VerifyUpstreamAccountRequest } from '../types';
 export interface AiUpstreamSuppliersResourcesUpdateParams {
   ifMatch: string;
 }
@@ -752,6 +752,178 @@ export class AiPluginCategoriesApi {
   }
 }
 
+export class AiCollectionsStatusApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Update collection status */
+  async update(collectionId: string, body: AiCollectionStatusUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AiCollection> {
+    return this.client.request<AiCollection>(backendApiPath(`/ai/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/status`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export interface AiCollectionsReleasesListParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export class AiCollectionsReleasesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List collection releases */
+  async list(collectionId: string, params?: AiCollectionsReleasesListParams, requestOptions?: ApiRequestOptions): Promise<AiCollectionReleasePage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AiCollectionReleasePage>(appendQueryString(backendApiPath(`/ai/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/releases`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export class AiCollectionsItemsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Replace collection items */
+  async update(collectionId: string, body: AiCollectionItemsReplaceRequest, requestOptions?: ApiRequestOptions): Promise<AiCollection> {
+    return this.client.request<AiCollection>(backendApiPath(`/ai/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}/items`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export interface AiCollectionsListParams {
+  collectionKind?: 'mixed' | 'skill' | 'mcp' | 'agent' | 'plugin';
+  categoryId?: string;
+  publishStatus?: 'draft' | 'published' | 'archived';
+  status?: 'enabled' | 'disabled';
+  featured?: boolean;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export class AiCollectionsApi {
+  private client: HttpClient;
+  public readonly items: AiCollectionsItemsApi;
+  public readonly releases: AiCollectionsReleasesApi;
+  public readonly status: AiCollectionsStatusApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.items = new AiCollectionsItemsApi(client);
+    this.releases = new AiCollectionsReleasesApi(client);
+    this.status = new AiCollectionsStatusApi(client);
+  }
+
+
+/** List collections */
+  async list(params?: AiCollectionsListParams, requestOptions?: ApiRequestOptions): Promise<AiCollectionPage> {
+    const query = buildQueryString([
+      { name: 'collection_kind', value: params?.collectionKind, style: 'form', explode: true, allowReserved: false },
+      { name: 'category_id', value: params?.categoryId, style: 'form', explode: true, allowReserved: false },
+      { name: 'publish_status', value: params?.publishStatus, style: 'form', explode: true, allowReserved: false },
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'featured', value: params?.featured, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AiCollectionPage>(appendQueryString(backendApiPath(`/ai/collections`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Create collection */
+  async create(body: AiCollectionCreateRequest, requestOptions?: ApiRequestOptions): Promise<AiCollection> {
+    return this.client.request<AiCollection>(backendApiPath(`/ai/collections`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+
+/** Delete collection */
+  async delete(collectionId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/ai/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
+  }
+
+/** Get collection */
+  async retrieve(collectionId: string, requestOptions?: ApiRequestOptions): Promise<AiCollection> {
+    return this.client.request<AiCollection>(backendApiPath(`/ai/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+
+/** Update collection */
+  async update(collectionId: string, body: AiCollectionUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AiCollection> {
+    return this.client.request<AiCollection>(backendApiPath(`/ai/collections/${serializePathParameter(collectionId, { name: 'collectionId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
+export class AiCollectionCategoriesDefaultsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Initialize collection categories */
+  async create(requestOptions?: ApiRequestOptions): Promise<AiCollectionCategoryPage> {
+    return this.client.request<AiCollectionCategoryPage>(backendApiPath(`/ai/collection_categories/defaults`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export interface AiCollectionCategoriesListParams {
+  collectionKind?: 'mixed' | 'skill' | 'mcp' | 'agent' | 'plugin';
+  status?: 'enabled' | 'disabled';
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export class AiCollectionCategoriesApi {
+  private client: HttpClient;
+  public readonly defaults: AiCollectionCategoriesDefaultsApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.defaults = new AiCollectionCategoriesDefaultsApi(client);
+  }
+
+
+/** List collection categories */
+  async list(params?: AiCollectionCategoriesListParams, requestOptions?: ApiRequestOptions): Promise<AiCollectionCategoryPage> {
+    const query = buildQueryString([
+      { name: 'collection_kind', value: params?.collectionKind, style: 'form', explode: true, allowReserved: false },
+      { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AiCollectionCategoryPage>(appendQueryString(backendApiPath(`/ai/collection_categories`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Create collection category */
+  async create(body: AiCollectionCategoryCreateRequest, requestOptions?: ApiRequestOptions): Promise<AiCollectionCategory> {
+    return this.client.request<AiCollectionCategory>(backendApiPath(`/ai/collection_categories`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+
+/** Delete collection category */
+  async delete(categoryId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/ai/collection_categories/${serializePathParameter(categoryId, { name: 'categoryId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
+  }
+
+/** Update collection category */
+  async update(categoryId: string, body: AiCollectionCategoryUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AiCollectionCategory> {
+    return this.client.request<AiCollectionCategory>(backendApiPath(`/ai/collection_categories/${serializePathParameter(categoryId, { name: 'categoryId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+  }
+}
+
 export class AiAgentsStatusApi {
   private client: HttpClient;
 
@@ -824,6 +996,8 @@ export class AiAgentCategoriesApi {
 export class AiApi {
   public readonly agentCategories: AiAgentCategoriesApi;
   public readonly agents: AiAgentsApi;
+  public readonly collectionCategories: AiCollectionCategoriesApi;
+  public readonly collections: AiCollectionsApi;
   public readonly pluginCategories: AiPluginCategoriesApi;
   public readonly plugins: AiPluginsApi;
   public readonly skillCapabilities: AiSkillCapabilitiesApi;
@@ -838,6 +1012,8 @@ export class AiApi {
   constructor(client: HttpClient) {
     this.agentCategories = new AiAgentCategoriesApi(client);
     this.agents = new AiAgentsApi(client);
+    this.collectionCategories = new AiCollectionCategoriesApi(client);
+    this.collections = new AiCollectionsApi(client);
     this.pluginCategories = new AiPluginCategoriesApi(client);
     this.plugins = new AiPluginsApi(client);
     this.skillCapabilities = new AiSkillCapabilitiesApi(client);

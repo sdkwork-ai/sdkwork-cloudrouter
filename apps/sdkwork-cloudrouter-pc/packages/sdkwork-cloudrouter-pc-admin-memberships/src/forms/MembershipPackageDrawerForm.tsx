@@ -16,12 +16,60 @@ import {
   parseRequiredPositiveIntegerField,
 } from './membershipFormValues';
 import type {
+  MembershipsAdminBillingCycle,
   MembershipsAdminCategory,
   MembershipsAdminPackageGroup,
   MembershipsAdminPackageItem,
   MembershipsAdminPackageMutationInput,
   MembershipsAdminPlanItem,
 } from '../membershipsService';
+
+/** Declared package cycles; `once` marks a one-time purchase. */
+const PACKAGE_BILLING_CYCLES: readonly MembershipsAdminBillingCycle[] = [
+  'once',
+  'day',
+  'week',
+  'month',
+  'quarter',
+  'year',
+];
+
+function normalizePackageBillingCycle(value: string | undefined): MembershipsAdminBillingCycle | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+  if (normalized === 'one_time') {
+    return 'once';
+  }
+  return PACKAGE_BILLING_CYCLES.find((cycle) => cycle === normalized);
+}
+
+/**
+ * Duration fallback that mirrors the backend default.
+ *
+ * Deliberately never returns `once`: a one-time purchase is a commercial
+ * decision, so it can only come from an explicit operator choice.
+ */
+function defaultBillingCycleForDuration(durationDays: string): MembershipsAdminBillingCycle {
+  const days = Number.parseInt(durationDays, 10);
+  if (!Number.isFinite(days)) {
+    return 'month';
+  }
+  if (days >= 365) {
+    return 'year';
+  }
+  if (days >= 90) {
+    return 'quarter';
+  }
+  if (days >= 30) {
+    return 'month';
+  }
+  if (days >= 7) {
+    return 'week';
+  }
+  return 'day';
+}
 
 // Base-data currency options (sdkwork-appbase base_currency) with a minimal
 // fallback set so the select keeps working during a base-data outage.
@@ -76,6 +124,10 @@ export function MembershipPackageDrawerForm({
   const [priceAmount, setPriceAmount] = useState(initialValue?.priceAmount ?? '');
   const [currencyCode, setCurrencyCode] = useState(normalizeCurrencyCodeValue(initialValue?.currencyCode));
   const [durationDays, setDurationDays] = useState(String(initialValue?.durationDays ?? 30));
+  const [billingCycle, setBillingCycle] = useState<MembershipsAdminBillingCycle>(
+    normalizePackageBillingCycle(initialValue?.billingCycle ?? initialValue?.recurrenceCycle)
+      ?? defaultBillingCycleForDuration(String(initialValue?.durationDays ?? 30)),
+  );
   const [discount, setDiscount] = useState(String(initialValue?.discount ?? 100));
   const [status, setStatus] = useState<'active' | 'inactive' | 'disabled'>(
     initialValue?.status === 'inactive' || initialValue?.status === 'disabled'
@@ -83,6 +135,14 @@ export function MembershipPackageDrawerForm({
       : 'active',
   );
   const [error, setError] = useState<string | null>(null);
+  const billingCycleOptions = [
+    { value: 'once', label: t('admin.commerce.memberships.groups.form.billingCycle.once', 'One-time') },
+    { value: 'day', label: t('admin.commerce.memberships.groups.form.billingCycle.day', 'Daily') },
+    { value: 'week', label: t('admin.commerce.memberships.groups.form.billingCycle.week', 'Weekly') },
+    { value: 'month', label: t('admin.commerce.memberships.groups.form.billingCycle.month', 'Monthly') },
+    { value: 'quarter', label: t('admin.commerce.memberships.groups.form.billingCycle.quarter', 'Quarterly') },
+    { value: 'year', label: t('admin.commerce.memberships.groups.form.billingCycle.year', 'Yearly') },
+  ] satisfies Array<{ value: MembershipsAdminBillingCycle; label: string }>;
   const durationDayOptions = includeCurrentOption(
     membershipDurationDayOptions(t, translationKeyPrefix),
     durationDays,
@@ -106,6 +166,7 @@ export function MembershipPackageDrawerForm({
         code: mode === 'edit' && initialValue?.packageNo ? initialValue.packageNo : buildMembershipPackageCode(name),
         packageGroupId,
         planId,
+        billingCycle,
         name,
         priceAmount: parseRequiredMoneyAmountField(priceAmount, t(`${translationKeyPrefix}.form.price`, 'Price')),
         currencyCode,
@@ -209,6 +270,18 @@ export function MembershipPackageDrawerForm({
           onChange={(value) => setStatus(value as 'active' | 'inactive' | 'disabled')}
         />
       </div>
+      <MembershipSelectField
+        label={t(`${translationKeyPrefix}.form.billingCycle`, 'Purchase model')}
+        value={billingCycle}
+        options={billingCycleOptions}
+        onChange={(value) => setBillingCycle(value || defaultBillingCycleForDuration(durationDays))}
+      />
+      <p className="-mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+        {t(
+          `${translationKeyPrefix}.form.billingCycleHint`,
+          'One-time settles once and never renews; the calendar cycles are subscriptions. This is what the plan purchase model is derived from.',
+        )}
+      </p>
     </MembershipFormFrame>
   );
 

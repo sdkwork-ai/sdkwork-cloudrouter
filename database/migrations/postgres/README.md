@@ -115,6 +115,22 @@ development lifecycle history stays readable.
   for any model call. The table is soft-deleted with the standard column
   contract and a partial unique index over the scope plus group.
 
+- `0055_ai_capability_collections.up.sql` creates the AI capability collection
+  plane behind the admin AI-foundation surface (`/admin/collection`):
+  `ai_collection_category` (typed taxonomy: `mixed` / `skill` / `mcp` / `agent`
+  / `plugin`), `ai_collection` (a named, publishable capability set),
+  `ai_collection_item` (ordered skill/MCP/agent/plugin references with a display
+  snapshot), and `ai_collection_release` (immutable snapshots of the enabled
+  items). Capability
+  records stay owned by the sibling Skills/MCP/Agents/Plugins modules; an item
+  stores the owning capability key plus a snapshot instead of a cross-schema
+  foreign key. Kind, tag-array, config-object, and release-snapshot-array checks
+  run in the database; the category-code check also admits the truncated
+  `#deleted-<id>` tombstone so soft delete never violates it. The baseline
+  carries the same definitions for clean installs.
+  Reversible: the down migration drops only these four tables. Design:
+  `docs/architecture/tech/TECH-2026-11-28-ai-capability-collections.md`.
+
 ## Historical migrations
 
 Folded into the baseline (`0001_cloudrouter_baseline.sql`) during pre-release

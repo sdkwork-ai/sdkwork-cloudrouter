@@ -1027,6 +1027,50 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
 
+- route: /admin/agent/visibility
+  package: '@sdkwork/cloudrouter-pc-admin-agent'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-agents-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/agent/visibility
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/src/admin/cloudRouterAdminHostMount.tsx
+
+- route: /admin/collection/categories
+  package: '@sdkwork/cloudrouter-pc-admin-collection'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/collection/categories
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+
+- route: /admin/collection
+  package: '@sdkwork/cloudrouter-pc-admin-collection'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/collection
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+
 - route: /oauth/app
   package: portal-root
   owner: product-surface

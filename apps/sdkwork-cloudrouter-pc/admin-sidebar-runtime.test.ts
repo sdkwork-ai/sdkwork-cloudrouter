@@ -260,6 +260,7 @@ test("admin sidebar nests skills, connectors, plugins, and agents under the AI f
     "admin.menu.home.connectorManagement",
     "admin.menu.home.pluginManagement",
     "admin.menu.home.agentManagement",
+    "admin.menu.home.collectionManagement",
   ]);
 
   const skillGroup = nestedGroups.find((group) => group.groupKey === "admin.menu.home.skillManagement");
@@ -288,6 +289,21 @@ test("admin sidebar nests skills, connectors, plugins, and agents under the AI f
   assert.deepEqual(agentGroup.items.map((item) => item.path), [
     "/admin/agent/categories",
     "/admin/agent",
+    // Reachability is governed on its own page, beside the catalog it governs.
+    "/admin/agent/visibility",
+  ]);
+
+  // Capability collections span every kind, so they get their own nested group
+  // beside the four per-kind groups instead of being nested inside one.
+  const collectionGroup = nestedGroups.find((group) => group.groupKey === "admin.menu.home.collectionManagement");
+  assert.ok(collectionGroup, "collection management group must exist");
+  assert.deepEqual(collectionGroup.items.map((item) => item.path), [
+    "/admin/collection/categories",
+    "/admin/collection",
+  ]);
+  assert.deepEqual(collectionGroup.items.map((item) => item.labelKey), [
+    "admin.menu.collections.categories",
+    "admin.menu.collections",
   ]);
 
   // Three navigation levels: foundation group -> capability group -> page.
@@ -314,6 +330,7 @@ test("admin sidebar nests skills, connectors, plugins, and agents under the AI f
     "admin.menu.home.connectorManagement",
     "admin.menu.home.pluginManagement",
     "admin.menu.home.agentManagement",
+    "admin.menu.home.collectionManagement",
   ]);
   const filteredOut = getFilteredAdminModuleMenu("home", []);
   assert.equal(
@@ -326,7 +343,7 @@ test("admin sidebar nests skills, connectors, plugins, and agents under the AI f
   // module switcher keeps the four groups inside the same admin module.
   const homeModule = ADMIN_MODULES.find((module) => module.id === "home");
   assert.ok(homeModule, "home module must exist");
-  for (const prefix of ["/admin/skill", "/admin/connector", "/admin/plugin", "/admin/agent"]) {
+  for (const prefix of ["/admin/skill", "/admin/connector", "/admin/plugin", "/admin/agent", "/admin/collection"]) {
     assert.ok(
       homeModule.pathPrefixes.includes(prefix),
       `home module must claim ${prefix}`,

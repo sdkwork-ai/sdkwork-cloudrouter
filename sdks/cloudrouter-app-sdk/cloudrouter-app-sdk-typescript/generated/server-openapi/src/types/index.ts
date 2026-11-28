@@ -3,6 +3,7 @@ export type { AcknowledgeNotificationResponse } from './acknowledge-notification
 
 export type { AppApiKeyItem } from './app-api-key-item';
 export type { AppApiKeyListResponse } from './app-api-key-list-response';
+export type { AppAuthRuntimeSettingsResponse } from './app-auth-runtime-settings-response';
 export type { AppInviteClaimRequest } from './app-invite-claim-request';
 export type { AppInviteClaimResponse } from './app-invite-claim-response';
 export type { AppInvitePolicyResponse } from './app-invite-policy-response';
@@ -31,6 +32,7 @@ export type { AppRoutingRequestTrace } from './app-routing-request-trace';
 export type { AppRoutingRequestTraceListResponse } from './app-routing-request-trace-list-response';
 export type { AppRoutingUsageData } from './app-routing-usage-data';
 export type { AppRoutingUsageSnapshot } from './app-routing-usage-snapshot';
+
 export type { CompleteRuntimeInvocationRequest } from './complete-runtime-invocation-request';
 export type { CreateApiKeyRequest } from './create-api-key-request';
 export type { CreateApiKeyResponse } from './create-api-key-response';
@@ -111,5 +113,3 @@ export type { UpdateSettingsResponse } from './update-settings-response';
 export type { UsageLogItem } from './usage-log-item';
 
 export type { UsageLogsResponse } from './usage-logs-response';
-
-export type { RevealApiKeyResponse } from './reveal-api-key-response';

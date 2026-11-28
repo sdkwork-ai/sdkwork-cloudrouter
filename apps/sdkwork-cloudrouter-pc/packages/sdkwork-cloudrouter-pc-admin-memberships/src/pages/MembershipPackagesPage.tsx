@@ -15,10 +15,17 @@ import {
   MembershipTablePanel,
   confirmMembershipAction,
   hasNextMembershipPage,
+  membershipBillingCycleLabel,
   membershipPageLabel,
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipCategoryBadge } from '../components/MembershipCategoryBadge';
+import { MembershipAudienceBadge } from '../components/MembershipAudienceBadge';
+import { MembershipSegmentedFilter } from '../components/MembershipSegmentedFilter';
+import {
+  MEMBERSHIP_AUDIENCE_FILTERS,
+  type MembershipsAdminAudienceFilter,
+} from '../planTaxonomy';
 import {
   MembershipCategoryFilter,
   type MembershipCategoryFilterValue,
@@ -67,6 +74,7 @@ export function MembershipPackagesPage() {
   const [packagePageSize, setPackagePageSize] = useState(20);
   const [packagePageInfo, setPackagePageInfo] = useState<MembershipsAdminPageInfo | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<MembershipCategoryFilterValue>('all');
+  const [audienceFilter, setAudienceFilter] = useState<MembershipsAdminAudienceFilter>('all');
   const referenceRequestIdRef = useRef(0);
   const packageRequestIdRef = useRef(0);
   const referencePageSize = 20;
@@ -76,15 +84,17 @@ export function MembershipPackagesPage() {
     requestedPlanPage: number,
     preferredGroupId?: string,
     requestedCategory: MembershipCategoryFilterValue = categoryFilter,
+    requestedAudience: MembershipsAdminAudienceFilter = audienceFilter,
   ) => {
     const requestId = ++referenceRequestIdRef.current;
     setIsReferenceLoading(true);
     setReferenceError(null);
     try {
       const category = requestedCategory === 'all' ? undefined : requestedCategory;
+      const audience = requestedAudience === 'all' ? undefined : requestedAudience;
       const [groupResult, planResult] = await Promise.all([
-        fetchMembershipAdminPackageGroups({ page: requestedGroupPage, pageSize: referencePageSize, category }),
-        fetchMembershipAdminPlans({ page: requestedPlanPage, pageSize: referencePageSize, category }),
+        fetchMembershipAdminPackageGroups({ page: requestedGroupPage, pageSize: referencePageSize, category, audience }),
+        fetchMembershipAdminPlans({ page: requestedPlanPage, pageSize: referencePageSize, category, audience }),
       ]);
       if (requestId !== referenceRequestIdRef.current) {
         return;
@@ -115,6 +125,7 @@ export function MembershipPackagesPage() {
     requestedPage: number,
     requestedGroupId: string | null,
     requestedCategory: MembershipCategoryFilterValue = categoryFilter,
+    requestedAudience: MembershipsAdminAudienceFilter = audienceFilter,
   ) => {
     const requestId = ++packageRequestIdRef.current;
     if (!requestedGroupId) {
@@ -132,6 +143,7 @@ export function MembershipPackagesPage() {
         pageSize: packagePageSize,
         packageGroupId: requestedGroupId,
         category: requestedCategory === 'all' ? undefined : requestedCategory,
+        audience: requestedAudience === 'all' ? undefined : requestedAudience,
       });
       if (requestId !== packageRequestIdRef.current) {
         return;
@@ -151,30 +163,41 @@ export function MembershipPackagesPage() {
 
   const refreshPage = useCallback(async () => {
     await Promise.all([
-      loadReferenceData(groupPage, planPage, undefined, categoryFilter),
-      loadPackages(packagePage, selectedGroupId, categoryFilter),
+      loadReferenceData(groupPage, planPage, undefined, categoryFilter, audienceFilter),
+      loadPackages(packagePage, selectedGroupId, categoryFilter, audienceFilter),
     ]);
-  }, [categoryFilter, groupPage, loadPackages, loadReferenceData, packagePage, planPage, selectedGroupId]);
+  }, [audienceFilter, categoryFilter, groupPage, loadPackages, loadReferenceData, packagePage, planPage, selectedGroupId]);
 
   useEffect(() => {
-    void loadReferenceData(groupPage, planPage, undefined, categoryFilter);
+    void loadReferenceData(groupPage, planPage, undefined, categoryFilter, audienceFilter);
     return () => {
       referenceRequestIdRef.current += 1;
     };
-  }, [categoryFilter, groupPage, loadReferenceData, planPage]);
+  }, [audienceFilter, categoryFilter, groupPage, loadReferenceData, planPage]);
 
   useEffect(() => {
-    void loadPackages(packagePage, selectedGroupId, categoryFilter);
+    void loadPackages(packagePage, selectedGroupId, categoryFilter, audienceFilter);
     return () => {
       packageRequestIdRef.current += 1;
     };
-  }, [categoryFilter, loadPackages, packagePage, selectedGroupId]);
+  }, [audienceFilter, categoryFilter, loadPackages, packagePage, selectedGroupId]);
 
   const handleCategoryFilterChange = (nextCategory: MembershipCategoryFilterValue) => {
     if (nextCategory === categoryFilter) {
       return;
     }
     setCategoryFilter(nextCategory);
+    setGroupPage(1);
+    setPlanPage(1);
+    setPackagePage(1);
+    setSelectedGroupId(null);
+  };
+
+  const handleAudienceFilterChange = (nextAudience: MembershipsAdminAudienceFilter) => {
+    if (nextAudience === audienceFilter) {
+      return;
+    }
+    setAudienceFilter(nextAudience);
     setGroupPage(1);
     setPlanPage(1);
     setPackagePage(1);
@@ -216,7 +239,7 @@ export function MembershipPackagesPage() {
       }
       setIsDrawerOpen(false);
       setEditingPackage(null);
-      await loadPackages(packagePage, selectedGroupId);
+      await loadPackages(packagePage, selectedGroupId, categoryFilter, audienceFilter);
     } finally {
       setIsSaving(false);
     }
@@ -252,7 +275,7 @@ export function MembershipPackagesPage() {
       setPackagePage(targetPage);
       return;
     }
-    await loadPackages(targetPage, selectedGroupId);
+    await loadPackages(targetPage, selectedGroupId, categoryFilter, audienceFilter);
   };
 
   const handleDeleteGroup = async (group: MembershipsAdminPackageGroup) => {
@@ -275,6 +298,11 @@ export function MembershipPackagesPage() {
   return (
     <>
       <MembershipAdminPageShell
+        title={t('admin.commerce.memberships.packages.title', 'Plans & pricing')}
+        description={t(
+          'admin.commerce.memberships.packages.desc',
+          'Every price binds a plan, a billing period, and an amount. The purchase model of a plan is derived from these prices.',
+        )}
         isLoading={isReferenceLoading || isPackageLoading}
         error={packageError ?? referenceError}
         onRefresh={refreshPage}
@@ -289,9 +317,17 @@ export function MembershipPackagesPage() {
           </button>
         )}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3">
-          <MembershipCategoryFilter value={categoryFilter} onChange={handleCategoryFilterChange} />
-          <span className="text-xs text-slate-400">{t('admin.commerce.memberships.category.filterHint', 'Filter by plan family')}</span>
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <MembershipSegmentedFilter
+              label={t('admin.commerce.memberships.audience.filterLabel', 'Audience filter')}
+              value={audienceFilter}
+              options={MEMBERSHIP_AUDIENCE_FILTERS}
+              onChange={handleAudienceFilterChange}
+            />
+            <MembershipCategoryFilter value={categoryFilter} onChange={handleCategoryFilterChange} />
+            <span className="text-xs text-slate-400 dark:text-slate-500">{t('admin.commerce.memberships.category.filterHint', 'Filter by plan family')}</span>
+          </div>
         </div>
         <div className="grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5">
@@ -327,7 +363,8 @@ export function MembershipPackagesPage() {
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">{group.name}</span>
-                      <span className="mt-1 flex items-center gap-2">
+                      <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <MembershipAudienceBadge audience={group.audience} />
                         <MembershipCategoryBadge category={group.category} />
                         <span className="text-xs text-slate-400">{t('admin.commerce.memberships.groups.packagesCount', '{{count}} packages', { count: group.packageCount })}</span>
                       </span>
@@ -410,11 +447,13 @@ export function MembershipPackagesPage() {
                   <tr className="border-b border-slate-100 dark:border-white/5">
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.package', 'Package')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.category', 'Category')}</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.audience.label', 'Audience')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.plan', 'Plan')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.price', 'Price')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.discount', 'Discount')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.discountedPrice', 'Discounted Price')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.duration', 'Duration')}</th>
+                    <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.plans.table.purchaseModel', 'Purchase model')}</th>
                     <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.packages.table.status', 'Status')}</th>
                     <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('common.actions.actions', 'Actions')}</th>
                   </tr>
@@ -427,6 +466,7 @@ export function MembershipPackagesPage() {
                         <div className="text-xs text-slate-400">{item.packageNo}</div>
                       </td>
                       <td className="px-4 py-2.5"><MembershipCategoryBadge category={item.category} /></td>
+                      <td className="px-4 py-2.5"><MembershipAudienceBadge audience={item.audience} /></td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">
                         {planNameById.get(item.planId) ?? item.planId}
                       </td>
@@ -440,6 +480,7 @@ export function MembershipPackagesPage() {
                         {formatMoney(computeDiscountedAmount(item.priceAmount, item.discount), { currency: item.currencyCode, locale: displayLocale, mode: 'symbol' }) ?? `${computeDiscountedAmount(item.priceAmount, item.discount)} ${item.currencyCode}`}
                       </td>
                       <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.packages.form.durationOptionDays', '{{days}} days', { days: item.durationDays })}</td>
+                      <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{membershipBillingCycleLabel(item.billingCycle, t)}</td>
                       <td className="px-4 py-2.5"><MembershipStatusBadge status={item.status} /></td>
                       <td className="px-4 py-2.5">
                         <MembershipTableActions>

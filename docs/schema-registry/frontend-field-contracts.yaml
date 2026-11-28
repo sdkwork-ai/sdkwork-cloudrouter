@@ -3824,6 +3824,86 @@ frontend_operations:
         schema: { type: string, maxLength: 64 }
       - name: organization_code
         schema: { type: string, maxLength: 64 }
+  - route: /auth/login
+    source: apps/sdkwork-cloudrouter-pc/src/auth/authRuntimeConfig.ts
+    operation: fetchAuthRuntimeConfig
+    operation_id: auth.runtime.retrieve
+    kind: read
+    api_surface: app
+    api_method: GET
+    api_path: /app/v3/api/iam/auth/runtime
+    sdk_domain: iam
+    read_sources:
+      - ops_config_snapshot
+    response_schema:
+      name: AppAuthRuntimeSettingsResponse
+      schema:
+        additionalProperties: false
+        name: AppAuthRuntimeSettingsResponse
+        properties:
+          leftRailMode:
+            type: string
+            enum: [auto, highlights-only, qr-only]
+          loginMethods:
+            type: array
+            items:
+              type: string
+              enum: [password, emailCode, phoneCode, sessionBridge]
+          registerMethods:
+            type: array
+            items:
+              type: string
+              enum: [username, email, phone]
+          recoveryMethods:
+            type: array
+            items:
+              type: string
+              enum: [email, phone]
+          verificationPolicy:
+            additionalProperties: false
+            type: object
+            properties:
+              emailCodeLoginEnabled: { type: boolean }
+              emailRegistrationVerificationRequired: { type: boolean }
+              phoneCodeLoginEnabled: { type: boolean }
+              phoneRegistrationVerificationRequired: { type: boolean }
+            required:
+              - emailCodeLoginEnabled
+              - emailRegistrationVerificationRequired
+              - phoneCodeLoginEnabled
+              - phoneRegistrationVerificationRequired
+          oauthLoginEnabled: { type: boolean }
+          oauthProviders:
+            type: array
+            items: { type: string, maxLength: 64 }
+          oauthRegion: { type: string, enum: [mainland, overseas] }
+          qrLoginEnabled: { type: boolean }
+          qrLoginType: { type: string, enum: [web, official, mini] }
+          inviteCodePolicy:
+            additionalProperties: false
+            type: object
+            properties:
+              registerRequired: { type: boolean }
+              loginRequired: { type: boolean }
+            required: [registerRequired, loginRequired]
+        required:
+          - leftRailMode
+          - loginMethods
+          - registerMethods
+          - recoveryMethods
+          - verificationPolicy
+          - oauthLoginEnabled
+          - oauthProviders
+          - oauthRegion
+          - qrLoginEnabled
+          - qrLoginType
+          - inviteCodePolicy
+        type: object
+    query_parameters:
+      - name: tenant_code
+        schema: { type: string, maxLength: 64 }
+      - name: organization_code
+        schema: { type: string, maxLength: 64 }
   - route: /auth/register
     source: apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts
     operation: claimInviteRelation
@@ -10247,7 +10327,7 @@ frontend_operations:
             type: array
           registerMethods:
             description: registerMethods field on AdminAuthSettingsResponse.
-            items: { enum: [email, phone], type: string }
+            items: { enum: [username, email, phone], type: string }
             type: array
           verificationPolicy:
             additionalProperties: true
@@ -10313,7 +10393,7 @@ frontend_operations:
             type: array
           registerMethods:
             description: registerMethods field on AdminAuthSettingsResponse.
-            items: { enum: [email, phone], type: string }
+            items: { enum: [username, email, phone], type: string }
             type: array
           verificationPolicy:
             additionalProperties: true
@@ -10369,12 +10449,10 @@ frontend_operations:
           recoveryMethods:
             description: recoveryMethods field on AdminAuthSettingsUpdateRequest.
             items: { enum: [email, phone], type: string }
-            minItems: 1
             type: array
           registerMethods:
             description: registerMethods field on AdminAuthSettingsUpdateRequest.
-            items: { enum: [email, phone], type: string }
-            minItems: 1
+            items: { enum: [username, email, phone], type: string }
             type: array
           verificationPolicy:
             additionalProperties: true
@@ -14700,6 +14778,713 @@ frontend_operations:
         type: object
     query_parameters: []
 
+  - route: /admin/collection/categories
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: listCollectionCategories
+    operation_id: collectionCategories.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/collection_categories
+    sdk_domain: ai
+    read_sources:
+      - ai_collection_category
+      - ai_collection
+    response_schema:
+      name: AiCollectionCategoryPage
+      schema:
+        additionalProperties: false
+        description: One page of collection categories, each carrying the number of collections filed under it.
+        name: AiCollectionCategoryPage
+        properties:
+          items:
+            description: Collection categories of the workspace, including the read-only system categories.
+            items:
+              additionalProperties: false
+              name: AiCollectionCategory
+              properties:
+                categoryCode: { maxLength: 128, minLength: 1, pattern: '^[a-z0-9][a-z0-9_-]{0,127}$', type: string }
+                collectionCount:
+                  description: Number of collections filed under this category in the workspace.
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                collectionKind: { enum: [mixed, skill, mcp, agent, plugin], type: string }
+                createdAt: { type: string }
+                description: { maxLength: 4000, type: string }
+                iconRef: { maxLength: 512, type: string }
+                id:
+                  description: Category identifier; an int64 decimal string on the wire.
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                isSystem:
+                  description: True for the built-in category set created by the initialize command; system categories cannot be renamed or deleted.
+                  type: boolean
+                name: { maxLength: 255, type: string }
+                parentId:
+                  description: Parent category identifier, or null for a top-level category.
+                  format: int64
+                  nullable: true
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                sortOrder: { format: int32, minimum: 0, type: integer }
+                status: { enum: [enabled, disabled], type: string }
+                updatedAt: { type: string }
+              required: [id, categoryCode, name, description, iconRef, collectionKind, parentId, sortOrder, status, isSystem, collectionCount, createdAt, updatedAt]
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required: [items, pageInfo]
+        type: object
+    query_parameters:
+      - name: collection_kind
+        schema: { type: string, enum: [mixed, skill, mcp, agent, plugin] }
+      - name: status
+        schema: { type: string, enum: [enabled, disabled] }
+      - name: q
+        schema: { type: string, maxLength: 256 }
+      - name: page
+        schema: { type: integer, format: int32, minimum: 1, default: 1 }
+      - name: page_size
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - route: /admin/collection/categories
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: createCollectionCategory
+    operation_id: collectionCategories.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/collection_categories
+    sdk_domain: ai
+    read_sources:
+      - ai_collection_category
+    response_schema:
+      name: AiCollectionCategoryItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionCategoryItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollectionCategory'
+        required: [item]
+        type: object
+    request_schema:
+      name: AiCollectionCategoryCreateRequest
+      schema:
+        additionalProperties: false
+        name: AiCollectionCategoryCreateRequest
+        properties:
+          categoryCode: { maxLength: 128, minLength: 1, pattern: '^[a-z0-9][a-z0-9_-]{0,127}$', type: string }
+          collectionKind: { enum: [mixed, skill, mcp, agent, plugin], type: string }
+          description: { maxLength: 4000, nullable: true, type: string }
+          iconRef: { maxLength: 512, nullable: true, type: string }
+          name: { maxLength: 255, minLength: 1, type: string }
+          parentId:
+            format: int64
+            nullable: true
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          sortOrder: { format: int32, minimum: 0, nullable: true, type: integer }
+          status: { enum: [enabled, disabled], nullable: true, type: string }
+        required: [collectionKind, categoryCode, name]
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_collection_category
+  - route: /admin/collection/categories
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: updateCollectionCategory
+    operation_id: collectionCategories.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/ai/collection_categories/{categoryId}
+    sdk_domain: ai
+    read_sources:
+      - ai_collection_category
+    response_schema:
+      name: AiCollectionCategoryItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionCategoryItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollectionCategory'
+        required: [item]
+        type: object
+    request_schema:
+      name: AiCollectionCategoryUpdateRequest
+      schema:
+        additionalProperties: false
+        name: AiCollectionCategoryUpdateRequest
+        properties:
+          description: { maxLength: 4000, nullable: true, type: string }
+          iconRef: { maxLength: 512, nullable: true, type: string }
+          name: { maxLength: 255, nullable: true, type: string }
+          parentId:
+            format: int64
+            nullable: true
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          sortOrder: { format: int32, minimum: 0, nullable: true, type: integer }
+          status: { enum: [enabled, disabled], nullable: true, type: string }
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_collection_category
+  - route: /admin/collection/categories
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: deleteCollectionCategory
+    operation_id: collectionCategories.delete
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/ai/collection_categories/{categoryId}
+    sdk_domain: ai
+    read_sources:
+      - ai_collection_category
+      - ai_collection
+    response_schema:
+      name: NoData
+      schema:
+        additionalProperties: false
+        name: NoData
+        properties: {}
+        type: object
+    write_tables:
+      - ai_collection_category
+  - route: /admin/collection/categories
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: initializeCollectionCategories
+    operation_id: collectionCategories.defaults.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/collection_categories/defaults
+    sdk_domain: ai
+    read_sources:
+      - ai_collection_category
+    response_schema:
+      name: AiCollectionCategoryPage
+      schema:
+        additionalProperties: false
+        description: One page of collection categories after the built-in category set was ensured.
+        name: AiCollectionCategoryPage
+        properties:
+          items:
+            description: Collection categories of the workspace, including the read-only system categories.
+            items:
+              $ref: '#/components/schemas/AiCollectionCategory'
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required: [items, pageInfo]
+        type: object
+    request_body_required: false
+    write_tables:
+      - ai_collection_category
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: listCollections
+    operation_id: collections.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/collections
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_item
+      - ai_collection_category
+      - ai_collection_release
+    response_schema:
+      name: AiCollectionPage
+      schema:
+        additionalProperties: false
+        description: One page of capability collections. Every collection carries its ordered capability items so the admin editor never needs a second read to open a collection.
+        name: AiCollectionPage
+        properties:
+          items:
+            description: Capability collections in the workspace.
+            items:
+              additionalProperties: false
+              name: AiCollection
+              properties:
+                capabilityCounts:
+                  additionalProperties: false
+                  description: Number of enabled items per capability type; useful for the list badges without walking the item array.
+                  name: AiCollectionCapabilityCounts
+                  properties:
+                    agent:
+                      format: int64
+                      pattern: ^[0-9]+$
+                      type: string
+                      x-sdkwork-int64-string: true
+                      x-sdkwork-rust-type: i64
+                    mcp:
+                      format: int64
+                      pattern: ^[0-9]+$
+                      type: string
+                      x-sdkwork-int64-string: true
+                      x-sdkwork-rust-type: i64
+                    plugin:
+                      format: int64
+                      pattern: ^[0-9]+$
+                      type: string
+                      x-sdkwork-int64-string: true
+                      x-sdkwork-rust-type: i64
+                    skill:
+                      format: int64
+                      pattern: ^[0-9]+$
+                      type: string
+                      x-sdkwork-int64-string: true
+                      x-sdkwork-rust-type: i64
+                  required: [skill, mcp, agent, plugin]
+                  type: object
+                categoryId:
+                  format: int64
+                  nullable: true
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                categoryName: { maxLength: 255, nullable: true, type: string }
+                collectionKey: { maxLength: 128, type: string }
+                collectionKind: { enum: [mixed, skill, mcp, agent, plugin], type: string }
+                createdAt: { type: string }
+                createdBy:
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                description: { maxLength: 8000, type: string }
+                featured: { type: boolean }
+                iconRef: { maxLength: 512, type: string }
+                id:
+                  description: Collection identifier; an int64 decimal string on the wire.
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                itemCount:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                items:
+                  description: Ordered capability items of the collection.
+                  items:
+                    additionalProperties: false
+                    name: AiCollectionItem
+                    properties:
+                      capabilityIconRef: { maxLength: 512, type: string }
+                      capabilityKey: { maxLength: 191, type: string }
+                      capabilityName: { maxLength: 255, type: string }
+                      capabilityType: { enum: [skill, mcp, agent, plugin], type: string }
+                      capabilityVersion: { maxLength: 64, type: string }
+                      collectionId:
+                        format: int64
+                        pattern: ^-?[0-9]+$
+                        type: string
+                        x-sdkwork-int64-string: true
+                        x-sdkwork-rust-type: i64
+                      config:
+                        additionalProperties: true
+                        type: object
+                      createdAt: { type: string }
+                      enabled: { type: boolean }
+                      id:
+                        format: int64
+                        pattern: ^-?[0-9]+$
+                        type: string
+                        x-sdkwork-int64-string: true
+                        x-sdkwork-rust-type: i64
+                      sortOrder: { format: int32, minimum: 0, type: integer }
+                      updatedAt: { type: string }
+                    required: [id, collectionId, capabilityType, capabilityKey, capabilityName, capabilityVersion, capabilityIconRef, config, sortOrder, enabled, createdAt, updatedAt]
+                    type: object
+                  type: array
+                latestReleaseNo:
+                  description: Highest published release number, or null when the collection has never been published.
+                  format: int32
+                  nullable: true
+                  type: integer
+                name: { maxLength: 255, type: string }
+                ownerUserId:
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                publishStatus: { enum: [draft, published, archived], type: string }
+                publishedAt: { nullable: true, type: string }
+                sortOrder: { format: int32, minimum: 0, type: integer }
+                status: { enum: [enabled, disabled], type: string }
+                summary: { maxLength: 1024, type: string }
+                tags:
+                  items: { maxLength: 64, type: string }
+                  maxItems: 20
+                  type: array
+                updatedAt: { type: string }
+                updatedBy:
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                visibility: { enum: [private, organization, public], type: string }
+              required: [id, collectionKey, name, summary, description, iconRef, collectionKind, categoryId, categoryName, visibility, publishStatus, publishedAt, itemCount, capabilityCounts, tags, featured, sortOrder, ownerUserId, createdBy, updatedBy, status, latestReleaseNo, items, createdAt, updatedAt]
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required: [items, pageInfo]
+        type: object
+    query_parameters:
+      - name: collection_kind
+        schema: { type: string, enum: [mixed, skill, mcp, agent, plugin] }
+      - name: category_id
+        schema: { type: string, pattern: '^-?[0-9]+$', x-sdkwork-int64-string: true }
+      - name: publish_status
+        schema: { type: string, enum: [draft, published, archived] }
+      - name: status
+        schema: { type: string, enum: [enabled, disabled] }
+      - name: featured
+        schema: { type: boolean }
+      - name: q
+        schema: { type: string, maxLength: 256 }
+      - name: page
+        schema: { type: integer, format: int32, minimum: 1, default: 1 }
+      - name: page_size
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: createCollection
+    operation_id: collections.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/ai/collections
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_item
+      - ai_collection_category
+    response_schema:
+      name: AiCollectionItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollection'
+        required: [item]
+        type: object
+    request_schema:
+      name: AiCollectionCreateRequest
+      schema:
+        additionalProperties: false
+        name: AiCollectionCreateRequest
+        properties:
+          categoryId:
+            format: int64
+            nullable: true
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          collectionKey: { maxLength: 128, nullable: true, pattern: '^[a-z0-9][a-z0-9._-]{0,127}$', type: string }
+          collectionKind: { enum: [mixed, skill, mcp, agent, plugin], type: string }
+          description: { maxLength: 8000, nullable: true, type: string }
+          featured: { nullable: true, type: boolean }
+          iconRef: { maxLength: 512, nullable: true, type: string }
+          items:
+            items:
+              $ref: '#/components/schemas/AiCollectionItemInput'
+            maxItems: 200
+            nullable: true
+            type: array
+          name: { maxLength: 255, minLength: 1, type: string }
+          sortOrder: { format: int32, minimum: 0, nullable: true, type: integer }
+          summary: { maxLength: 1024, nullable: true, type: string }
+          tags:
+            items: { maxLength: 64, type: string }
+            maxItems: 20
+            nullable: true
+            type: array
+          visibility: { enum: [private, organization, public], nullable: true, type: string }
+        required: [name, collectionKind]
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_collection
+      - ai_collection_item
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: getCollection
+    operation_id: collections.retrieve
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/collections/{collectionId}
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_item
+      - ai_collection_category
+      - ai_collection_release
+    response_schema:
+      name: AiCollectionItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollection'
+        required: [item]
+        type: object
+    query_parameters: []
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: updateCollection
+    operation_id: collections.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/ai/collections/{collectionId}
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_category
+    response_schema:
+      name: AiCollectionItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollection'
+        required: [item]
+        type: object
+    request_schema:
+      name: AiCollectionUpdateRequest
+      schema:
+        additionalProperties: false
+        name: AiCollectionUpdateRequest
+        properties:
+          categoryId:
+            format: int64
+            nullable: true
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          description: { maxLength: 8000, nullable: true, type: string }
+          featured: { nullable: true, type: boolean }
+          iconRef: { maxLength: 512, nullable: true, type: string }
+          name: { maxLength: 255, nullable: true, type: string }
+          sortOrder: { format: int32, minimum: 0, nullable: true, type: integer }
+          status: { enum: [enabled, disabled], nullable: true, type: string }
+          summary: { maxLength: 1024, nullable: true, type: string }
+          tags:
+            items: { maxLength: 64, type: string }
+            maxItems: 20
+            nullable: true
+            type: array
+          visibility: { enum: [private, organization, public], nullable: true, type: string }
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_collection
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: deleteCollection
+    operation_id: collections.delete
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/ai/collections/{collectionId}
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+    response_schema:
+      name: NoData
+      schema:
+        additionalProperties: false
+        name: NoData
+        properties: {}
+        type: object
+    write_tables:
+      - ai_collection
+      - ai_collection_item
+      - ai_collection_release
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: replaceCollectionItems
+    operation_id: collections.items.update
+    kind: update
+    api_surface: backend
+    api_method: PUT
+    api_path: /backend/v3/api/ai/collections/{collectionId}/items
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_item
+    response_schema:
+      name: AiCollectionItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollection'
+        required: [item]
+        type: object
+    request_schema:
+      name: AiCollectionItemsReplaceRequest
+      schema:
+        additionalProperties: false
+        name: AiCollectionItemsReplaceRequest
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: AiCollectionItemInput
+              properties:
+                capabilityIconRef: { maxLength: 512, nullable: true, type: string }
+                capabilityKey: { maxLength: 191, minLength: 1, type: string }
+                capabilityName: { maxLength: 255, nullable: true, type: string }
+                capabilityType: { enum: [skill, mcp, agent, plugin], type: string }
+                capabilityVersion: { maxLength: 64, nullable: true, type: string }
+                config:
+                  additionalProperties: true
+                  nullable: true
+                  type: object
+                enabled: { nullable: true, type: boolean }
+                sortOrder: { format: int32, minimum: 0, nullable: true, type: integer }
+              required: [capabilityType, capabilityKey]
+              type: object
+            maxItems: 200
+            type: array
+        required: [items]
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_collection
+      - ai_collection_item
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: updateCollectionStatus
+    operation_id: collections.status.update
+    kind: update
+    api_surface: backend
+    api_method: PUT
+    api_path: /backend/v3/api/ai/collections/{collectionId}/status
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_item
+    response_schema:
+      name: AiCollectionItemResponse
+      schema:
+        additionalProperties: false
+        name: AiCollectionItemResponse
+        properties:
+          item:
+            $ref: '#/components/schemas/AiCollection'
+        required: [item]
+        type: object
+    request_schema:
+      name: AiCollectionStatusUpdateRequest
+      schema:
+        additionalProperties: false
+        name: AiCollectionStatusUpdateRequest
+        properties:
+          notes: { maxLength: 1024, nullable: true, type: string }
+          publishStatus: { enum: [published, archived], type: string }
+        required: [publishStatus]
+        type: object
+    request_body_required: true
+    write_tables:
+      - ai_collection
+      - ai_collection_release
+  - route: /admin/collection
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts
+    operation: listCollectionReleases
+    operation_id: collections.releases.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/ai/collections/{collectionId}/releases
+    sdk_domain: ai
+    read_sources:
+      - ai_collection
+      - ai_collection_release
+    response_schema:
+      name: AiCollectionReleasePage
+      schema:
+        additionalProperties: false
+        description: One page of immutable publish releases for a collection, newest first.
+        name: AiCollectionReleasePage
+        properties:
+          items:
+            description: Publish releases of the collection.
+            items:
+              additionalProperties: false
+              name: AiCollectionRelease
+              properties:
+                createdAt: { type: string }
+                id:
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                itemCount:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                name: { maxLength: 255, type: string }
+                notes: { maxLength: 1024, type: string }
+                publishedAt: { type: string }
+                publishedBy:
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+                releaseNo: { format: int32, minimum: 1, type: integer }
+                releaseStatus: { enum: [published, revoked], type: string }
+              required: [id, releaseNo, name, itemCount, releaseStatus, notes, publishedBy, publishedAt, createdAt]
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required: [items, pageInfo]
+        type: object
+    query_parameters:
+      - name: page
+        schema: { type: integer, format: int32, minimum: 1, default: 1 }
+      - name: page_size
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+
 routes:
   - route: /admin/data
     dependency_owned: true
@@ -15498,6 +16283,21 @@ routes:
     dependency_owned: true
     dependency_sdk_family: sdkwork-community-backend-sdk
     required_tables: []
+  - route: /admin/collection
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables:
+      - ai_collection
+      - ai_collection_item
+      - ai_collection_category
+      - ai_collection_release
+  - route: /admin/collection/categories
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables:
+      - ai_collection_category
+      - ai_collection
+
 frontend_models:
   - route: /console/settlements
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts

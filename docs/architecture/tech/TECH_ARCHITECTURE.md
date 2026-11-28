@@ -753,6 +753,7 @@ Each remains the detail authority for its topic; this index is the discoverabili
 | [TECH-2026-11-18-admin-enterprise-center.md](TECH-2026-11-18-admin-enterprise-center.md) | Admin Enterprise Center (sdkwork-company composition) |
 | [TECH-2026-11-18-admin-product-center-reinstatement.md](TECH-2026-11-18-admin-product-center-reinstatement.md) | Admin Product Center Reinstatement |
 | [TECH-2026-11-21-wechat-channel-dual-mode-design.md](TECH-2026-11-21-wechat-channel-dual-mode-design.md) | WeChat channel dual mode design |
+| [TECH-2026-11-28-ai-capability-collections.md](TECH-2026-11-28-ai-capability-collections.md) | AI capability collections (合集) admin plane |
 
 ## 11. Verification
 

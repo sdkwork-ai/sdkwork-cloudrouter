@@ -144,6 +144,9 @@ Token Plan 团队订阅页
 
 `GET /plans`、`/package_groups`、`/packages` 的 `audience` 默认 `personal`，保证个人订阅页行为不变。
 
+目录在管理端的受众 × 购买方式分类、读模型字段与写入校验见
+[`catalog-audience-purchase-model.md`](catalog-audience-purchase-model.md)。
+
 ## 7. 关键接口
 
 | 方法 | 路径 | 说明 |

@@ -1,4 +1,4 @@
-import { PluginsPage as PluginsBlock, PluginCategoriesPage as PluginCategoriesBlock } from '@sdkwork/plugins-pc-admin';
+import { PluginsPage as PluginsBlock } from '@sdkwork/plugins-pc-admin';
 import { configurePluginsAdminRuntime } from '@sdkwork/plugins-pc-admin/pluginsAdminService';
 import {
   getPluginsBackendSdkClient,
@@ -37,4 +37,4 @@ export function PluginsAdminPage() {
   return <PluginsBlock roleCodes={readPortalRoleCodes()} />;
 }
 
-export { PluginCategoriesBlock as PluginCategoriesAdminPage };
+export { PluginCategoriesAdminPage } from './PluginCategoriesAdminPage.tsx';

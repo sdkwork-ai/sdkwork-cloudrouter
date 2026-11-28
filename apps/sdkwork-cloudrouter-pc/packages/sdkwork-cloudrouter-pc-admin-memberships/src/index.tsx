@@ -4,7 +4,6 @@ import { MembershipPackageGroupsPage } from './pages/MembershipPackageGroupsPage
 import { MembershipPackagesPage } from './pages/MembershipPackagesPage';
 import { MembershipPlansPage } from './pages/MembershipPlansPage';
 import { MembershipRechargePackagesPage } from './pages/MembershipRechargePackagesPage';
-import { MembershipVipPackagesPage } from './pages/MembershipVipPackagesPage';
 import { TokenBankRatesPage } from './pages/TokenBankRatesPage';
 import { fetchMembershipAdminEntitlements } from './membershipsService';
 
@@ -44,7 +43,14 @@ export function MembershipsAdmin({ sectionId }: MembershipsAdminProps = {}) {
       {activeSection === 'packages' ? (
         <MembershipPackagesPage />
       ) : activeSection === 'vipPackages' ? (
-        <MembershipVipPackagesPage />
+        /**
+         * `vipPackages` is a retired route: it was a second, identical list of
+         * `membership_package` rows with no data distinction from `packages`,
+         * which is exactly the "two parallel price catalogs" confusion the
+         * membership centre had. Old deep links keep working and land on the
+         * single price catalog.
+         */
+        <MembershipPackagesPage />
       ) : activeSection === 'packageGroups' ? (
         <MembershipPackageGroupsPage />
       ) : activeSection === 'plans' ? (

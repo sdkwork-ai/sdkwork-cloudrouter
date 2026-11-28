@@ -242,6 +242,7 @@ table_fragments:
 - tables/payment-control-plane.yaml
 - tables/storage-center.yaml
 - tables/data-center.yaml
+- tables/ai-collection.yaml
 modules:
   user-settings:
     owner: cloud-router-platform
@@ -300,6 +301,21 @@ modules:
     - ai_model_access_policy
     - ai_resource_binding
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  ai-collection:
+    owner: cloud-router-platform
+    description: AI capability collection plane (合集). A collection groups
+      skills, MCP servers, agents, and plugins in one mixed set or in a
+      single-capability-type set. Collection records are Cloud Router-owned; the
+      capabilities themselves stay owned by sdkwork-skills, sdkwork-mcp,
+      sdkwork-agents, and sdkwork-plugins.
+    compliance_level: L2
+    tables_count: 4
+    tables:
+    - ai_collection_category
+    - ai_collection
+    - ai_collection_item
+    - ai_collection_release
+    ddl_location: database/migrations/{engine}/0055_ai_capability_collections.up.sql
   ai-metering:
     owner: cloud-router-platform
     description: AI usage facts, request traces, and the async usage reconciliation queue.

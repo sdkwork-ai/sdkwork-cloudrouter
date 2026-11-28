@@ -1,5 +1,51 @@
 # Cloud Router Backend API Changelog
 
+## 0.16.0
+
+- New `ai` admin surface for AI capability collections (tag `ai`, prefix
+  `/backend/v3/api/ai/`), managing `ai_collection_category`, `ai_collection`,
+  `ai_collection_item`, and `ai_collection_release`:
+  - `GET/POST /backend/v3/api/ai/collection_categories` and
+    `GET/PATCH/DELETE /backend/v3/api/ai/collection_categories/{categoryId}`
+    (`collectionCategories.list/create/retrieve/update/delete`) plus
+    `POST /backend/v3/api/ai/collection_categories/defaults`
+    (`collectionCategories.defaults.create`): per-workspace categories bound to
+    one collection kind. `defaults` idempotently materializes the five built-in
+    categories (`general`/`skills`/`mcp`/`agents`/`plugins`); built-in rows are
+    read-only. A category that still has collections filed under it returns
+    HTTP 409 on delete.
+  - `GET/POST /backend/v3/api/ai/collections` and
+    `GET/PATCH/DELETE /backend/v3/api/ai/collections/{collectionId}`
+    (`collections.list/create/retrieve/update/delete`): a collection is either a
+    `mixed` free combination of skill / MCP / agent / plugin capabilities or a
+    single-kind collection that accepts only its own capability type.
+  - `PUT /backend/v3/api/ai/collections/{collectionId}/items`
+    (`collections.items.replace`): replace the ordered capability item set
+    (max 200, unique `(capabilityType, capabilityKey)`, JSON-object config up to
+    16 KiB, enabled flag).
+  - `PUT /backend/v3/api/ai/collections/{collectionId}/status`
+    (`collections.status.update`): `published` writes an immutable snapshot of
+    the enabled items (`release_no` monotonic per collection) and `archived`
+    removes the active release while keeping history. Publishing requires an
+    enabled collection with at least one enabled item.
+  - `GET /backend/v3/api/ai/collections/{collectionId}/releases`
+    (`collections.releases.list`): offset-paginated release history.
+- Publish lifecycle: editing content (name, summary, description, icon, tags, or
+  the item set) on a published/archived collection resets `publishStatus` to
+  `draft` in the same write; filing, visibility, featured, sort, and record
+  status changes do not. `q` search covers name, key, summary, description, and
+  tags.
+- Tags are trimmed, validated, and deduplicated in input order, so the API and
+  the admin console store the same tag set. Deletes are soft deletes that
+  truncate the original key/code to 100 characters and append a
+  `#deleted-<id>` tombstone, keeping the value inside `VARCHAR(128)` and making
+  the original key/code immediately reusable. Ids are int64 decimal strings,
+  lists use `{items, pageInfo}` with `page_size` capped at 200, and errors use
+  `ProblemDetail` (404 for missing collections/categories, 409 for duplicate
+  key/code or an in-use category). The `@sdkwork/cloudrouter-backend-sdk`
+  TypeScript package exposes `client.ai.collections` and
+  `client.ai.collectionCategories`.
+
 ## 0.15.0
 
 - New `pricing` admin surface for the billing/rating engine (tag `pricing`, prefix

@@ -366,13 +366,28 @@ mod tests {
         assert!(!settings.verification_policy.email_code_login_enabled);
         assert!(settings.verification_policy.phone_code_login_enabled);
         assert_eq!(
-            vec!["email".to_owned(), "phone".to_owned()],
+            vec![
+                "username".to_owned(),
+                "email".to_owned(),
+                "phone".to_owned()
+            ],
             settings.register_methods
         );
         assert_eq!(
             vec!["email".to_owned(), "phone".to_owned()],
             settings.recovery_methods
         );
+    }
+
+    #[test]
+    fn settings_from_payload_keeps_explicitly_disabled_flows() {
+        let settings = settings_from_payload(
+            r#"{"settings":{"registerMethods":[],"recoveryMethods":[]}}"#,
+        )
+        .unwrap();
+
+        assert!(settings.register_methods.is_empty());
+        assert!(settings.recovery_methods.is_empty());
     }
 
     #[test]

@@ -98,6 +98,7 @@ export function membershipPageLabel(
 }
 
 const billingCycleTranslationKeys: Record<string, string> = {
+  once: 'admin.commerce.memberships.groups.form.billingCycle.once',
   one_time: 'admin.commerce.memberships.groups.form.billingCycle.oneTime',
   day: 'admin.commerce.memberships.groups.form.billingCycle.day',
   week: 'admin.commerce.memberships.groups.form.billingCycle.week',

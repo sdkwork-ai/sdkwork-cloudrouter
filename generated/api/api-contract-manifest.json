@@ -6830,6 +6830,1691 @@
       ]
     },
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/collections",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#createCollection@/admin/collection",
+      "kind": "create",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "createCollection",
+      "operation_id": "collections.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_item",
+        "ai_collection_category"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AiCollectionCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionCreateRequest",
+          "properties": {
+            "categoryId": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "collectionKey": {
+              "maxLength": 128,
+              "nullable": true,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+              "type": "string"
+            },
+            "collectionKind": {
+              "enum": [
+                "mixed",
+                "skill",
+                "mcp",
+                "agent",
+                "plugin"
+              ],
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 8000,
+              "nullable": true,
+              "type": "string"
+            },
+            "featured": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "iconRef": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/AiCollectionItemInput"
+              },
+              "maxItems": 200,
+              "nullable": true,
+              "type": "array"
+            },
+            "name": {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int32",
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            },
+            "summary": {
+              "maxLength": 1024,
+              "nullable": true,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 64,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "nullable": true,
+              "type": "array"
+            },
+            "visibility": {
+              "enum": [
+                "private",
+                "organization",
+                "public"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "collectionKind"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AiCollectionItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollection"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection",
+        "ai_collection_item"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/collection_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#createCollectionCategory@/admin/collection/categories",
+      "kind": "create",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "createCollectionCategory",
+      "operation_id": "collectionCategories.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection_category"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AiCollectionCategoryCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionCategoryCreateRequest",
+          "properties": {
+            "categoryCode": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+              "type": "string"
+            },
+            "collectionKind": {
+              "enum": [
+                "mixed",
+                "skill",
+                "mcp",
+                "agent",
+                "plugin"
+              ],
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 4000,
+              "nullable": true,
+              "type": "string"
+            },
+            "iconRef": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 255,
+              "minLength": 1,
+              "type": "string"
+            },
+            "parentId": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "sortOrder": {
+              "format": "int32",
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "required": [
+            "collectionKind",
+            "categoryCode",
+            "name"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AiCollectionCategoryItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionCategoryItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollectionCategory"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection_category"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/collections/{collectionId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#deleteCollection@/admin/collection",
+      "kind": "delete",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "deleteCollection",
+      "operation_id": "collections.delete",
+      "path_params": [
+        "collectionId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection",
+        "ai_collection_item",
+        "ai_collection_release"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/ai/collection_categories/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#deleteCollectionCategory@/admin/collection/categories",
+      "kind": "delete",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "deleteCollectionCategory",
+      "operation_id": "collectionCategories.delete",
+      "path_params": [
+        "categoryId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection_category",
+        "ai_collection"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection_category"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/collections/{collectionId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#getCollection@/admin/collection",
+      "kind": "read",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "getCollection",
+      "operation_id": "collections.retrieve",
+      "path_params": [
+        "collectionId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_item",
+        "ai_collection_category",
+        "ai_collection_release"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiCollectionItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollection"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/ai/collection_categories/defaults",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#initializeCollectionCategories@/admin/collection/categories",
+      "kind": "create",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "initializeCollectionCategories",
+      "operation_id": "collectionCategories.defaults.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection_category"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiCollectionCategoryPage",
+        "schema": {
+          "additionalProperties": false,
+          "description": "One page of collection categories after the built-in category set was ensured.",
+          "name": "AiCollectionCategoryPage",
+          "properties": {
+            "items": {
+              "description": "Collection categories of the workspace, including the read-only system categories.",
+              "items": {
+                "$ref": "#/components/schemas/AiCollectionCategory"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection_category"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/collection_categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#listCollectionCategories@/admin/collection/categories",
+      "kind": "read",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "listCollectionCategories",
+      "operation_id": "collectionCategories.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "collection_kind",
+          "required": false,
+          "schema": {
+            "enum": [
+              "mixed",
+              "skill",
+              "mcp",
+              "agent",
+              "plugin"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_collection_category",
+        "ai_collection"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiCollectionCategoryPage",
+        "schema": {
+          "additionalProperties": false,
+          "description": "One page of collection categories, each carrying the number of collections filed under it.",
+          "name": "AiCollectionCategoryPage",
+          "properties": {
+            "items": {
+              "description": "Collection categories of the workspace, including the read-only system categories.",
+              "items": {
+                "additionalProperties": false,
+                "name": "AiCollectionCategory",
+                "properties": {
+                  "categoryCode": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$",
+                    "type": "string"
+                  },
+                  "collectionCount": {
+                    "description": "Number of collections filed under this category in the workspace.",
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "collectionKind": {
+                    "enum": [
+                      "mixed",
+                      "skill",
+                      "mcp",
+                      "agent",
+                      "plugin"
+                    ],
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "maxLength": 4000,
+                    "type": "string"
+                  },
+                  "iconRef": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "Category identifier; an int64 decimal string on the wire.",
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "isSystem": {
+                    "description": "True for the built-in category set created by the initialize command; system categories cannot be renamed or deleted.",
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "parentId": {
+                    "description": "Parent category identifier, or null for a top-level category.",
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "sortOrder": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "enabled",
+                      "disabled"
+                    ],
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "categoryCode",
+                  "name",
+                  "description",
+                  "iconRef",
+                  "collectionKind",
+                  "parentId",
+                  "sortOrder",
+                  "status",
+                  "isSystem",
+                  "collectionCount",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/collections/{collectionId}/releases",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#listCollectionReleases@/admin/collection",
+      "kind": "read",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "listCollectionReleases",
+      "operation_id": "collections.releases.list",
+      "path_params": [
+        "collectionId"
+      ],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_release"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiCollectionReleasePage",
+        "schema": {
+          "additionalProperties": false,
+          "description": "One page of immutable publish releases for a collection, newest first.",
+          "name": "AiCollectionReleasePage",
+          "properties": {
+            "items": {
+              "description": "Publish releases of the collection.",
+              "items": {
+                "additionalProperties": false,
+                "name": "AiCollectionRelease",
+                "properties": {
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "itemCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "name": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "notes": {
+                    "maxLength": 1024,
+                    "type": "string"
+                  },
+                  "publishedAt": {
+                    "type": "string"
+                  },
+                  "publishedBy": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "releaseNo": {
+                    "format": "int32",
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "releaseStatus": {
+                    "enum": [
+                      "published",
+                      "revoked"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "releaseNo",
+                  "name",
+                  "itemCount",
+                  "releaseStatus",
+                  "notes",
+                  "publishedBy",
+                  "publishedAt",
+                  "createdAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/collections",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#listCollections@/admin/collection",
+      "kind": "read",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "listCollections",
+      "operation_id": "collections.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "collection_kind",
+          "required": false,
+          "schema": {
+            "enum": [
+              "mixed",
+              "skill",
+              "mcp",
+              "agent",
+              "plugin"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "category_id",
+          "required": false,
+          "schema": {
+            "pattern": "^-?[0-9]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "publish_status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "enabled",
+              "disabled"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "featured",
+          "required": false,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_item",
+        "ai_collection_category",
+        "ai_collection_release"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AiCollectionPage",
+        "schema": {
+          "additionalProperties": false,
+          "description": "One page of capability collections. Every collection carries its ordered capability items so the admin editor never needs a second read to open a collection.",
+          "name": "AiCollectionPage",
+          "properties": {
+            "items": {
+              "description": "Capability collections in the workspace.",
+              "items": {
+                "additionalProperties": false,
+                "name": "AiCollection",
+                "properties": {
+                  "capabilityCounts": {
+                    "additionalProperties": false,
+                    "description": "Number of enabled items per capability type; useful for the list badges without walking the item array.",
+                    "name": "AiCollectionCapabilityCounts",
+                    "properties": {
+                      "agent": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "mcp": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "plugin": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      },
+                      "skill": {
+                        "format": "int64",
+                        "pattern": "^[0-9]+$",
+                        "type": "string",
+                        "x-sdkwork-int64-string": true,
+                        "x-sdkwork-rust-type": "i64"
+                      }
+                    },
+                    "required": [
+                      "skill",
+                      "mcp",
+                      "agent",
+                      "plugin"
+                    ],
+                    "type": "object"
+                  },
+                  "categoryId": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "categoryName": {
+                    "maxLength": 255,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "collectionKey": {
+                    "maxLength": 128,
+                    "type": "string"
+                  },
+                  "collectionKind": {
+                    "enum": [
+                      "mixed",
+                      "skill",
+                      "mcp",
+                      "agent",
+                      "plugin"
+                    ],
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string"
+                  },
+                  "createdBy": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "description": {
+                    "maxLength": 8000,
+                    "type": "string"
+                  },
+                  "featured": {
+                    "type": "boolean"
+                  },
+                  "iconRef": {
+                    "maxLength": 512,
+                    "type": "string"
+                  },
+                  "id": {
+                    "description": "Collection identifier; an int64 decimal string on the wire.",
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "itemCount": {
+                    "format": "int64",
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "items": {
+                    "description": "Ordered capability items of the collection.",
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "AiCollectionItem",
+                      "properties": {
+                        "capabilityIconRef": {
+                          "maxLength": 512,
+                          "type": "string"
+                        },
+                        "capabilityKey": {
+                          "maxLength": 191,
+                          "type": "string"
+                        },
+                        "capabilityName": {
+                          "maxLength": 255,
+                          "type": "string"
+                        },
+                        "capabilityType": {
+                          "enum": [
+                            "skill",
+                            "mcp",
+                            "agent",
+                            "plugin"
+                          ],
+                          "type": "string"
+                        },
+                        "capabilityVersion": {
+                          "maxLength": 64,
+                          "type": "string"
+                        },
+                        "collectionId": {
+                          "format": "int64",
+                          "pattern": "^-?[0-9]+$",
+                          "type": "string",
+                          "x-sdkwork-int64-string": true,
+                          "x-sdkwork-rust-type": "i64"
+                        },
+                        "config": {
+                          "additionalProperties": true,
+                          "type": "object"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "id": {
+                          "format": "int64",
+                          "pattern": "^-?[0-9]+$",
+                          "type": "string",
+                          "x-sdkwork-int64-string": true,
+                          "x-sdkwork-rust-type": "i64"
+                        },
+                        "sortOrder": {
+                          "format": "int32",
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "collectionId",
+                        "capabilityType",
+                        "capabilityKey",
+                        "capabilityName",
+                        "capabilityVersion",
+                        "capabilityIconRef",
+                        "config",
+                        "sortOrder",
+                        "enabled",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "latestReleaseNo": {
+                    "description": "Highest published release number, or null when the collection has never been published.",
+                    "format": "int32",
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "name": {
+                    "maxLength": 255,
+                    "type": "string"
+                  },
+                  "ownerUserId": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "publishStatus": {
+                    "enum": [
+                      "draft",
+                      "published",
+                      "archived"
+                    ],
+                    "type": "string"
+                  },
+                  "publishedAt": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "enabled",
+                      "disabled"
+                    ],
+                    "type": "string"
+                  },
+                  "summary": {
+                    "maxLength": 1024,
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "maxLength": 64,
+                      "type": "string"
+                    },
+                    "maxItems": 20,
+                    "type": "array"
+                  },
+                  "updatedAt": {
+                    "type": "string"
+                  },
+                  "updatedBy": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "visibility": {
+                    "enum": [
+                      "private",
+                      "organization",
+                      "public"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "collectionKey",
+                  "name",
+                  "summary",
+                  "description",
+                  "iconRef",
+                  "collectionKind",
+                  "categoryId",
+                  "categoryName",
+                  "visibility",
+                  "publishStatus",
+                  "publishedAt",
+                  "itemCount",
+                  "capabilityCounts",
+                  "tags",
+                  "featured",
+                  "sortOrder",
+                  "ownerUserId",
+                  "createdBy",
+                  "updatedBy",
+                  "status",
+                  "latestReleaseNo",
+                  "items",
+                  "createdAt",
+                  "updatedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/collections/{collectionId}/items",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#replaceCollectionItems@/admin/collection",
+      "kind": "update",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "replaceCollectionItems",
+      "operation_id": "collections.items.update",
+      "path_params": [
+        "collectionId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_item"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AiCollectionItemsReplaceRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionItemsReplaceRequest",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AiCollectionItemInput",
+                "properties": {
+                  "capabilityIconRef": {
+                    "maxLength": 512,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "capabilityKey": {
+                    "maxLength": 191,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "capabilityName": {
+                    "maxLength": 255,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "capabilityType": {
+                    "enum": [
+                      "skill",
+                      "mcp",
+                      "agent",
+                      "plugin"
+                    ],
+                    "type": "string"
+                  },
+                  "capabilityVersion": {
+                    "maxLength": 64,
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "config": {
+                    "additionalProperties": true,
+                    "nullable": true,
+                    "type": "object"
+                  },
+                  "enabled": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "sortOrder": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "capabilityType",
+                  "capabilityKey"
+                ],
+                "type": "object"
+              },
+              "maxItems": 200,
+              "type": "array"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AiCollectionItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollection"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection",
+        "ai_collection_item"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/collections/{collectionId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#updateCollection@/admin/collection",
+      "kind": "update",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "updateCollection",
+      "operation_id": "collections.update",
+      "path_params": [
+        "collectionId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_category"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AiCollectionUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionUpdateRequest",
+          "properties": {
+            "categoryId": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "description": {
+              "maxLength": 8000,
+              "nullable": true,
+              "type": "string"
+            },
+            "featured": {
+              "nullable": true,
+              "type": "boolean"
+            },
+            "iconRef": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 255,
+              "nullable": true,
+              "type": "string"
+            },
+            "sortOrder": {
+              "format": "int32",
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "nullable": true,
+              "type": "string"
+            },
+            "summary": {
+              "maxLength": 1024,
+              "nullable": true,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 64,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "nullable": true,
+              "type": "array"
+            },
+            "visibility": {
+              "enum": [
+                "private",
+                "organization",
+                "public"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AiCollectionItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollection"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/ai/collection_categories/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#updateCollectionCategory@/admin/collection/categories",
+      "kind": "update",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "updateCollectionCategory",
+      "operation_id": "collectionCategories.update",
+      "path_params": [
+        "categoryId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection_category"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AiCollectionCategoryUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionCategoryUpdateRequest",
+          "properties": {
+            "description": {
+              "maxLength": 4000,
+              "nullable": true,
+              "type": "string"
+            },
+            "iconRef": {
+              "maxLength": 512,
+              "nullable": true,
+              "type": "string"
+            },
+            "name": {
+              "maxLength": 255,
+              "nullable": true,
+              "type": "string"
+            },
+            "parentId": {
+              "format": "int64",
+              "nullable": true,
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "sortOrder": {
+              "format": "int32",
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "enabled",
+                "disabled"
+              ],
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AiCollectionCategoryItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionCategoryItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollectionCategory"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection/categories",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection_category"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/collections/{collectionId}/status",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts#updateCollectionStatus@/admin/collection",
+      "kind": "update",
+      "module": "pc-admin-collection",
+      "openapi_exposed": true,
+      "operation": "updateCollectionStatus",
+      "operation_id": "collections.status.update",
+      "path_params": [
+        "collectionId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "ai_collection",
+        "ai_collection_item"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "AiCollectionStatusUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionStatusUpdateRequest",
+          "properties": {
+            "notes": {
+              "maxLength": 1024,
+              "nullable": true,
+              "type": "string"
+            },
+            "publishStatus": {
+              "enum": [
+                "published",
+                "archived"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "publishStatus"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AiCollectionItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AiCollectionItemResponse",
+          "properties": {
+            "item": {
+              "$ref": "#/components/schemas/AiCollection"
+            }
+          },
+          "required": [
+            "item"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/collection",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection/src/collectionService.ts",
+      "tag": "ai",
+      "write_tables": [
+        "ai_collection",
+        "ai_collection_release"
+      ]
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/system/dashboard/admin/overview",
       "api_surface": "backend",
@@ -18376,6 +20061,7 @@
               "description": "registerMethods field on AdminAuthSettingsResponse.",
               "items": {
                 "enum": [
+                  "username",
                   "email",
                   "phone"
                 ],
@@ -18520,19 +20206,18 @@
                 ],
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             },
             "registerMethods": {
               "description": "registerMethods field on AdminAuthSettingsUpdateRequest.",
               "items": {
                 "enum": [
+                  "username",
                   "email",
                   "phone"
                 ],
                 "type": "string"
               },
-              "minItems": 1,
               "type": "array"
             },
             "verificationPolicy": {
@@ -18632,6 +20317,7 @@
               "description": "registerMethods field on AdminAuthSettingsResponse.",
               "items": {
                 "enum": [
+                  "username",
                   "email",
                   "phone"
                 ],
@@ -35712,6 +37398,188 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/iam/auth/runtime",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/src/auth/authRuntimeConfig.ts#fetchAuthRuntimeConfig@/auth/login",
+      "kind": "read",
+      "module": "login",
+      "openapi_exposed": true,
+      "operation": "fetchAuthRuntimeConfig",
+      "operation_id": "auth.runtime.retrieve",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "tenant_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "organization_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ops_config_snapshot"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AppAuthRuntimeSettingsResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AppAuthRuntimeSettingsResponse",
+          "properties": {
+            "inviteCodePolicy": {
+              "additionalProperties": false,
+              "properties": {
+                "loginRequired": {
+                  "type": "boolean"
+                },
+                "registerRequired": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "registerRequired",
+                "loginRequired"
+              ],
+              "type": "object"
+            },
+            "leftRailMode": {
+              "enum": [
+                "auto",
+                "highlights-only",
+                "qr-only"
+              ],
+              "type": "string"
+            },
+            "loginMethods": {
+              "items": {
+                "enum": [
+                  "password",
+                  "emailCode",
+                  "phoneCode",
+                  "sessionBridge"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthLoginEnabled": {
+              "type": "boolean"
+            },
+            "oauthProviders": {
+              "items": {
+                "maxLength": 64,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "oauthRegion": {
+              "enum": [
+                "mainland",
+                "overseas"
+              ],
+              "type": "string"
+            },
+            "qrLoginEnabled": {
+              "type": "boolean"
+            },
+            "qrLoginType": {
+              "enum": [
+                "web",
+                "official",
+                "mini"
+              ],
+              "type": "string"
+            },
+            "recoveryMethods": {
+              "items": {
+                "enum": [
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "registerMethods": {
+              "items": {
+                "enum": [
+                  "username",
+                  "email",
+                  "phone"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "verificationPolicy": {
+              "additionalProperties": false,
+              "properties": {
+                "emailCodeLoginEnabled": {
+                  "type": "boolean"
+                },
+                "emailRegistrationVerificationRequired": {
+                  "type": "boolean"
+                },
+                "phoneCodeLoginEnabled": {
+                  "type": "boolean"
+                },
+                "phoneRegistrationVerificationRequired": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "emailCodeLoginEnabled",
+                "emailRegistrationVerificationRequired",
+                "phoneCodeLoginEnabled",
+                "phoneRegistrationVerificationRequired"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "leftRailMode",
+            "loginMethods",
+            "registerMethods",
+            "recoveryMethods",
+            "verificationPolicy",
+            "oauthLoginEnabled",
+            "oauthProviders",
+            "oauthRegion",
+            "qrLoginEnabled",
+            "qrLoginType",
+            "inviteCodePolicy"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/auth/login",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "iam",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/authRuntimeConfig.ts",
+      "tag": "iam",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/app/v3/api/auth/sessions/current",
       "api_surface": "app",
       "file_targets": [],
@@ -37789,25 +39657,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 25,
-      "GET": 141,
-      "PATCH": 24,
-      "POST": 75,
-      "PUT": 17
+      "DELETE": 27,
+      "GET": 146,
+      "PATCH": 26,
+      "POST": 78,
+      "PUT": 19
     },
     "api_surface_counts": {
-      "app": 81,
-      "backend": 201
+      "app": 82,
+      "backend": 214
     },
-    "operation_count": 282,
+    "operation_count": 296,
     "route_scope_counts": {
-      "admin": 201,
+      "admin": 214,
       "console": 38,
-      "public": 43
+      "public": 44
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 81,
-      "SdkworkBackendClient": 201
+      "SdkworkAppClient": 82,
+      "SdkworkBackendClient": 214
     }
   }
 }

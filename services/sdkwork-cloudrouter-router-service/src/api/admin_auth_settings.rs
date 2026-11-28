@@ -254,6 +254,7 @@ fn merge_update_request(
             "loginMethods",
             &["password", "emailCode", "phoneCode", "sessionBridge"],
             8,
+            false,
         )?;
     }
     if let Some(value) = request.oauth_login_enabled {
@@ -273,11 +274,16 @@ fn merge_update_request(
     }
     if let Some(value) = request.recovery_methods {
         current.recovery_methods =
-            normalize_enum_array(value, "recoveryMethods", &["email", "phone"], 4)?;
+            normalize_enum_array(value, "recoveryMethods", &["email", "phone"], 4, true)?;
     }
     if let Some(value) = request.register_methods {
-        current.register_methods =
-            normalize_enum_array(value, "registerMethods", &["email", "phone"], 4)?;
+        current.register_methods = normalize_enum_array(
+            value,
+            "registerMethods",
+            &["username", "email", "phone"],
+            4,
+            true,
+        )?;
     }
     if let Some(value) = request.verification_policy {
         current.verification_policy = merge_verification_policy(current.verification_policy, value);
@@ -342,9 +348,14 @@ fn normalize_enum_array(
     field_name: &str,
     allowed: &[&str],
     max_items: usize,
+    allow_empty: bool,
 ) -> Result<Vec<String>, String> {
     if values.is_empty() {
-        return Err(format!("{field_name} must include at least one item"));
+        return if allow_empty {
+            Ok(Vec::new())
+        } else {
+            Err(format!("{field_name} must include at least one item"))
+        };
     }
     if values.len() > max_items {
         return Err(format!(
@@ -358,7 +369,7 @@ fn normalize_enum_array(
             normalized.push(value);
         }
     }
-    if normalized.is_empty() {
+    if normalized.is_empty() && !allow_empty {
         return Err(format!("{field_name} must include at least one valid item"));
     }
     Ok(normalized)
@@ -751,6 +762,20 @@ fn to_wechat_response(settings: AdminAuthWechatSettings) -> AdminAuthWechatRespo
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn merge_update_request_accepts_username_registration_and_disabled_flows() {
+        let request: AdminAuthSettingsUpdateRequest = serde_json::from_value(json!({
+            "registerMethods": ["username"],
+            "recoveryMethods": []
+        }))
+        .unwrap();
+
+        let settings = merge_update_request(AdminAuthSettings::default(), request).unwrap();
+
+        assert_eq!(vec!["username".to_owned()], settings.register_methods);
+        assert!(settings.recovery_methods.is_empty());
+    }
 
     #[test]
     fn merge_update_request_merges_invite_code_policy_partial() {

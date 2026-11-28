@@ -288,6 +288,20 @@ modules:
     - ai_model_access_policy
     - ai_resource_binding
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  ai-collection:
+    owner: cloud-router-platform
+    description: AI capability collection plane (合集). A collection groups skills,
+      MCP servers, agents, and plugins in one mixed set or in a single-capability-type
+      set. Collection records are Cloud Router-owned; the capabilities themselves
+      stay owned by sdkwork-skills, sdkwork-mcp, sdkwork-agents, and sdkwork-plugins.
+    compliance_level: L2
+    tables_count: 4
+    tables:
+    - ai_collection_category
+    - ai_collection
+    - ai_collection_item
+    - ai_collection_release
+    ddl_location: database/migrations/{engine}/0055_ai_capability_collections.up.sql
   ai-metering:
     owner: cloud-router-platform
     description: AI usage facts, request traces, and the async usage reconciliation
@@ -1285,6 +1299,365 @@ tables:
     - status
     - updated_at
     - id
+  imported: false
+- table: ai_collection
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection
+  columns:
+    collection_key:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    summary:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    description:
+      type: string(8000)
+      constraints: NOT NULL DEFAULT ''
+    icon_ref:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    collection_kind:
+      type: string(32)
+      constraints: NOT NULL
+    category_id: int64
+    visibility:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'organization'
+    publish_status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'draft'
+    published_at: instant
+    item_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    featured:
+      type: bool
+      constraints: NOT NULL DEFAULT false
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    owner_user_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    created_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    updated_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - collection_key
+  - name
+  - collection_kind
+  - visibility
+  - publish_status
+  unique_constraints:
+  - name: uk_ai_collection_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_key
+  foreign_keys:
+  - name: fk_ai_collection_category
+    columns:
+    - category_id
+    references_table: ai_collection_category
+    references_columns:
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_collection_kind
+    expression: collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin')
+  - name: ck_ai_collection_visibility
+    expression: visibility IN ('private', 'organization', 'public')
+  - name: ck_ai_collection_publish_status
+    expression: publish_status IN ('draft', 'published', 'archived')
+  - name: ck_ai_collection_values
+    expression: length(trim(collection_key)) > 0 AND length(trim(name)) > 0 AND item_count
+      >= 0 AND sort_order >= 0 AND (publish_status <> 'published' OR published_at
+      IS NOT NULL)
+  - name: ck_ai_collection_tags_array
+    expression: jsonb_typeof(tags) = 'array'
+  indexes:
+  - name: idx_ai_collection_scope_kind_status
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_kind
+    - publish_status
+    - updated_at
+    - id
+  - name: idx_ai_collection_scope_category
+    columns:
+    - tenant_id
+    - organization_id
+    - category_id
+    - sort_order
+    - id
+  - name: idx_ai_collection_scope_featured
+    columns:
+    - tenant_id
+    - organization_id
+    - featured
+    - sort_order
+    - id
+  lifecycle:
+    storage_strategy: overwrite_state
+    cleanup:
+      strategy: soft_delete
+  imported: false
+- table: ai_collection_category
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection/categories
+  columns:
+    collection_kind:
+      type: string(32)
+      constraints: NOT NULL
+    category_code:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    description:
+      type: string(4000)
+      constraints: NOT NULL DEFAULT ''
+    icon_ref:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    parent_id: int64
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - collection_kind
+  - category_code
+  - name
+  unique_constraints:
+  - name: uk_ai_collection_category_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_kind
+    - category_code
+  foreign_keys:
+  - name: fk_ai_collection_category_parent
+    columns:
+    - parent_id
+    references_table: ai_collection_category
+    references_columns:
+    - id
+    on_delete: SET NULL
+  check_constraints:
+  - name: ck_ai_collection_category_kind
+    expression: collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin')
+  - name: ck_ai_collection_category_code
+    expression: (category_code ~ '^[a-z0-9][a-z0-9_-]{0,127}$' OR category_code ~
+      '^[a-z0-9][a-z0-9_-]{0,99}#deleted-[0-9]{1,19}$')
+  - name: ck_ai_collection_category_values
+    expression: length(trim(name)) > 0 AND sort_order >= 0 AND (parent_id IS NULL
+      OR parent_id > 0)
+  indexes:
+  - name: idx_ai_collection_category_scope_kind
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_kind
+    - sort_order
+    - id
+  - name: idx_ai_collection_category_parent
+    columns:
+    - parent_id
+  lifecycle:
+    storage_strategy: overwrite_state
+    cleanup:
+      strategy: soft_delete
+  imported: false
+- table: ai_collection_item
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection
+  columns:
+    collection_id:
+      type: int64
+      constraints: NOT NULL
+    collection_kind:
+      type: string(32)
+      constraints: NOT NULL
+    capability_type:
+      type: string(32)
+      constraints: NOT NULL
+    capability_key:
+      type: string(191)
+      constraints: NOT NULL
+    capability_name:
+      type: string(255)
+      constraints: NOT NULL DEFAULT ''
+    capability_version:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    capability_icon_ref:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+  required_columns:
+  - collection_id
+  - collection_kind
+  - capability_type
+  - capability_key
+  unique_constraints:
+  - name: uk_ai_collection_item_capability
+    columns:
+    - collection_id
+    - capability_type
+    - capability_key
+  foreign_keys:
+  - name: fk_ai_collection_item_collection
+    columns:
+    - collection_id
+    references_table: ai_collection
+    references_columns:
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_collection_item_capability_type
+    expression: capability_type IN ('skill', 'mcp', 'agent', 'plugin')
+  - name: ck_ai_collection_item_kind_matches
+    expression: collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin') AND
+      (collection_kind = 'mixed' OR collection_kind = capability_type)
+  - name: ck_ai_collection_item_values
+    expression: length(trim(capability_key)) > 0 AND sort_order >= 0
+  - name: ck_ai_collection_item_config_object
+    expression: jsonb_typeof(config) = 'object'
+  indexes:
+  - name: idx_ai_collection_item_order
+    columns:
+    - collection_id
+    - sort_order
+    - id
+  lifecycle:
+    storage_strategy: overwrite_state
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_collection
+  imported: false
+- table: ai_collection_release
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection
+  columns:
+    collection_id:
+      type: int64
+      constraints: NOT NULL
+    release_no:
+      type: int32
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL DEFAULT ''
+    item_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    item_snapshot:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    release_status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'published'
+    notes:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    published_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    published_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  required_columns:
+  - collection_id
+  - release_no
+  unique_constraints:
+  - name: uk_ai_collection_release_order
+    columns:
+    - collection_id
+    - release_no
+  foreign_keys:
+  - name: fk_ai_collection_release_collection
+    columns:
+    - collection_id
+    references_table: ai_collection
+    references_columns:
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_collection_release_values
+    expression: release_no > 0 AND item_count >= 0 AND release_status IN ('published',
+      'revoked')
+  - name: ck_ai_collection_release_snapshot_array
+    expression: jsonb_typeof(item_snapshot) = 'array'
+  indexes:
+  - name: idx_ai_collection_release_published
+    columns:
+    - collection_id
+    - published_at
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 24mo
+      archive_retention: 7y
+      grace_period: 7d
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_collection
   imported: false
 - table: ai_config_change_event
   domain: ai

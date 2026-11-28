@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/cloudrouter-app-sdk"
   },
-  "changeFingerprint": "402ca6c78a5d6296a7ac197ba84ac056a820fec0a81079e0fd28a70b1f778e07",
+  "changeFingerprint": "fee0e18186f9057d998815c7ec71b8322226fe508f92f1e2ef2416974875f4a6",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -38,6 +38,7 @@
       "src/types/acknowledge-notification-response.ts",
       "src/types/app-api-key-item.ts",
       "src/types/app-api-key-list-response.ts",
+      "src/types/app-auth-runtime-settings-response.ts",
       "src/types/app-invite-claim-request.ts",
       "src/types/app-invite-claim-response.ts",
       "src/types/app-invite-policy-response.ts",
@@ -109,7 +110,6 @@
       "src/types/official-pricing-value-facet.ts",
       "src/types/page-info.ts",
       "src/types/problem-detail.ts",
-      "src/types/reveal-api-key-response.ts",
       "src/types/runtime-artifact-item.ts",
       "src/types/runtime-artifact-list-response.ts",
       "src/types/runtime-artifact-response.ts",
@@ -186,6 +186,7 @@
           "src/types/acknowledge-notification-response.ts",
           "src/types/app-api-key-item.ts",
           "src/types/app-api-key-list-response.ts",
+          "src/types/app-auth-runtime-settings-response.ts",
           "src/types/app-invite-claim-request.ts",
           "src/types/app-invite-claim-response.ts",
           "src/types/app-invite-policy-response.ts",
@@ -257,7 +258,6 @@
           "src/types/official-pricing-value-facet.ts",
           "src/types/page-info.ts",
           "src/types/problem-detail.ts",
-          "src/types/reveal-api-key-response.ts",
           "src/types/runtime-artifact-item.ts",
           "src/types/runtime-artifact-list-response.ts",
           "src/types/runtime-artifact-response.ts",

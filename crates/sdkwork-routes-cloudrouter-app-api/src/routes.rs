@@ -514,12 +514,18 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
     };
     if let (Some(invite_store), Some(auth_settings_store)) = (app_invite_store, auth_settings_store)
     {
-        router = router.merge(
-            sdkwork_cloudrouter_router_service::api::app_invite_router_with_store(
-                invite_store,
-                auth_settings_store,
-            ),
-        );
+        router = router
+            .merge(
+                sdkwork_cloudrouter_router_service::api::app_invite_router_with_store(
+                    invite_store,
+                    Arc::clone(&auth_settings_store),
+                ),
+            )
+            .merge(
+                sdkwork_cloudrouter_router_service::api::app_auth_runtime_router_with_store(
+                    auth_settings_store,
+                ),
+            );
     }
     if let Some(model_catalog_router) = model_catalog_router {
         router = router.merge(model_catalog_router);

@@ -9,14 +9,28 @@ interface MembershipAdminPageShellProps {
   onRefresh: () => void;
   children: ReactNode;
   actions?: ReactNode;
+  /** Page title; renders a consistent page header above the action row. */
+  title?: string;
+  /** One-line explanation of what this page owns. */
+  description?: string;
 }
 
+/**
+ * Shared frame for every membership admin page.
+ *
+ * The header keeps the whole membership centre visually consistent: a title, a
+ * one-line statement of what the page owns, and a right-aligned action row.
+ * Pages that do not pass a title still get the action row, so refresh and the
+ * primary action never move around between tabs.
+ */
 export function MembershipAdminPageShell({
   isLoading,
   error,
   onRefresh,
   children,
   actions,
+  title,
+  description,
 }: MembershipAdminPageShellProps) {
   const { t } = useTranslation();
 
@@ -38,7 +52,15 @@ export function MembershipAdminPageShell({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
+        {title ? (
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h1>
+            {description ? (
+              <p className="mt-1 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{description}</p>
+            ) : null}
+          </div>
+        ) : <span aria-hidden="true" />}
         <div className="flex shrink-0 items-center justify-end gap-2">
           <button
             type="button"

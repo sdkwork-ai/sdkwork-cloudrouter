@@ -13,6 +13,7 @@ pub use billing_subject_resolver::{
 };
 mod admin_analytics_read_store;
 mod admin_announcement_store;
+mod admin_collection_store;
 mod admin_api_key_rate_limit_store;
 mod admin_auth_settings_store;
 mod admin_chain_policy_store;
@@ -200,6 +201,18 @@ pub use admin_referral_store::{
     CreateAdminReferralStrategyCommand, DeleteAdminReferralStrategyCommand,
     ListAdminReferralRelationsQuery, ListAdminReferralStrategiesQuery,
     RetrieveAdminReferralStrategyQuery, UpdateAdminReferralStrategyCommand,
+};
+pub use admin_collection_store::{
+    AdminCollectionCapabilityCounts, AdminCollectionCategoryItem, AdminCollectionCategoryListPage,
+    AdminCollectionDeleteOutcome, AdminCollectionFuture, AdminCollectionItemInput,
+    AdminCollectionItemRecord, AdminCollectionListPage, AdminCollectionRecord,
+    AdminCollectionReleaseListPage, AdminCollectionReleaseRecord, AdminCollectionStore,
+    AdminCollectionSubject, CreateAdminCollectionCategoryCommand, CreateAdminCollectionCommand,
+    DeleteAdminCollectionCategoryCommand, DeleteAdminCollectionCommand,
+    ListAdminCollectionCategoriesQuery, ListAdminCollectionReleasesQuery,
+    ListAdminCollectionsQuery, ReplaceAdminCollectionItemsCommand,
+    UpdateAdminCollectionCategoryCommand, UpdateAdminCollectionCommand,
+    UpdateAdminCollectionStatusCommand,
 };
 pub use admin_service_node_store::{
     AdminServiceNodeCommandFuture, AdminServiceNodeDeleteOutcome, AdminServiceNodeItem,

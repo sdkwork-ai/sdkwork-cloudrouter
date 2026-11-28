@@ -28,6 +28,7 @@ export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] =
   { pathPrefix: '/admin/plugin', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/memory', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/agent', requiredPermission: 'cloudrouter.admin.access' },
+  { pathPrefix: '/admin/collection', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/record', requiredPermission: 'cloudrouter.system.read' },
   { pathPrefix: '/admin/request-log', requiredPermission: 'cloudrouter.system.read' },
   { pathPrefix: '/admin/analytics', requiredPermission: 'cloudrouter.system.read' },

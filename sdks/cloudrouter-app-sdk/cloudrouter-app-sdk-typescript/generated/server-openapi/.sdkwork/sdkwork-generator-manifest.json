@@ -60,7 +60,7 @@
     },
     {
       "path": "src/api/iam.ts",
-      "sha256": "c84d7eadb90649ab78bcdc300d2f0ead9cb86a1e9e442ba7af8a8a7dd6f5c7c0"
+      "sha256": "c733242ea5418fc87cc7999edffdf21a4f773d65805e88889e1ced599ae3148f"
     },
     {
       "path": "src/api/index.ts",
@@ -108,11 +108,15 @@
     },
     {
       "path": "src/types/app-api-key-item.ts",
-      "sha256": "246c2b20c94b181d1bc67d306664fd9ae17472422e541c8f36857bf3adc4647e"
+      "sha256": "9f0f617f00dd1bab2234c358cee2acb634c244e7d5efc7d193c730f38628293f"
     },
     {
       "path": "src/types/app-api-key-list-response.ts",
       "sha256": "f4c51050279be90ff5e7c1bd4a720716a60e2e1631f817a36fdea83e7a710fcb"
+    },
+    {
+      "path": "src/types/app-auth-runtime-settings-response.ts",
+      "sha256": "86e014c9157800df68477b19e859de1267d31a64736f321d2aa19546aa0f795f"
     },
     {
       "path": "src/types/app-invite-claim-request.ts",
@@ -300,7 +304,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "b2860a9475936ead20007d1b3520f507b80d8c704ea739653dba6ed17229a7e5"
+      "sha256": "632cbd6ebffafbc42726781ae6fa594d145b080ac0321dd745cd3e1ac5a6a0c4"
     },
     {
       "path": "src/types/json-null.ts",
@@ -397,10 +401,6 @@
     {
       "path": "src/types/problem-detail.ts",
       "sha256": "98f0722417f5d85aa7c9ea5b56ca06f0b59a81e6016cfc116e7f4bd01ef9f275"
-    },
-    {
-      "path": "src/types/reveal-api-key-response.ts",
-      "sha256": "1211894f3e0f87629c1cc817b11188990fa75bd7fb13f4add2c7c2b3a86aeca3"
     },
     {
       "path": "src/types/runtime-artifact-item.ts",

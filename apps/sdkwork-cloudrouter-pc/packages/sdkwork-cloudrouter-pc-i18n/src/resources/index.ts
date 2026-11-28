@@ -37,6 +37,7 @@ import { adminAnalyticsRecordMessages } from './admin/analytics-record';
 import { adminAuthSettingsMessages } from './admin/auth-settings';
 import { adminBusinessManagementMessages } from './admin/business-management';
 import { adminCacheMessages } from './admin/cache';
+import { adminCollectionsMessages } from './admin/collections';
 import { adminCoreColumnsMessages } from './admin/core-columns';
 import { adminCoreNavigationMessages } from './admin/core-navigation';
 import { adminDataCenterMessages } from './admin/data-center';
@@ -114,6 +115,7 @@ export const resources = mergeI18nBundles([
   adminAuthSettingsMessages,
   adminBusinessManagementMessages,
   adminCacheMessages,
+  adminCollectionsMessages,
   adminCoreColumnsMessages,
   adminCoreNavigationMessages,
   adminDataCenterMessages,

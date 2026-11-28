@@ -69,6 +69,24 @@ export type { AdminStorageUsage } from './admin-storage-usage';
 export type { AdminStorageUsageListResponse } from './admin-storage-usage-list-response';
 export type { AdminTokenLimitCreateRequest } from './admin-token-limit-create-request';
 
+export type { AiCollection } from './ai-collection';
+export type { AiCollectionCapabilityCounts } from './ai-collection-capability-counts';
+export type { AiCollectionCategory } from './ai-collection-category';
+export type { AiCollectionCategoryCreateRequest } from './ai-collection-category-create-request';
+export type { AiCollectionCategoryItemResponse } from './ai-collection-category-item-response';
+export type { AiCollectionCategoryPage } from './ai-collection-category-page';
+export type { AiCollectionCategoryUpdateRequest } from './ai-collection-category-update-request';
+export type { AiCollectionCreateRequest } from './ai-collection-create-request';
+export type { AiCollectionItem } from './ai-collection-item';
+export type { AiCollectionItemInput } from './ai-collection-item-input';
+export type { AiCollectionItemResponse } from './ai-collection-item-response';
+export type { AiCollectionItemsReplaceRequest } from './ai-collection-items-replace-request';
+export type { AiCollectionPage } from './ai-collection-page';
+export type { AiCollectionRelease } from './ai-collection-release';
+export type { AiCollectionReleasePage } from './ai-collection-release-page';
+export type { AiCollectionStatusUpdateRequest } from './ai-collection-status-update-request';
+export type { AiCollectionUpdateRequest } from './ai-collection-update-request';
+
 export type { CacheNamespaceKeyPage } from './cache-namespace-key-page';
 
 export type { CacheOperationOutcome } from './cache-operation-outcome';
@@ -79,6 +97,7 @@ export type { ChainPolicyResult } from './chain-policy-result';
 export type { ChainsPolicyApiKeyRetrieveResult } from './chains-policy-api-key-retrieve-result';
 export type { ChainsPolicyRetrieveResult } from './chains-policy-retrieve-result';
 export type { ChainsPolicyUpdateResult } from './chains-policy-update-result';
+
 export type { CreateUpstreamAccountCredentialRequest } from './create-upstream-account-credential-request';
 export type { CreateUpstreamAccountGroupRequest } from './create-upstream-account-group-request';
 export type { CreateUpstreamAccountRequest } from './create-upstream-account-request';

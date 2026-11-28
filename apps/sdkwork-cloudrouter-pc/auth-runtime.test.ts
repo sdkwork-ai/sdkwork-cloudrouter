@@ -629,14 +629,13 @@ test("cloud router auth controller reuses appbase runtime while preserving app S
   assert.doesNotMatch(configSource, /oauthProviders:\s*\[[^\]]*'google'/);
   assert.doesNotMatch(configSource, /oauthProviders:\s*\[[^\]]*'github'/);
   assert.match(configSource, /qrLoginEnabled:\s*true/);
-  assert.match(configSource, /registerMethods:\s*\['email', 'phone'\]/);
+  assert.match(configSource, /registerMethods:\s*\['username', 'email', 'phone'\]/);
   assert.match(configSource, /recoveryMethods:\s*\['email', 'phone'\]/);
   assert.match(configSource, /fetchCloudRouterAuthRuntimeSettings/);
   assert.doesNotMatch(configSource, /fetchCloudRouterAuthSettings/);
-  assert.match(settingsServiceSource, /getSdkworkAppbaseAppSdkClient/);
-  assert.doesNotMatch(settingsServiceSource, /getCloudRouterAppSdkClient/);
-  assert.doesNotMatch(settingsServiceSource, /getCloudRouterBackendSdkClient/);
-  assert.match(settingsServiceSource, /\.system\.iam\.runtime\.retrieve\(\)/);
+  assert.match(settingsServiceSource, /getCloudRouterAppSdkClient/);
+  assert.match(settingsServiceSource, /\.iam\.auth\.runtime\.retrieve\(\)/);
+  assert.doesNotMatch(settingsServiceSource, /\.system\.iam\.runtime\.retrieve\(\)/);
   assert.match(settingsServiceSource, /\.system\.iam\.verificationPolicy\.retrieve\(\)/);
   assert.doesNotMatch(settingsServiceSource, /\.auth\.runtimeSettings/);
   assert.doesNotMatch(settingsServiceSource, /\.auth\.verificationPolicy/);
@@ -927,6 +926,16 @@ test("auth runtime config applies backend IAM settings without tenant or organiz
   assert.equal(DEFAULT_CLOUD_ROUTER_AUTH_RUNTIME_CONFIG.verificationPolicy?.emailRegistrationVerificationRequired, false);
 });
 
+test("auth runtime config accepts username registration and explicit flow disablement", () => {
+  const config = mergeCloudRouterAuthRuntimeConfig(authRuntimeSettingsFixture({
+    recoveryMethods: [],
+    registerMethods: ["username"],
+  }));
+
+  assert.deepEqual(config.registerMethods, ["username"]);
+  assert.deepEqual(config.recoveryMethods, []);
+});
+
 test("auth runtime config fails closed when backend omits required IAM runtime fields", () => {
   for (const [field, message] of [
     ["leftRailMode", /Auth leftRailMode is required/],
@@ -955,7 +964,7 @@ test("auth runtime config fails closed when backend returns unsupported IAM runt
     [{ oauthRegion: "antarctica" }, /Unsupported auth oauthRegion: antarctica/],
     [{ qrLoginType: "wechat-work" }, /Unsupported auth qrLoginType: wechat-work/],
     [{ recoveryMethods: ["email", "totp"] }, /Unsupported auth recoveryMethods: totp/],
-    [{ registerMethods: ["email", "username"] }, /Unsupported auth registerMethods: username/],
+    [{ registerMethods: ["email", "totp"] }, /Unsupported auth registerMethods: totp/],
     [{ loginMethods: [] }, /Auth loginMethods are required/],
   ] as const) {
     assert.throws(
@@ -1181,8 +1190,8 @@ test("cloud router app auth composes the appbase IAM OAuth dependency SDK withou
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.verificationPolicy);
   assert.ok(backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.wechat);
   assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.loginMethods as { minItems?: number } | undefined)?.minItems, 1);
-  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.registerMethods as { minItems?: number } | undefined)?.minItems, 1);
-  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.recoveryMethods as { minItems?: number } | undefined)?.minItems, 1);
+  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.registerMethods as { minItems?: number } | undefined)?.minItems, undefined);
+  assert.equal((backendOpenApi.components?.schemas?.AdminAuthSettingsUpdateRequest?.properties?.recoveryMethods as { minItems?: number } | undefined)?.minItems, undefined);
   assert.doesNotMatch(backendSdkIndexSource, /public readonly auth:/);
   assert.match(backendSdkSystemSource, /public readonly auth: SystemAuthApi/);
   assert.match(backendSdkSystemSource, /public readonly settings: SystemAuthSettingsApi/);
