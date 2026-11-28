@@ -4,14 +4,20 @@ import { Search } from 'lucide-react';
 import { DataCenterService, type DataCenterSourceSummary } from '../dataCenterService.ts';
 import { useDataCenterQuery } from '../dataCenterHooks.ts';
 import {
-  DataCenterDisabledAction,
   DataCenterPageHeader,
-  DataCenterPendingNotice,
+  DataCenterReadOnlyBadge,
   DataCenterTable,
   type DataCenterColumn,
 } from '../components/DataCenterShell.tsx';
 
-const SUPPORTED_SOURCE_KINDS = ['postgresql', 'mysql', 'files'] as const;
+const SUPPORTED_SOURCE_KINDS = ['postgresql', 'mysql', 'platform', 'file'] as const;
+
+const HEALTH_TONE: Record<DataCenterSourceSummary['health'], string> = {
+  healthy: 'text-emerald-600 dark:text-emerald-400',
+  warning: 'text-amber-600 dark:text-amber-400',
+  error: 'text-red-600 dark:text-red-400',
+  unknown: 'text-slate-500 dark:text-slate-400',
+};
 
 export function DataCenterSourcesPage() {
   const { t } = useTranslation();
@@ -44,25 +50,22 @@ export function DataCenterSourcesPage() {
     {
       key: 'kind',
       label: t('admin.dataCenter.sources.columns.kind', 'Type'),
-      render: (row) => <span className="uppercase text-xs text-slate-500 dark:text-slate-400">{row.kind}</span>,
+      render: (row) => <span className="text-xs uppercase text-slate-500 dark:text-slate-400">{row.kind}</span>,
     },
     {
       key: 'health',
       label: t('admin.dataCenter.sources.columns.status', 'Health'),
-      render: (row) => {
-        const tone = row.health === 'healthy'
-          ? 'text-emerald-600 dark:text-emerald-400'
-          : row.health === 'warning'
-            ? 'text-amber-600 dark:text-amber-400'
-            : 'text-red-600 dark:text-red-400';
-        return <span className={`text-xs font-medium ${tone}`}>{row.health}</span>;
-      },
+      render: (row) => (
+        <span className={`text-xs font-medium ${HEALTH_TONE[row.health]}`}>
+          {t(`admin.dataCenter.sources.health.${row.health}`, row.health)}
+        </span>
+      ),
     },
     {
       key: 'tables',
       label: t('admin.dataCenter.sources.columns.tables', 'Tables'),
       align: 'right',
-      render: (row) => row.tableCount,
+      render: (row) => String(row.tableCount),
     },
     {
       key: 'lastTestedAt',
@@ -77,17 +80,17 @@ export function DataCenterSourcesPage() {
         title={t('admin.dataCenter.sources.title', 'Data Sources')}
         description={t(
           'admin.dataCenter.sources.description',
-          'Connect platform databases, external databases and uploaded files. Credentials are write-only, every source must pass a connection test before it can be referenced.',
+          'Connect platform databases, external databases and uploaded files. Credentials are write-only, and every source must pass a connection test before it can be referenced.',
         )}
         actions={(
-          <DataCenterDisabledAction
-            label={t('admin.dataCenter.sources.new', 'New source')}
-            reason={t('admin.dataCenter.sources.newReason', 'Requires the datacenter backend')}
+          <DataCenterReadOnlyBadge
+            reason={t(
+              'admin.dataCenter.sources.readOnlyReason',
+              'Creating and testing sources from the console is not part of this release.',
+            )}
           />
         )}
       />
-
-      <DataCenterPendingNotice />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -124,6 +127,7 @@ export function DataCenterSourcesPage() {
         )}
         emptyTitle={t('admin.dataCenter.sources.empty.title', 'No data sources yet')}
         loadingLabel={t('admin.dataCenter.loading', 'Loading…')}
+        onRetry={() => void load()}
         state={visibleState}
       />
     </div>

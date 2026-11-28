@@ -45,10 +45,19 @@ class CloudRouterConsolePorts {
   }
 
   Future<Object?> listCatalog([int? page, int? pageSize, String? query]) async {
-    return _client.ai.modelsList(page, pageSize, query);
+    return _client.ai.pricingRatesList(
+      null,
+      query,
+      null,
+      null,
+      null,
+      null,
+      page,
+      pageSize,
+    );
   }
 
-  Future<Object?> revokeApiKey(String apiKeyId) async {
+  Future<void> revokeApiKey(String apiKeyId) {
     return _client.iam.apiKeysDelete(apiKeyId);
   }
 

@@ -85,9 +85,11 @@ ROOT_MODULE = DatabaseModuleSpec(
     baseline_file="0001_cloudrouter_baseline.sql",
     relative_root="database",
     # The root module additionally owns the console user-settings tables
-    # (`iam_user_preference`, `integration_webhook_endpoint`) that live in its
-    # composite baseline next to the auxiliary module tables.
-    table_prefixes=("ai_", "iam_user_", "integration_", "storage_"),
+    # (`iam_user_preference`, `integration_webhook_endpoint`), the storage
+    # center governance tables (`storage_*`), and the admin data-center
+    # governance tables (`dc_*`) that live in its composite baseline next to
+    # the auxiliary module tables.
+    table_prefixes=("ai_", "iam_user_", "integration_", "storage_", "dc_"),
 )
 
 AUXILIARY_MODULES = (

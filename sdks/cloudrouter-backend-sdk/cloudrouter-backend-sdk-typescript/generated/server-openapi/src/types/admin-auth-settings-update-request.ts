@@ -22,7 +22,7 @@ export interface AdminAuthSettingsUpdateRequest {
   /** recoveryMethods field on AdminAuthSettingsUpdateRequest. */
   recoveryMethods?: ('email' | 'phone')[];
   /** registerMethods field on AdminAuthSettingsUpdateRequest. */
-  registerMethods?: ('email' | 'phone')[];
+  registerMethods?: ('username' | 'email' | 'phone')[];
   /** verificationPolicy field on AdminAuthSettingsUpdateRequest. */
   verificationPolicy?: Record<string, JsonValue>;
   /** wechat field on AdminAuthSettingsUpdateRequest. */

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { Building2, Check, CheckCircle2, ChevronDown, Copy, Edit3, ExternalLink, Loader2, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2, X } from 'lucide-react';
+import { Building2, Check, CheckCircle2, ChevronDown, Copy, Edit3, ExternalLink, Loader2, Plus, RefreshCw, Settings2, Share2, Sparkles, Trash2, Wallet, X } from 'lucide-react';
 import { AdminTableShell, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,8 @@ import { isKnownLlmProtocol, LLM_PROTOCOLS, llmProtocolLabelKey, PROTOCOL_RESOUR
 import { resolveVendorBaseUrl, vendorAddressUnavailableReason, vendorDefaultBaseUrl, resolveVendorProtocolDefaultUrl, normalizeVendorRegion, vendorStandardBaseUrl, vendorSupportedProtocols } from './vendorProtocolCatalog';
 import { emptyResourceSelection, ResourcePicker, toEntitlements, toSelection, type ResourceSelection } from './resourcePicker';
 import { uniqueSupplierCopyName } from './supplierCopy';
+import { formatRechargeMoney } from './supplierRechargeCopy';
+import { SupplierRechargeDialog } from './supplierRechargeDialog';
 import {
   dangerButtonClass,
   errorMessage,
@@ -180,6 +182,7 @@ export function SupplierAdminPanel() {
   const [editor, setEditor] = useState<SupplierEditorState | null>(null);
   const [selected, setSelected] = useState<UpstreamSupplier | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UpstreamSupplier | null>(null);
+  const [rechargeTarget, setRechargeTarget] = useState<UpstreamSupplier | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -396,12 +399,13 @@ export function SupplierAdminPanel() {
               <th className="px-4 py-3">{t('admin.upstream.supplier.table.type')}</th>
               <th className="px-4 py-3">{t('admin.upstream.supplier.table.protocolAdapter')}</th>
               <th className="px-4 py-3">{t('admin.upstream.supplier.table.region')}</th>
+              <th className="px-4 py-3">{t('admin.upstream.supplier.table.balance')}</th>
               <th className="px-4 py-3">{t('admin.upstream.supplier.table.status')}</th>
               <th className="px-4 py-3 text-right">{t('admin.upstream.supplier.table.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {filteredItems.length === 0 ? <TableState loading={loading} empty={t('admin.upstream.supplier.empty')} colSpan={6} /> : filteredItems.map((supplier) => (
+            {filteredItems.length === 0 ? <TableState loading={loading} empty={t('admin.upstream.supplier.empty')} colSpan={7} /> : filteredItems.map((supplier) => (
               <tr key={supplier.id} className="text-slate-700 hover:bg-slate-50/80 dark:text-slate-200 dark:hover:bg-white/[0.03]">
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => setSelected(supplier)} className="text-left">
@@ -422,6 +426,31 @@ export function SupplierAdminPanel() {
                   </div>
                 </td>
                 <td className="px-4 py-3">{supplier.regionCode || '-'}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="whitespace-nowrap font-mono text-sm text-slate-700 dark:text-slate-200"
+                      title={supplier.balanceUpdatedAt ?? undefined}
+                    >
+                      {supplier.balanceAmount
+                        ? supplier.balanceCurrency
+                          ? formatRechargeMoney(supplier.balanceAmount, supplier.balanceCurrency)
+                          : supplier.balanceAmount
+                        : '-'}
+                    </span>
+                    {supplier.supplierType === 'relay' ? (
+                      <button
+                        type="button"
+                        className={secondaryButtonClass}
+                        onClick={() => setRechargeTarget(supplier)}
+                        title={t('admin.upstream.supplier.recharge.actions.recharge')}
+                      >
+                        <Wallet className="h-4 w-4" />
+                        {t('admin.upstream.supplier.recharge.actions.recharge')}
+                      </button>
+                    ) : null}
+                  </div>
+                </td>
                 <td className="px-4 py-3"><StatusBadge status={supplier.status} healthy={supplier.healthStatus} /></td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
@@ -455,6 +484,17 @@ export function SupplierAdminPanel() {
       ) : null}
       {selected ? (
         <SupplierCapabilities supplier={selected} onChanged={updateSelected} onClose={() => setSelected(null)} />
+      ) : null}
+      {rechargeTarget ? (
+        <SupplierRechargeDialog
+          supplierId={rechargeTarget.id}
+          supplierName={rechargeTarget.displayName || rechargeTarget.supplierName}
+          onClose={() => {
+            setRechargeTarget(null);
+            void load();
+          }}
+          onBalanceChanged={() => void load()}
+        />
       ) : null}
       {deleteTarget ? (
         <ConfirmDialog

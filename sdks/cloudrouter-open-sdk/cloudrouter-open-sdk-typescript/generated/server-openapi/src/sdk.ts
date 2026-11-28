@@ -51,6 +51,7 @@ import { ImagesApi, createImagesApi } from './api/images';
 import { ModelsApi, createModelsApi } from './api/models';
 import { ModerationsApi, createModerationsApi } from './api/moderations';
 import { RealtimeApi, createRealtimeApi } from './api/realtime';
+import { RechargeApi, createRechargeApi } from './api/recharge';
 import { ResponsesApi, createResponsesApi } from './api/responses';
 import { ThreadsApi, createThreadsApi } from './api/threads';
 import { ToolApi, createToolApi } from './api/tool';
@@ -120,6 +121,7 @@ export class SdkworkAiClient {
   public readonly models: ModelsApi;
   public readonly moderations: ModerationsApi;
   public readonly realtime: RealtimeApi;
+  public readonly recharge: RechargeApi;
   public readonly responses: ResponsesApi;
   public readonly threads: ThreadsApi;
   public readonly tool: ToolApi;
@@ -236,6 +238,8 @@ export class SdkworkAiClient {
     this.moderations = createModerationsApi(this.httpClient);
 
     this.realtime = createRealtimeApi(this.httpClient);
+
+    this.recharge = createRechargeApi(this.httpClient);
 
     this.responses = createResponsesApi(this.httpClient);
 

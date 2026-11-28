@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "70b81afcf6a58d8c7ba6c3db2186d8b4b3212a7f9db9b8235dd5dd6770dc0050"
+      "sha256": "1b3f6f90014e0671619d9f72d2db9475feb815fd5317ec6edc3f10654d9f7e14"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -204,7 +204,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "b87db474f0076ffd130e8ab427842a48979880599c74b38bfc027a8b312a5ec9"
+      "sha256": "105593c6edf11773ec24306ccc1569ddcda0a5423560ad749c3960713b2b1d0f"
     },
     {
       "path": "src/api/models.ts",
@@ -237,6 +237,10 @@
     {
       "path": "src/api/realtime.ts",
       "sha256": "ab78b95a6489066e22b452798edb99aa19aee01fb62a7cbb08837207bfc9543d"
+    },
+    {
+      "path": "src/api/recharge.ts",
+      "sha256": "0144d0447762ab2b6bc059fed8244e84e9042a3574f81637c65425a71e9fd9ca"
     },
     {
       "path": "src/api/responses-google.ts",
@@ -340,7 +344,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "9488d7bb30758e299c55510eb435b96af69591f18b9852fb9744e0c329322a35"
+      "sha256": "d4891e09f8deb1ff7af4fe85fa3eaeda31dc25ce5f2de0c8b823a1f1217a9d3b"
     },
     {
       "path": "src/types/alibaba-async-task.ts",
@@ -864,7 +868,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "b0694a458720fe1ad78b53dc3d9f71d851aba2c108628c2a0a14b4cf52e9af15"
+      "sha256": "db7b8fb03e87e07b8a20afefc3f43b1c10c5d04ea64732ad970b41d17302f2b0"
     },
     {
       "path": "src/types/jimeng-video-generation-request.ts",
@@ -1795,6 +1799,10 @@
       "sha256": "1051066b5d02c277e656ebfed697a6e3730daa6a542cb7a3244c9d90d74c302f"
     },
     {
+      "path": "src/types/problem-detail.ts",
+      "sha256": "a2bda3dd442be14f3326e2f4333a68766bdb7516fd840d9476a1ecbff18ba2e1"
+    },
+    {
       "path": "src/types/provider-generated-media-metadata.ts",
       "sha256": "d85c9aaba88f3097edaf36b5b660c99e9f3e54ec18a7e36d735fd424c3fb8401"
     },
@@ -1821,6 +1829,26 @@
     {
       "path": "src/types/provider-task-error.ts",
       "sha256": "8e71a74018d8673115617bd72b0e8170dc8b81c897e6bbd967b8a47e5598aca2"
+    },
+    {
+      "path": "src/types/recharge-balance.ts",
+      "sha256": "132ae65cd60baafcebe49484b3612b17d0bc249047e19ca7e859fb1dab48b27a"
+    },
+    {
+      "path": "src/types/recharge-option.ts",
+      "sha256": "8d6650a826f804485051978dc3811b786d710025a1cb9c3de404e5f61c698169"
+    },
+    {
+      "path": "src/types/recharge-options.ts",
+      "sha256": "9eca8a8bf38355c1761b7625761d60ff798bf345620b89b108ad7c0047856729"
+    },
+    {
+      "path": "src/types/recharge-order-create-request.ts",
+      "sha256": "0f0dc6bd75cefad2edc529f7a8140f008986699a9f338c7bc43f9dc40353d44a"
+    },
+    {
+      "path": "src/types/recharge-order.ts",
+      "sha256": "70c9c43970a54b0f71cf88a7bdbfd55db69c02c867f4a6386b1d303304927db1"
     },
     {
       "path": "src/types/runway-image-to-video-request.ts",

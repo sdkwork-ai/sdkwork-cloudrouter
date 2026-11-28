@@ -868,6 +868,21 @@ mod tests {
                 "plugins.admin.category.manage",
             ),
             (
+                "PATCH",
+                "/backend/v3/api/plugin_categories/{categoryCode}",
+                "plugins.admin.category.manage",
+            ),
+            (
+                "DELETE",
+                "/backend/v3/api/plugin_categories/{categoryCode}",
+                "plugins.admin.category.manage",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/plugin_categories/{categoryCode}/move_category",
+                "plugins.admin.category.manage",
+            ),
+            (
                 "GET",
                 "/backend/v3/api/plugins",
                 "plugins.admin.plugin.read",

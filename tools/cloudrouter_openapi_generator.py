@@ -91,6 +91,7 @@ class CloudRouterOpenApiGenerator:
         "verificationCodes.create",
         "verificationCodes.verify",
         "invite.policy.retrieve",
+        "auth.runtime.retrieve",
         "invites.validate.create",
     }
     REFRESH_TOKEN_OPERATION_IDS = {"sessions.refresh"}

@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AppApiKeyItem, AppApiKeyListResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, RevealApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
+import type { AppApiKeyItem, AppApiKeyListResponse, AppAuthRuntimeSettingsResponse, AppInviteClaimRequest, AppInviteClaimResponse, AppInvitePolicyResponse, AppInviteValidateRequest, AppInviteValidateResponse, CreateApiKeyRequest, CreateApiKeyResponse, SettingsDataResponse, UpdateApiKeyRequest, UpdateSettingsRequest, UpdateSettingsResponse } from '../types';
 
 
 export class IamUsersSettingsApi {
@@ -96,6 +96,38 @@ export class IamInviteApi {
 
 }
 
+export interface IamAuthRuntimeRetrieveParams {
+  tenantCode?: string;
+  organizationCode?: string;
+}
+
+export class IamAuthRuntimeApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List auth runtime config */
+  async retrieve(params?: IamAuthRuntimeRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AppAuthRuntimeSettingsResponse> {
+    const query = buildQueryString([
+      { name: 'tenant_code', value: params?.tenantCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'organization_code', value: params?.organizationCode, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AppAuthRuntimeSettingsResponse>(appendQueryString(appApiPath(`/iam/auth/runtime`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, skipAuth: true, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class IamAuthApi {
+  public readonly runtime: IamAuthRuntimeApi;
+
+  constructor(client: HttpClient) {
+    this.runtime = new IamAuthRuntimeApi(client);
+  }
+
+}
+
 export interface IamApiKeysListParams {
   page?: number;
   pageSize?: number;
@@ -144,20 +176,17 @@ export class IamApiKeysApi {
   async update(apiKeyId: string, body: UpdateApiKeyRequest, requestOptions?: ApiRequestOptions): Promise<AppApiKeyItem> {
     return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
-
-/** Reveal key */
-  async reveal(apiKeyId: string, requestOptions?: ApiRequestOptions): Promise<RevealApiKeyResponse> {
-    return this.client.request<RevealApiKeyResponse>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}/reveal`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
-  }
 }
 
 export class IamApi {
   public readonly apiKeys: IamApiKeysApi;
+  public readonly auth: IamAuthApi;
   public readonly invite: IamInviteApi;
   public readonly users: IamUsersApi;
 
   constructor(client: HttpClient) {
     this.apiKeys = new IamApiKeysApi(client);
+    this.auth = new IamAuthApi(client);
     this.invite = new IamInviteApi(client);
     this.users = new IamUsersApi(client);
   }

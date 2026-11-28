@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useMemo, Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AppShellLayout, RouteFallback, ScrollToTop } from '@sdkwork/cloudrouter-pc-shell';
 import { ConsoleLayout } from '@sdkwork/cloudrouter-pc-console-shell';
@@ -26,7 +26,7 @@ import { CloudRouterConsoleIamOauthMenuRoute } from './console-business/consoleI
 import { CloudRouterConsoleIamOfficialAccountsRoute } from './console-business/consoleIamOfficialAccountsHost';
 import { CloudRouterConsoleBusinessNavbarActions } from './console-business/consoleBusinessNavbar';
 import { applySdkCommerceThemeVariables } from './console-business/consoleCommerceTheme';
-import { CloudRouterAdminHostRoutes } from './admin/cloudRouterAdminHostMount';
+import { CloudRouterAdminHostRoutes, CloudRouterAdminFullscreenHostRoutes } from './admin/cloudRouterAdminHostMount';
 import { CommunityPortalRoutes } from '@sdkwork/cloudrouter-pc-community';
 import { LEGAL_DOCUMENT_PATHS } from '@sdkwork/documents-pc-legal/paths';
 
@@ -380,6 +380,13 @@ export default function App() {
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               {CloudRouterAdminHostRoutes()}
               <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+            </Route>
+
+            {/* Full-bleed admin surfaces (the operator data wall). They keep the
+                admin session gate but render no sidebar, no navigation bar, and
+                no content gutters: the wall is the whole page. */}
+            <Route path="/admin" element={<PortalErrorBoundary><RequireAdminSession><Outlet /></RequireAdminSession></PortalErrorBoundary>}>
+              {CloudRouterAdminFullscreenHostRoutes()}
             </Route>
 
             <Route path="*" element={<RequirePortalSession><MainLayout isDark={isDark} toggleTheme={toggleTheme} /></RequirePortalSession>} />

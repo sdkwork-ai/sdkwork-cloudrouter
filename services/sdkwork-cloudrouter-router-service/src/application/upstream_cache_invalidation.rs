@@ -6,8 +6,8 @@ use crate::ports::{
     AdminUpstreamAccountCredentialSecretItem, AdminUpstreamAccountGroupItem,
     AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
     AdminUpstreamAccountItem, AdminUpstreamFuture, AdminUpstreamListQuery, AdminUpstreamPage,
-    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamStore,
-    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
+    AdminUpstreamRechargeBinding, AdminUpstreamResourceInput, AdminUpstreamResourceItem,
+    AdminUpstreamStore, AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
     AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
     AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem,
     CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
@@ -445,5 +445,31 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
                 .await?;
             self.invalidate_after(items).await
         })
+    }
+
+    fn load_supplier_recharge_binding<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        supplier_id: i64,
+    ) -> AdminUpstreamFuture<'a, Option<AdminUpstreamRechargeBinding>> {
+        self.inner
+            .load_supplier_recharge_binding(subject, supplier_id)
+    }
+
+    fn record_supplier_account_balance<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        amount: String,
+        currency_code: Option<String>,
+        checked_at: String,
+    ) -> AdminUpstreamFuture<'a, ()> {
+        self.inner.record_supplier_account_balance(
+            subject,
+            account_id,
+            amount,
+            currency_code,
+            checked_at,
+        )
     }
 }

@@ -3,9 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { DataCenterService, type DataCenterExportSummary } from '../dataCenterService.ts';
 import { useDataCenterQuery } from '../dataCenterHooks.ts';
 import {
-  DataCenterDisabledAction,
   DataCenterPageHeader,
-  DataCenterPendingNotice,
+  DataCenterReadOnlyBadge,
   DataCenterTable,
   type DataCenterColumn,
 } from '../components/DataCenterShell.tsx';
@@ -47,12 +46,12 @@ export function DataCenterExportsPage() {
     {
       key: 'requester',
       label: t('admin.dataCenter.exports.columns.requester', 'Requested by'),
-      render: (row) => row.requestedBy,
+      render: (row) => row.requestedBy || '—',
     },
     {
       key: 'expires',
       label: t('admin.dataCenter.exports.columns.expires', 'Link expires'),
-      render: (row) => row.expiresAt,
+      render: (row) => row.expiresAt ?? '—',
     },
   ];
 
@@ -65,14 +64,14 @@ export function DataCenterExportsPage() {
           'Governed data delivery: request, approve, generate, then download through a single-use signed link with a watermark and an expiry date. Every download is audited.',
         )}
         actions={(
-          <DataCenterDisabledAction
-            label={t('admin.dataCenter.exports.new', 'New export')}
-            reason={t('admin.dataCenter.exports.newReason', 'Requires the datacenter backend')}
+          <DataCenterReadOnlyBadge
+            reason={t(
+              'admin.dataCenter.exports.readOnlyReason',
+              'Requesting and approving exports from the console is not part of this release.',
+            )}
           />
         )}
       />
-
-      <DataCenterPendingNotice />
 
       <DataCenterTable
         columns={columns}
@@ -82,6 +81,7 @@ export function DataCenterExportsPage() {
         )}
         emptyTitle={t('admin.dataCenter.exports.empty.title', 'No export jobs yet')}
         loadingLabel={t('admin.dataCenter.loading', 'Loading…')}
+        onRetry={() => void load()}
         state={state}
       />
     </div>

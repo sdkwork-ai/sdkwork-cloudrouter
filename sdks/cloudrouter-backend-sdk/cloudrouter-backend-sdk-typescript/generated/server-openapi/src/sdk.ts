@@ -4,28 +4,38 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 
 import { AiApi, createAiApi } from './api/ai';
 import { BillingApi, createBillingApi } from './api/billing';
+import { SystemApi, createSystemApi } from './api/system';
+import { McpApi, createMcpApi } from './api/mcp';
+import { MemoryApi, createMemoryApi } from './api/memory';
 import { PaymentsApi, createPaymentsApi } from './api/payments';
 import { PricingApi, createPricingApi } from './api/pricing';
 import { RechargesApi, createRechargesApi } from './api/recharges';
 import { StorageApi, createStorageApi } from './api/storage';
-import { SystemApi, createSystemApi } from './api/system';
 
 export class SdkworkBackendClient {
   private httpClient: HttpClient;
 
   public readonly ai: AiApi;
   public readonly billing: BillingApi;
+  public readonly system: SystemApi;
+  public readonly mcp: McpApi;
+  public readonly memory: MemoryApi;
   public readonly payments: PaymentsApi;
   public readonly pricing: PricingApi;
   public readonly recharges: RechargesApi;
   public readonly storage: StorageApi;
-  public readonly system: SystemApi;
 
   constructor(config: SdkworkBackendConfig) {
     this.httpClient = createHttpClient(config);
     this.ai = createAiApi(this.httpClient);
 
     this.billing = createBillingApi(this.httpClient);
+
+    this.system = createSystemApi(this.httpClient);
+
+    this.mcp = createMcpApi(this.httpClient);
+
+    this.memory = createMemoryApi(this.httpClient);
 
     this.payments = createPaymentsApi(this.httpClient);
 
@@ -34,8 +44,6 @@ export class SdkworkBackendClient {
     this.recharges = createRechargesApi(this.httpClient);
 
     this.storage = createStorageApi(this.httpClient);
-
-    this.system = createSystemApi(this.httpClient);
   }
   setAuthToken(token: string): this {
     this.httpClient.setAuthToken(token);

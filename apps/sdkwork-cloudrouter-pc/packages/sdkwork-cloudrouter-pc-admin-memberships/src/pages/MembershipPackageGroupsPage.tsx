@@ -17,10 +17,16 @@ import {
 } from '../components/MembershipPageControls';
 import { MembershipStatusBadge } from '../components/MembershipStatusBadge';
 import { MembershipCategoryBadge } from '../components/MembershipCategoryBadge';
+import { MembershipAudienceBadge } from '../components/MembershipAudienceBadge';
+import { MembershipSegmentedFilter } from '../components/MembershipSegmentedFilter';
 import {
   MembershipCategoryFilter,
   type MembershipCategoryFilterValue,
 } from '../components/MembershipCategoryFilter';
+import {
+  MEMBERSHIP_AUDIENCE_FILTERS,
+  type MembershipsAdminAudienceFilter,
+} from '../planTaxonomy';
 import { MembershipPackageGroupDrawerForm } from '../forms/MembershipPackageGroupDrawerForm';
 import {
   createMembershipAdminPackageGroup,
@@ -44,12 +50,14 @@ export function MembershipPackageGroupsPage() {
   const [pageSize, setPageSize] = useState(20);
   const [pageInfo, setPageInfo] = useState<MembershipsAdminPageInfo | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<MembershipCategoryFilterValue>('all');
+  const [audienceFilter, setAudienceFilter] = useState<MembershipsAdminAudienceFilter>('all');
   const requestIdRef = useRef(0);
 
   const loadGroups = useCallback(async (
     requestedPage: number,
     requestedPageSize: number,
     requestedCategory: MembershipCategoryFilterValue,
+    requestedAudience: MembershipsAdminAudienceFilter,
   ) => {
     const requestId = ++requestIdRef.current;
     setIsLoading(true);
@@ -59,6 +67,7 @@ export function MembershipPackageGroupsPage() {
         page: requestedPage,
         pageSize: requestedPageSize,
         category: requestedCategory === 'all' ? undefined : requestedCategory,
+        audience: requestedAudience === 'all' ? undefined : requestedAudience,
       });
       if (requestId !== requestIdRef.current) {
         return;
@@ -77,11 +86,11 @@ export function MembershipPackageGroupsPage() {
   }, [t]);
 
   useEffect(() => {
-    void loadGroups(page, pageSize, categoryFilter);
+    void loadGroups(page, pageSize, categoryFilter, audienceFilter);
     return () => {
       requestIdRef.current += 1;
     };
-  }, [loadGroups, page, pageSize, categoryFilter]);
+  }, [loadGroups, page, pageSize, categoryFilter, audienceFilter]);
 
   const handleCategoryFilterChange = (nextCategory: MembershipCategoryFilterValue) => {
     if (nextCategory === categoryFilter) {
@@ -111,7 +120,7 @@ export function MembershipPackageGroupsPage() {
       }
       setIsDrawerOpen(false);
       setEditingGroup(null);
-      await loadGroups(page, pageSize, categoryFilter);
+      await loadGroups(page, pageSize, categoryFilter, audienceFilter);
     } finally {
       setIsSaving(false);
     }
@@ -127,15 +136,20 @@ export function MembershipPackageGroupsPage() {
       setPage(targetPage);
       return;
     }
-    await loadGroups(targetPage, pageSize, categoryFilter);
+    await loadGroups(targetPage, pageSize, categoryFilter, audienceFilter);
   };
 
   return (
     <>
       <MembershipAdminPageShell
+        title={t('admin.commerce.memberships.groups.pageTitle', 'Billing periods')}
+        description={t(
+          'admin.commerce.memberships.groups.pageDesc',
+          'A billing period groups the prices that renew on the same cycle. It decides whether a price is a subscription or a one-time purchase.',
+        )}
         isLoading={isLoading}
         error={error}
-        onRefresh={() => loadGroups(page, pageSize, categoryFilter)}
+        onRefresh={() => loadGroups(page, pageSize, categoryFilter, audienceFilter)}
         actions={(
           <button type="button" onClick={openCreateDrawer} className="inline-flex items-center gap-1 rounded-md bg-lobster-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-lobster-700">
             <Plus className="h-3.5 w-3.5" />
@@ -143,8 +157,19 @@ export function MembershipPackageGroupsPage() {
           </button>
         )}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3">
-          <MembershipCategoryFilter value={categoryFilter} onChange={handleCategoryFilterChange} />
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <MembershipSegmentedFilter
+              label={t('admin.commerce.memberships.audience.filterLabel', 'Audience filter')}
+              value={audienceFilter}
+              options={MEMBERSHIP_AUDIENCE_FILTERS}
+              onChange={(nextAudience) => {
+                setAudienceFilter(nextAudience);
+                setPage(1);
+              }}
+            />
+            <MembershipCategoryFilter value={categoryFilter} onChange={handleCategoryFilterChange} />
+          </div>
           <span className="text-xs text-slate-400">{t('admin.commerce.memberships.category.filterHint', 'Filter by plan family')}</span>
         </div>
         <MembershipTablePanel
@@ -178,6 +203,7 @@ export function MembershipPackageGroupsPage() {
                 <tr className="border-b border-slate-100 dark:border-white/5">
                   <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.groups.table.group', 'Group')}</th>
                   <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.groups.table.category', 'Category')}</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.audience.label', 'Audience')}</th>
                   <th className="px-4 py-2.5 text-left font-medium text-slate-500">{t('admin.commerce.memberships.groups.table.billingCycle', 'Billing Cycle')}</th>
                   <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.groups.table.duration', 'Duration')}</th>
                   <th className="px-4 py-2.5 text-right font-medium text-slate-500">{t('admin.commerce.memberships.groups.table.packages', 'Packages')}</th>
@@ -200,6 +226,7 @@ export function MembershipPackageGroupsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-2.5"><MembershipCategoryBadge category={group.category} /></td>
+                    <td className="px-4 py-2.5"><MembershipAudienceBadge audience={group.audience} /></td>
                     <td className="px-4 py-2.5 text-slate-600 dark:text-slate-300">{membershipBillingCycleLabel(group.billingCycle, t)}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{t('admin.commerce.memberships.groups.form.durationOptionDays', '{{days}} days', { days: group.durationDays })}</td>
                     <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-300">{group.packageCount}</td>

@@ -402,6 +402,19 @@ export function challengeNeedsOperatorAction(status: string | undefined): boolea
   return OPERATOR_ACTION_CHALLENGE_STATUSES.includes(status);
 }
 
+export type ManualChallengeActionState = 'pending' | 'invalid' | 'valid';
+
+/** A wildcard and its apex release together, so one pending or invalid row wins. */
+export function manualChallengeActionState(rows: readonly ManualTxtRecordRow[]): ManualChallengeActionState {
+  if (rows.length === 0) {
+    return 'pending';
+  }
+  if (rows.some((row) => row.status === 'INVALID' || row.status === 'EXPIRED' || row.status === 'FAILED')) {
+    return 'invalid';
+  }
+  return rows.some((row) => challengeNeedsOperatorAction(row.status)) ? 'pending' : 'valid';
+}
+
 // ---- Manual DNS-01 TXT rows ----------------------------------------------
 
 export interface ManualTxtRecordRow {

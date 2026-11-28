@@ -254,3 +254,6 @@ deployments/docker/bundle/env/
 # Flutter golden-test failure diffs (regenerated on every failed run, never committed)
 apps/sdkwork-cloudrouter-flutter-mobile/test/failures/
 
+# Local filing-dialog preview scratch (never commit)
+.filing-preview.*
+

@@ -1,12 +1,13 @@
 import {
   ensureSdkworkApiSuccess,
+  getCloudRouterAppSdkClient,
   getSdkworkAppbaseAppSdkClient,
   readApiRecord,
   type ApiRecord,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 export async function fetchCloudRouterAuthRuntimeSettings(): Promise<ApiRecord> {
-  const result = await getSdkworkAppbaseAppSdkClient().system.iam.runtime.retrieve();
+  const result = await getCloudRouterAppSdkClient().iam.auth.runtime.retrieve();
   ensureSdkworkApiSuccess(result, 'Unable to load Cloud Router auth runtime settings');
   return readApiRecord(result);
 }

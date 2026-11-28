@@ -5428,6 +5428,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-cloudrouter-admin-data-center-repository-sqlx"
+version = "0.4.7"
+dependencies = [
+ "chrono",
+ "sdkwork-cloudrouter-router-service",
+ "sdkwork-utils-rust",
+ "sqlx",
+]
+
+[[package]]
 name = "sdkwork-cloudrouter-admin-gateway"
 version = "0.4.7"
 dependencies = [
@@ -5542,6 +5552,7 @@ dependencies = [
  "sdkwork-cloudrouter-http",
  "sdkwork-cloudrouter-license",
  "sdkwork-cloudrouter-observability",
+ "sdkwork-cloudrouter-open-recharge-repository-sqlx",
  "sdkwork-cloudrouter-provider-adapter-contract",
  "sdkwork-cloudrouter-provider-adapter-http",
  "sdkwork-cloudrouter-provider-adapter-registry",
@@ -5687,6 +5698,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-cloudrouter-open-recharge-repository-sqlx"
+version = "0.4.7"
+dependencies = [
+ "sdkwork-cloudrouter-router-service",
+ "sdkwork-contract-service",
+ "sdkwork-order-repository-sqlx",
+ "sdkwork-order-service",
+ "sdkwork-utils-rust",
+ "sqlx",
+]
+
+[[package]]
 name = "sdkwork-cloudrouter-paas-plugin"
 version = "0.4.7"
 dependencies = [
@@ -5794,6 +5817,7 @@ dependencies = [
  "sdkwork-cloudrouter-provider-adapter-registry",
  "sdkwork-cloudrouter-security",
  "sdkwork-cloudrouter-test-support",
+ "sdkwork-cloudrouter-upstream-recharge",
  "sdkwork-commerce-promotion-service",
  "sdkwork-contract-service",
  "sdkwork-database-config",
@@ -5818,6 +5842,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "sqlx",
+ "thiserror 1.0.69",
  "tokio",
  "tower",
  "tracing",
@@ -5900,6 +5925,20 @@ dependencies = [
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-http",
  "sqlx",
+]
+
+[[package]]
+name = "sdkwork-cloudrouter-upstream-recharge"
+version = "0.4.7"
+dependencies = [
+ "async-trait",
+ "axum",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "url",
 ]
 
 [[package]]
@@ -6566,6 +6605,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-featured-contract"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "sdkwork-feeds-database-host"
 version = "0.1.0"
 dependencies = [
@@ -6962,6 +7009,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "sdkwork-featured-contract",
  "sdkwork-id-core",
  "sdkwork-intelligence-plugins-service",
  "sdkwork-plugins-contract",
@@ -6977,6 +7025,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "regex-lite",
+ "sdkwork-featured-contract",
  "sdkwork-plugins-contract",
  "sdkwork-utils-rust",
  "serde",
@@ -7014,6 +7063,7 @@ dependencies = [
  "chrono",
  "sdkwork-database-id",
  "sdkwork-database-sqlx",
+ "sdkwork-featured-contract",
  "sdkwork-intelligence-skills-service",
  "sdkwork-skills-contract",
  "sdkwork-utils-rust",
@@ -7028,6 +7078,7 @@ dependencies = [
  "async-trait",
  "regex-lite",
  "sdkwork-drive-contract",
+ "sdkwork-featured-contract",
  "sdkwork-skills-contract",
  "sdkwork-utils-rust",
  "serde_json",
@@ -7869,6 +7920,7 @@ dependencies = [
 name = "sdkwork-plugins-contract"
 version = "0.1.0"
 dependencies = [
+ "sdkwork-featured-contract",
  "sdkwork-utils-rust",
  "serde",
  "serde_json",
@@ -8150,12 +8202,14 @@ dependencies = [
  "sdkwork-api-log-assembly",
  "sdkwork-cloudrouter-admin-analytics-repository-sqlx",
  "sdkwork-cloudrouter-admin-dashboard-repository-sqlx",
+ "sdkwork-cloudrouter-admin-data-center-repository-sqlx",
  "sdkwork-cloudrouter-admin-monitor-repository-sqlx",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-database-host",
  "sdkwork-cloudrouter-http",
  "sdkwork-cloudrouter-observability",
  "sdkwork-cloudrouter-router-service",
+ "sdkwork-cloudrouter-upstream-recharge",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
  "sdkwork-iam-web-adapter",
@@ -8617,6 +8671,7 @@ dependencies = [
  "sdkwork-utils-rust",
  "sdkwork-web-contract",
  "sdkwork-web-core",
+ "serde",
  "serde_json",
  "sqlx",
  "tracing",
@@ -9113,6 +9168,7 @@ name = "sdkwork-routes-plugins-app-api"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-featured-contract",
  "sdkwork-iam-web-adapter",
  "sdkwork-intelligence-plugins-service",
  "sdkwork-plugins-contract",
@@ -9130,6 +9186,7 @@ name = "sdkwork-routes-plugins-backend-api"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-featured-contract",
  "sdkwork-iam-web-adapter",
  "sdkwork-intelligence-plugins-service",
  "sdkwork-plugins-contract",
@@ -9222,6 +9279,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "axum",
+ "sdkwork-featured-contract",
  "sdkwork-intelligence-skills-service",
  "sdkwork-routes-skills-common",
  "sdkwork-skills-contract",
@@ -9248,6 +9306,7 @@ name = "sdkwork-routes-skills-common"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-featured-contract",
  "sdkwork-intelligence-skills-service",
  "sdkwork-skills-contract",
  "sdkwork-utils-rust",
@@ -9467,6 +9526,7 @@ dependencies = [
 name = "sdkwork-skills-contract"
 version = "0.1.0"
 dependencies = [
+ "sdkwork-featured-contract",
  "sdkwork-utils-rust",
  "serde",
  "serde_json",

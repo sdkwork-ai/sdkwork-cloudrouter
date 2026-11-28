@@ -134,7 +134,7 @@ export function DomainPrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-lobster-500 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-lobster-500 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-lobster-600 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
     </button>
@@ -155,7 +155,7 @@ export function DomainSecondaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
     >
       {children}
     </button>
@@ -205,15 +205,17 @@ export function DomainTextInput({
   mono = false,
   autoFocus = false,
   inputMode,
+  max,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  type?: 'text' | 'password';
+  type?: 'text' | 'password' | 'date' | 'url';
   disabled?: boolean;
   mono?: boolean;
   autoFocus?: boolean;
   inputMode?: 'text' | 'numeric' | 'decimal';
+  max?: string;
 }) {
   return (
     <input
@@ -222,6 +224,7 @@ export function DomainTextInput({
       disabled={disabled}
       autoFocus={autoFocus}
       inputMode={inputMode}
+      max={max}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
       className={`${INPUT_CLASS} ${mono ? 'font-mono' : ''}`.trim()}
@@ -234,16 +237,19 @@ export function DomainSelect<T extends string>({
   onChange,
   options,
   disabled = false,
+  ariaLabel,
 }: {
   value: T;
   onChange: (value: T) => void;
   options: readonly { value: T; label: string; disabled?: boolean }[];
   disabled?: boolean;
+  ariaLabel?: string;
 }) {
   return (
     <select
       value={value}
       disabled={disabled}
+      aria-label={ariaLabel}
       onChange={(event) => onChange(event.target.value as T)}
       className={INPUT_CLASS}
     >
@@ -433,6 +439,63 @@ export function DomainTableHead({ columns }: { columns: readonly string[] }) {
         ))}
       </tr>
     </thead>
+  );
+}
+
+/**
+ * Two-pixel indeterminate bar shown above a table while the next server page
+ * loads.
+ *
+ * The rows stay on screen during that request, so without this the table looks
+ * frozen between two pages; the bar states "a request is in flight" without
+ * pushing the table down or replacing rows the operator is still reading.
+ */
+export function DomainTableRefreshingBar({ label }: { label: string }) {
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      className="h-[2px] w-full overflow-hidden bg-slate-100 dark:bg-white/10"
+    >
+      <div className="h-full w-1/3 animate-pulse rounded-full bg-lobster-500" />
+    </div>
+  );
+}
+
+/**
+ * States that a filter applied to the rows of the current page only.
+ *
+ * The deployments list endpoints for hostnames and certificates accept no filter
+ * parameters yet, so the only honest thing a global search box can do with one
+ * page of data is filter that page — but it has to say so, and offer one click to
+ * undo it. Rendering the count ("3 of 20 on this page") keeps the server total in
+ * the footer and the matches in the body from looking contradictory.
+ */
+export function DomainPageFilterNotice({
+  label,
+  clearLabel,
+  onClear,
+}: {
+  /** Localized "{{matched}} of {{pageRowCount}} on this page". */
+  label: string;
+  clearLabel: string;
+  onClear: () => void;
+}) {
+  return (
+    <span
+      aria-live="polite"
+      aria-atomic="true"
+      className="inline-flex items-center gap-2 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+    >
+      <span>{label}</span>
+      <button
+        type="button"
+        onClick={onClear}
+        className="rounded underline decoration-amber-400/70 underline-offset-2 transition hover:text-amber-900 dark:hover:text-amber-200"
+      >
+        {clearLabel}
+      </button>
+    </span>
   );
 }
 

@@ -200,3 +200,44 @@ fn asynchronous_billing_keeps_legacy_precharge_refund_reconciliation() {
     assert!(BILLING_STORE.contains("\"refund\""));
     assert!(BILLING_TRANSACTION.contains("refund(context, reserved)"));
 }
+
+/// Regression: every wallet mutation (precharge hold, hold settle, hold release,
+/// ledger append) is guarded by `acct_account.version`, and the account
+/// repository does not retry the loser of a concurrent mutation on the same
+/// wallet. Without a bounded replay, a settle that lost the race was dropped:
+/// the provider had already completed, so the interceptor keeps the reservation
+/// and the frozen amount stayed unavailable for the whole hold TTL while the
+/// usage fact stayed unbilled.
+#[test]
+fn wallet_mutations_replay_lost_optimistic_version_races() {
+    for needle in [
+        "retry_account_conflict",
+        "ACCOUNT_CONFLICT_ATTEMPTS",
+        "is_account_conflict",
+        "CommerceServiceErrorKind::Conflict",
+        "built ONCE per hold",
+    ] {
+        assert!(
+            BILLING_STORE.contains(needle),
+            "conflict replay must contain {needle:?}"
+        );
+    }
+    // An idempotency hash drift is also a `Conflict`, but replaying it can never
+    // succeed, so it must stay terminal instead of burning the retry budget.
+    assert!(
+        BILLING_STORE.contains(".contains(\"idempotency\")"),
+        "idempotency drift must be excluded from the replay"
+    );
+    // The interceptor must not retry the precharge itself: rebuilding the hold
+    // command there would recompute `expires_at`, and the same idempotency key
+    // with a different request hash is rejected as payload drift while the hold
+    // created by the first attempt stays frozen with no recorded id.
+    assert!(
+        !BILLING_TRANSACTION.contains("precharge_attempt"),
+        "the precharge must not be retried by rebuilding its command"
+    );
+    assert!(
+        BILLING_TRANSACTION.contains("The billing store replays the idempotent"),
+        "the interceptor must document that the store owns the conflict replay"
+    );
+}

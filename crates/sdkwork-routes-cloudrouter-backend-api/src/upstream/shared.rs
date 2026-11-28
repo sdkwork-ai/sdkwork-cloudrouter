@@ -155,6 +155,7 @@ pub(super) struct UpstreamState {
     pub store: UpstreamStore,
     pub verifier: UpstreamVerifier,
     pub resource_store: Option<UpstreamResourceStore>,
+    pub recharge: std::sync::Arc<dyn sdkwork_cloudrouter_upstream_recharge::UpstreamRechargeClient>,
 }
 
 #[derive(Debug, Default, Deserialize)]

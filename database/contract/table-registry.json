@@ -51,6 +51,38 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_collection",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_collection_category",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_collection_item",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_collection_release",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_config_change_event",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -269,6 +301,86 @@
     {
       "table_name": "ai_user_account_group_route",
       "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_audit_log",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "event_log",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_data_source",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_data_source_credential",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_data_source_test_log",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "event_log",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_dataset",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_dataset_field",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_export_job",
+      "owner": "router-service",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_table",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_table_column",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "dc_workspace",
+      "owner": "router-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "tenant_entity",

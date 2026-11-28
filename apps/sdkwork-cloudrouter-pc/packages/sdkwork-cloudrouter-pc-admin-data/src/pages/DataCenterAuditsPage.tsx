@@ -4,7 +4,6 @@ import { DataCenterService, type DataCenterAuditSummary } from '../dataCenterSer
 import { useDataCenterQuery } from '../dataCenterHooks.ts';
 import {
   DataCenterPageHeader,
-  DataCenterPendingNotice,
   DataCenterTable,
   type DataCenterColumn,
 } from '../components/DataCenterShell.tsx';
@@ -18,12 +17,12 @@ export function DataCenterAuditsPage() {
     {
       key: 'at',
       label: t('admin.dataCenter.audits.columns.at', 'Time'),
-      render: (row) => <span className="tabular-nums text-xs">{row.at}</span>,
+      render: (row) => <span className="tabular-nums text-xs">{row.at || '—'}</span>,
     },
     {
       key: 'actor',
       label: t('admin.dataCenter.audits.columns.actor', 'Actor'),
-      render: (row) => row.actor,
+      render: (row) => row.actor || '—',
     },
     {
       key: 'action',
@@ -37,7 +36,7 @@ export function DataCenterAuditsPage() {
     {
       key: 'object',
       label: t('admin.dataCenter.audits.columns.object', 'Object'),
-      render: (row) => <span className="font-mono text-xs">{row.object}</span>,
+      render: (row) => <span className="font-mono text-xs">{row.object || '—'}</span>,
     },
     {
       key: 'rows',
@@ -69,8 +68,6 @@ export function DataCenterAuditsPage() {
         )}
       />
 
-      <DataCenterPendingNotice />
-
       <DataCenterTable
         columns={columns}
         emptyDescription={t(
@@ -79,6 +76,7 @@ export function DataCenterAuditsPage() {
         )}
         emptyTitle={t('admin.dataCenter.audits.empty.title', 'No audit events yet')}
         loadingLabel={t('admin.dataCenter.loading', 'Loading…')}
+        onRetry={() => void load()}
         state={state}
       />
     </div>

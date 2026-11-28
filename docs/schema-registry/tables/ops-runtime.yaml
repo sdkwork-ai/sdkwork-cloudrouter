@@ -181,6 +181,7 @@ tables:
   - /admin/recharges/settings
   - /admin/request-log
   - /admin/runtime-region
+  - /admin/iam/auth-settings
   - /admin/settings
   - /admin/site
   - /admin/storage/defaultBuckets
@@ -325,6 +326,7 @@ tables:
   frontend_routes:
   - /admin/cache
   - /admin/runtime-region
+  - /admin/iam/auth-settings
   - /admin/settings
   - /admin/site
   - /admin/upstream

@@ -13,6 +13,7 @@ pub use billing_subject_resolver::{
 };
 mod admin_analytics_read_store;
 mod admin_announcement_store;
+mod admin_collection_store;
 mod admin_api_key_rate_limit_store;
 mod admin_auth_settings_store;
 mod admin_chain_policy_store;
@@ -46,6 +47,7 @@ mod billing_subject_resolver;
 mod chat_completion_relay;
 mod chat_completion_stream_relay;
 mod dashboard_overview_read_store;
+mod data_center_store;
 mod embeddings_relay;
 mod gateway_accounting_retry_queue;
 mod gateway_billing_store;
@@ -200,6 +202,18 @@ pub use admin_referral_store::{
     ListAdminReferralRelationsQuery, ListAdminReferralStrategiesQuery,
     RetrieveAdminReferralStrategyQuery, UpdateAdminReferralStrategyCommand,
 };
+pub use admin_collection_store::{
+    AdminCollectionCapabilityCounts, AdminCollectionCategoryItem, AdminCollectionCategoryListPage,
+    AdminCollectionDeleteOutcome, AdminCollectionFuture, AdminCollectionItemInput,
+    AdminCollectionItemRecord, AdminCollectionListPage, AdminCollectionRecord,
+    AdminCollectionReleaseListPage, AdminCollectionReleaseRecord, AdminCollectionStore,
+    AdminCollectionSubject, CreateAdminCollectionCategoryCommand, CreateAdminCollectionCommand,
+    DeleteAdminCollectionCategoryCommand, DeleteAdminCollectionCommand,
+    ListAdminCollectionCategoriesQuery, ListAdminCollectionReleasesQuery,
+    ListAdminCollectionsQuery, ReplaceAdminCollectionItemsCommand,
+    UpdateAdminCollectionCategoryCommand, UpdateAdminCollectionCommand,
+    UpdateAdminCollectionStatusCommand,
+};
 pub use admin_service_node_store::{
     AdminServiceNodeCommandFuture, AdminServiceNodeDeleteOutcome, AdminServiceNodeItem,
     AdminServiceNodeListPage, AdminServiceNodeStore, AdminServiceNodeSubject,
@@ -284,6 +298,12 @@ pub use dashboard_overview_read_store::{
     DashboardModalityDistribution, DashboardOverviewQuery, DashboardOverviewReadFuture,
     DashboardOverviewReadStore, DashboardOverviewSnapshot, DashboardOverviewSubject,
     DashboardOverviewSummary, DashboardSparklinePoint, DashboardTopModel,
+};
+pub use data_center_store::{
+    DataCenterAuditAction, DataCenterAuditEntry, DataCenterAuditFuture, DataCenterAuditItem,
+    DataCenterAuditResult, DataCenterExportItem, DataCenterExportStatus, DataCenterListFuture,
+    DataCenterOverview, DataCenterReadFuture, DataCenterSourceHealth, DataCenterSourceItem,
+    DataCenterStore, DataCenterSubject, DataCenterTableItem, DataCenterTableKind,
 };
 pub use embeddings_relay::{
     EmbeddingsRelay, EmbeddingsRelayFuture, EmbeddingsRelayRequest, EmbeddingsRelayResponse,

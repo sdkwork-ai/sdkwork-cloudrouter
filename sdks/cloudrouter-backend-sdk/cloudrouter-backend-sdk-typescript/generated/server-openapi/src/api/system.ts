@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminDashboardOverview, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, ChainPolicyInput, FirewallRuleItem, FirewallRulePage, InstallationStatusResponse, IpLimitRuleItem, IpLimitRulePage, JsonValue, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
+import type { AdminAnalyticsOverview, AdminAuthSettingsResponse, AdminAuthSettingsUpdateRequest, AdminDashboardOverview, AdminFirewallRuleCreateRequest, AdminIpLimitCreateRequest, AdminModelLimitCreateRequest, AdminRecordPage, AdminRuntimeRegionSettingsResponse, AdminRuntimeRegionSettingsUpdateRequest, AdminServiceNodeCreateRequest, AdminServiceNodeItem, AdminServiceNodePage, AdminServiceNodeStatusUpdateRequest, AdminServiceNodeUpdateRequest, AdminSiteSettingsResponse, AdminSiteSettingsUpdateRequest, AdminTokenLimitCreateRequest, CacheNamespaceKeyPage, CacheOperationOutcome, CacheOverview, ChainPolicyInput, DataCenterAuditPage, DataCenterExportPage, DataCenterOverview, DataCenterSourcePage, DataCenterTablePage, FirewallRuleItem, FirewallRulePage, InstallationStatusResponse, IpLimitRuleItem, IpLimitRulePage, JsonValue, ModelLimitRuleItem, ModelLimitRulePage, MonitorAlertPage, MonitorNodePage, MonitorPerformancePage, TokenLimitRuleItem, TokenLimitRulePage } from '../types';
 
 
 export class SystemSiteSettingsApi {
@@ -656,7 +656,126 @@ export class SystemAnalyticsApi {
 
 }
 
+export interface SystemDataCenterTablesListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class SystemDataCenterTablesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List tables */
+  async list(params?: SystemDataCenterTablesListParams, requestOptions?: ApiRequestOptions): Promise<DataCenterTablePage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<DataCenterTablePage>(appendQueryString(backendApiPath(`/datacenter/tables`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export class SystemOverviewApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List overview */
+  async retrieve(requestOptions?: ApiRequestOptions): Promise<DataCenterOverview> {
+    return this.client.request<DataCenterOverview>(backendApiPath(`/datacenter/overview`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export interface SystemDataCenterExportsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class SystemDataCenterExportsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List exports */
+  async list(params?: SystemDataCenterExportsListParams, requestOptions?: ApiRequestOptions): Promise<DataCenterExportPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<DataCenterExportPage>(appendQueryString(backendApiPath(`/datacenter/exports`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export interface SystemDataSourcesListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class SystemDataSourcesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List sources */
+  async list(params?: SystemDataSourcesListParams, requestOptions?: ApiRequestOptions): Promise<DataCenterSourcePage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<DataCenterSourcePage>(appendQueryString(backendApiPath(`/datacenter/data_sources`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export interface SystemDataCenterAuditsListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class SystemDataCenterAuditsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List audits */
+  async list(params?: SystemDataCenterAuditsListParams, requestOptions?: ApiRequestOptions): Promise<DataCenterAuditPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<DataCenterAuditPage>(appendQueryString(backendApiPath(`/datacenter/audits`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
 export class SystemApi {
+  public readonly dataCenterAudits: SystemDataCenterAuditsApi;
+  public readonly dataSources: SystemDataSourcesApi;
+  public readonly dataCenterExports: SystemDataCenterExportsApi;
+  public readonly overview: SystemOverviewApi;
+  public readonly dataCenterTables: SystemDataCenterTablesApi;
   public readonly analytics: SystemAnalyticsApi;
   public readonly auth: SystemAuthApi;
   public readonly cache: SystemCacheApi;
@@ -672,6 +791,11 @@ export class SystemApi {
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
+    this.dataCenterAudits = new SystemDataCenterAuditsApi(client);
+    this.dataSources = new SystemDataSourcesApi(client);
+    this.dataCenterExports = new SystemDataCenterExportsApi(client);
+    this.overview = new SystemOverviewApi(client);
+    this.dataCenterTables = new SystemDataCenterTablesApi(client);
     this.analytics = new SystemAnalyticsApi(client);
     this.auth = new SystemAuthApi(client);
     this.cache = new SystemCacheApi(client);

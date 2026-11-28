@@ -12,6 +12,7 @@
 
 import type {
   CertificateArchiveRetryResult,
+  CertificateArtifactResponse,
   CertificateChallengePresentationList,
   CertificateChallengePresentationResponse,
   CertificateChallengeReleaseResult,
@@ -32,6 +33,8 @@ export type {
   DomainDnsRecordStatusRequest as DomainDnsRecordStatusInput,
   DomainDnsSyncResponse as DomainDnsSyncResult,
   DomainHostnameResponse as DomainHostname,
+  DomainZoneFiling as DomainZoneFiling,
+  DomainZonePoliceFiling as DomainZonePoliceFiling,
   DomainVerificationFileCheckResponse as DomainVerificationFileCheck,
   DomainVerificationFileResponse as DomainVerificationFile,
   DomainVerifyResponse as DomainVerifyResult,
@@ -112,6 +115,9 @@ export type DomainCertificateChallengeReleaseResult = CertificateChallengeReleas
  * until it settles on `ARCHIVED` or `FAILED`.
  */
 export type DomainCertificateArchiveRetryResult = CertificateArchiveRetryResult;
+
+/** `GET .../artifact` result: public PEM bundle encoded as a ZIP. */
+export type DomainCertificateArtifact = CertificateArtifactResponse;
 
 export type DomainRenewalStatus = 'NONE' | 'PLANNED' | 'PROCESSING' | 'FAILED';
 export type DomainValidityPhase = 'NOT_YET_VALID' | 'VALID' | 'EXPIRING_SOON' | 'EXPIRED';

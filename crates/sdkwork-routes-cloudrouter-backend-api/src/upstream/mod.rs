@@ -1,5 +1,6 @@
 mod account;
 mod account_group;
+mod recharge;
 mod resource_catalog;
 mod shared;
 mod supplier;
@@ -18,9 +19,11 @@ pub(crate) fn admin_upstream_router_with_store(
     store: UpstreamStore,
     verifier: UpstreamVerifier,
     resource_store: Option<UpstreamResourceStore>,
+    recharge: std::sync::Arc<dyn sdkwork_cloudrouter_upstream_recharge::UpstreamRechargeClient>,
 ) -> Router {
     Router::new()
         .merge(supplier::routes())
+        .merge(recharge::routes())
         .merge(account::routes())
         .merge(account_group::routes())
         .merge(resource_catalog::routes())
@@ -28,6 +31,7 @@ pub(crate) fn admin_upstream_router_with_store(
             store,
             verifier,
             resource_store,
+            recharge,
         })
 }
 

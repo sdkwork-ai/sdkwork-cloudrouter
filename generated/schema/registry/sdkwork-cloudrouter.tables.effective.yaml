@@ -288,6 +288,20 @@ modules:
     - ai_model_access_policy
     - ai_resource_binding
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  ai-collection:
+    owner: cloud-router-platform
+    description: AI capability collection plane (合集). A collection groups skills,
+      MCP servers, agents, and plugins in one mixed set or in a single-capability-type
+      set. Collection records are Cloud Router-owned; the capabilities themselves
+      stay owned by sdkwork-skills, sdkwork-mcp, sdkwork-agents, and sdkwork-plugins.
+    compliance_level: L2
+    tables_count: 4
+    tables:
+    - ai_collection_category
+    - ai_collection
+    - ai_collection_item
+    - ai_collection_release
+    ddl_location: database/migrations/{engine}/0055_ai_capability_collections.up.sql
   ai-metering:
     owner: cloud-router-platform
     description: AI usage facts, request traces, and the async usage reconciliation
@@ -364,6 +378,27 @@ modules:
     - commerce_refund_attempt
     - commerce_refund_item
     ddl_location: database/modules/payment-control-plane/ddl/baseline/{engine}/0001_payment_control_plane_baseline.sql
+  data-center:
+    owner: cloud-router-platform
+    description: Admin data-center governance plane (数据中心) behind `/backend/v3/api/datacenter/*`
+      — data sources with write-only credentials, connectivity history, landed table
+      and dataset catalogs, governed export jobs, and the data-access audit trail.
+      Landed data itself stays in a Data Center-owned schema, never in the gateway/routing/billing
+      tables.
+    compliance_level: L3
+    tables_count: 10
+    tables:
+    - dc_workspace
+    - dc_data_source
+    - dc_data_source_credential
+    - dc_data_source_test_log
+    - dc_table
+    - dc_table_column
+    - dc_dataset
+    - dc_dataset_field
+    - dc_export_job
+    - dc_audit_log
+    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
 data_flow:
   usage_to_account:
     description: 用量推送到账户模块
@@ -1264,6 +1299,365 @@ tables:
     - status
     - updated_at
     - id
+  imported: false
+- table: ai_collection
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection
+  columns:
+    collection_key:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    summary:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    description:
+      type: string(8000)
+      constraints: NOT NULL DEFAULT ''
+    icon_ref:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    collection_kind:
+      type: string(32)
+      constraints: NOT NULL
+    category_id: int64
+    visibility:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'organization'
+    publish_status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'draft'
+    published_at: instant
+    item_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    featured:
+      type: bool
+      constraints: NOT NULL DEFAULT false
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    owner_user_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    created_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    updated_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - collection_key
+  - name
+  - collection_kind
+  - visibility
+  - publish_status
+  unique_constraints:
+  - name: uk_ai_collection_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_key
+  foreign_keys:
+  - name: fk_ai_collection_category
+    columns:
+    - category_id
+    references_table: ai_collection_category
+    references_columns:
+    - id
+    on_delete: RESTRICT
+  check_constraints:
+  - name: ck_ai_collection_kind
+    expression: collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin')
+  - name: ck_ai_collection_visibility
+    expression: visibility IN ('private', 'organization', 'public')
+  - name: ck_ai_collection_publish_status
+    expression: publish_status IN ('draft', 'published', 'archived')
+  - name: ck_ai_collection_values
+    expression: length(trim(collection_key)) > 0 AND length(trim(name)) > 0 AND item_count
+      >= 0 AND sort_order >= 0 AND (publish_status <> 'published' OR published_at
+      IS NOT NULL)
+  - name: ck_ai_collection_tags_array
+    expression: jsonb_typeof(tags) = 'array'
+  indexes:
+  - name: idx_ai_collection_scope_kind_status
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_kind
+    - publish_status
+    - updated_at
+    - id
+  - name: idx_ai_collection_scope_category
+    columns:
+    - tenant_id
+    - organization_id
+    - category_id
+    - sort_order
+    - id
+  - name: idx_ai_collection_scope_featured
+    columns:
+    - tenant_id
+    - organization_id
+    - featured
+    - sort_order
+    - id
+  lifecycle:
+    storage_strategy: overwrite_state
+    cleanup:
+      strategy: soft_delete
+  imported: false
+- table: ai_collection_category
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection/categories
+  columns:
+    collection_kind:
+      type: string(32)
+      constraints: NOT NULL
+    category_code:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    description:
+      type: string(4000)
+      constraints: NOT NULL DEFAULT ''
+    icon_ref:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    parent_id: int64
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - collection_kind
+  - category_code
+  - name
+  unique_constraints:
+  - name: uk_ai_collection_category_scope_code
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_kind
+    - category_code
+  foreign_keys:
+  - name: fk_ai_collection_category_parent
+    columns:
+    - parent_id
+    references_table: ai_collection_category
+    references_columns:
+    - id
+    on_delete: SET NULL
+  check_constraints:
+  - name: ck_ai_collection_category_kind
+    expression: collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin')
+  - name: ck_ai_collection_category_code
+    expression: (category_code ~ '^[a-z0-9][a-z0-9_-]{0,127}$' OR category_code ~
+      '^[a-z0-9][a-z0-9_-]{0,99}#deleted-[0-9]{1,19}$')
+  - name: ck_ai_collection_category_values
+    expression: length(trim(name)) > 0 AND sort_order >= 0 AND (parent_id IS NULL
+      OR parent_id > 0)
+  indexes:
+  - name: idx_ai_collection_category_scope_kind
+    columns:
+    - tenant_id
+    - organization_id
+    - collection_kind
+    - sort_order
+    - id
+  - name: idx_ai_collection_category_parent
+    columns:
+    - parent_id
+  lifecycle:
+    storage_strategy: overwrite_state
+    cleanup:
+      strategy: soft_delete
+  imported: false
+- table: ai_collection_item
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection
+  columns:
+    collection_id:
+      type: int64
+      constraints: NOT NULL
+    collection_kind:
+      type: string(32)
+      constraints: NOT NULL
+    capability_type:
+      type: string(32)
+      constraints: NOT NULL
+    capability_key:
+      type: string(191)
+      constraints: NOT NULL
+    capability_name:
+      type: string(255)
+      constraints: NOT NULL DEFAULT ''
+    capability_version:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    capability_icon_ref:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    config:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    sort_order:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+  required_columns:
+  - collection_id
+  - collection_kind
+  - capability_type
+  - capability_key
+  unique_constraints:
+  - name: uk_ai_collection_item_capability
+    columns:
+    - collection_id
+    - capability_type
+    - capability_key
+  foreign_keys:
+  - name: fk_ai_collection_item_collection
+    columns:
+    - collection_id
+    references_table: ai_collection
+    references_columns:
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_collection_item_capability_type
+    expression: capability_type IN ('skill', 'mcp', 'agent', 'plugin')
+  - name: ck_ai_collection_item_kind_matches
+    expression: collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin') AND
+      (collection_kind = 'mixed' OR collection_kind = capability_type)
+  - name: ck_ai_collection_item_values
+    expression: length(trim(capability_key)) > 0 AND sort_order >= 0
+  - name: ck_ai_collection_item_config_object
+    expression: jsonb_typeof(config) = 'object'
+  indexes:
+  - name: idx_ai_collection_item_order
+    columns:
+    - collection_id
+    - sort_order
+    - id
+  lifecycle:
+    storage_strategy: overwrite_state
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_collection
+  imported: false
+- table: ai_collection_release
+  domain: ai
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/collection
+  columns:
+    collection_id:
+      type: int64
+      constraints: NOT NULL
+    release_no:
+      type: int32
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL DEFAULT ''
+    item_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    item_snapshot:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    release_status:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'published'
+    notes:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    published_by:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    published_at:
+      type: instant
+      constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  required_columns:
+  - collection_id
+  - release_no
+  unique_constraints:
+  - name: uk_ai_collection_release_order
+    columns:
+    - collection_id
+    - release_no
+  foreign_keys:
+  - name: fk_ai_collection_release_collection
+    columns:
+    - collection_id
+    references_table: ai_collection
+    references_columns:
+    - id
+    on_delete: CASCADE
+  check_constraints:
+  - name: ck_ai_collection_release_values
+    expression: release_no > 0 AND item_count >= 0 AND release_status IN ('published',
+      'revoked')
+  - name: ck_ai_collection_release_snapshot_array
+    expression: jsonb_typeof(item_snapshot) = 'array'
+  indexes:
+  - name: idx_ai_collection_release_published
+    columns:
+    - collection_id
+    - published_at
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 24mo
+      archive_retention: 7y
+      grace_period: 7d
+    cleanup:
+      strategy: foreign_key_cascade
+      parent_table: ai_collection
   imported: false
 - table: ai_config_change_event
   domain: ai
@@ -6164,6 +6558,83 @@ tables:
     - effective_from
     - id
   imported: false
+- table: cloudrouter_catalog_generation
+  domain: commerce
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-rating-service
+  common_columns: tenant_entity
+  columns:
+    config_scope:
+      type: string(64)
+      constraints: NOT NULL
+    partition_key:
+      type: string(256)
+      constraints: NOT NULL DEFAULT ''
+    generation:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    changed_by: string(128)
+    changed_reason: string(256)
+  unique_constraints:
+  - name: uk_cloudrouter_catalog_generation
+    columns:
+    - config_scope
+    - partition_key
+  - name: uk_cloudrouter_catalog_generation_uuid
+    columns:
+    - uuid
+  check_constraints:
+  - name: ck_cloudrouter_catalog_generation_scope
+    expression: BTRIM(config_scope) <> ''
+  - name: ck_cloudrouter_catalog_generation_non_negative
+    expression: generation >= 0
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 7y
+      grace_period: 24h
+    cleanup:
+      owner: cloudrouter-billing-retention-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: cloudrouter-billing-retention-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
+  imported: false
 - table: cloudrouter_charge_line
   domain: commerce
   profile: ledger_source_fact
@@ -6272,6 +6743,162 @@ tables:
   - name: idx_cloudrouter_charge_line_retention
     columns:
     - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 7y
+      grace_period: 24h
+    cleanup:
+      owner: cloudrouter-billing-retention-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: cloudrouter-billing-retention-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
+  imported: false
+- table: cloudrouter_group_resource_price
+  domain: commerce
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: cloudrouter-rating-service
+  common_columns: tenant_entity
+  columns:
+    account_group_id:
+      type: int64
+      constraints: NOT NULL
+    account_group_code_snapshot:
+      type: string(64)
+      constraints: NOT NULL
+    resource_type:
+      type: string(32)
+      constraints: NOT NULL
+    catalog_key:
+      type: string(256)
+      constraints: NOT NULL
+    operation_code:
+      type: string(160)
+      constraints: NOT NULL
+    meter_code:
+      type: string(96)
+      constraints: NOT NULL
+    region_code:
+      type: string(64)
+      constraints: NOT NULL
+    provider_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    price_mode:
+      type: string(24)
+      constraints: NOT NULL
+    multiplier:
+      type: decimal
+      constraints: NOT NULL DEFAULT 1
+    markup_amount:
+      type: decimal
+      constraints: NOT NULL DEFAULT 0
+    unit_price_override: decimal
+    currency_code:
+      type: string(10)
+      constraints: NOT NULL
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_cloudrouter_group_resource_price_uuid
+    columns:
+    - uuid
+  - name: uk_cloudrouter_group_resource_price_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_cloudrouter_group_resource_price_target
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - catalog_key
+    - operation_code
+    - meter_code
+    - region_code
+    - provider_code
+  foreign_keys:
+  - name: fk_cloudrouter_group_resource_price_group
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    references_table: ai_upstream_account_group
+    references_columns:
+    - tenant_id
+    - organization_id
+    - id
+  check_constraints:
+  - name: ck_cloudrouter_group_resource_price_resource_type
+    expression: resource_type IN ('model', 'image', 'video', 'api', 'audio', 'other')
+  - name: ck_cloudrouter_group_resource_price_mode
+    expression: price_mode IN ('multiplier', 'markup', 'unit_price', 'free')
+  - name: ck_cloudrouter_group_resource_price_payload
+    expression: (price_mode = 'multiplier' AND multiplier > 0 AND markup_amount =
+      0 AND unit_price_override IS NULL) OR (price_mode = 'markup' AND multiplier
+      = 1 AND markup_amount >= 0 AND unit_price_override IS NULL) OR (price_mode =
+      'unit_price' AND multiplier = 1 AND markup_amount = 0 AND unit_price_override
+      > 0) OR (price_mode = 'free' AND multiplier = 1 AND markup_amount = 0 AND unit_price_override
+      = 0)
+  - name: ck_cloudrouter_group_resource_price_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
+  - name: ck_cloudrouter_group_resource_price_currency
+    expression: currency_code ~ '^[A-Z]{3}$'
+  - name: ck_cloudrouter_group_resource_price_target
+    expression: BTRIM(catalog_key) <> '' AND BTRIM(operation_code) <> '' AND BTRIM(meter_code)
+      <> '' AND BTRIM(region_code) <> '' AND BTRIM(account_group_code_snapshot) <>
+      ''
+  indexes:
+  - name: idx_cloudrouter_group_resource_price_resolve
+    columns:
+    - tenant_id
+    - organization_id
+    - account_group_id
+    - resource_type
+    - catalog_key
+    - meter_code
+    - status
+    - effective_from
     - id
   lifecycle:
     storage_strategy: indexed_append_only
@@ -6557,6 +7184,7 @@ tables:
     pricing_snapshot:
       type: json
       constraints: NOT NULL
+    pricing_layer: string(32)
     decided_at:
       type: instant
       constraints: NOT NULL
@@ -6670,6 +7298,9 @@ tables:
       NULL AND pricing_plan_id IS NULL AND pricing_rule_id IS NULL) OR (pricing_plan_tenant_id
       IS NOT NULL AND pricing_plan_organization_id IS NOT NULL AND pricing_plan_id
       IS NOT NULL AND pricing_rule_id IS NOT NULL)
+  - name: ck_cloudrouter_rating_decision_layer
+    expression: pricing_layer IS NULL OR pricing_layer IN ('plan_reference', 'plan_rule',
+      'group_resource', 'group_multiplier')
   - name: ck_cloudrouter_rating_decision_amount
     expression: (decision_status = 'rated' AND billability = 'chargeable' AND reference_unit_price
       IS NOT NULL AND reference_unit_price >= 0 AND (cost_unit_price IS NULL OR cost_unit_price
@@ -6677,14 +7308,13 @@ tables:
       NOT NULL AND reference_amount >= 0 AND (cost_amount IS NULL OR cost_amount >=
       0) AND amount IS NOT NULL AND amount >= 0 AND currency_code IS NOT NULL AND
       unit_size > 0 AND strategy_code IS NOT NULL AND calculation_mode IS NOT NULL
-      AND price_book_id IS NOT NULL AND rate_id IS NOT NULL AND account_rate_card_id
-      IS NOT NULL AND pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT NULL)
-      OR (decision_status = 'non_chargeable' AND billability IN ('free', 'not_applicable')
-      AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND
-      currency_code IS NULL AND price_book_id IS NOT NULL AND rate_id IS NOT NULL)
-      OR (decision_status = 'unrated' AND billability IN ('chargeable', 'unknown')
-      AND reference_amount IS NULL AND cost_amount IS NULL AND amount IS NULL AND
-      currency_code IS NULL)
+      AND price_book_id IS NOT NULL AND rate_id IS NOT NULL AND pricing_plan_id IS
+      NOT NULL AND pricing_rule_id IS NOT NULL) OR (decision_status = 'non_chargeable'
+      AND billability IN ('free', 'not_applicable') AND reference_amount IS NULL AND
+      cost_amount IS NULL AND amount IS NULL AND currency_code IS NULL AND price_book_id
+      IS NOT NULL AND rate_id IS NOT NULL) OR (decision_status = 'unrated' AND billability
+      IN ('chargeable', 'unknown') AND reference_amount IS NULL AND cost_amount IS
+      NULL AND amount IS NULL AND currency_code IS NULL)
   - name: ck_cloudrouter_rating_decision_currency
     expression: currency_code IS NULL OR currency_code ~ '^[A-Z]{3}$'
   indexes:
@@ -7135,6 +7765,695 @@ tables:
     columns:
     - tenant_id
     - refund_id
+  imported: false
+- table: dc_audit_log
+  domain: data
+  profile: event_log
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: event_log
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/audits
+  columns:
+    actor:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    audit_action:
+      type: string(24)
+      constraints: NOT NULL
+    object_type:
+      type: string(32)
+      constraints: NOT NULL DEFAULT ''
+    object_key:
+      type: string(256)
+      constraints: NOT NULL DEFAULT ''
+    row_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    audit_result:
+      type: string(16)
+      constraints: NOT NULL
+    detail:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - audit_action
+  - audit_result
+  unique_constraints: []
+  check_constraints:
+  - name: ck_dc_audit_log_action
+    expression: audit_action IN ('connect', 'query', 'download', 'ddl', 'dml', 'publish',
+      'approve', 'rollback')
+  - name: ck_dc_audit_log_result
+    expression: audit_result IN ('success', 'failure')
+  - name: ck_dc_audit_log_values
+    expression: row_count >= 0
+  indexes:
+  - name: idx_dc_audit_log_scope_created
+    columns:
+    - tenant_id
+    - organization_id
+    - created_at
+    - id
+  - name: idx_dc_audit_log_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
+  imported: false
+- table: dc_data_source
+  domain: data
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/sources
+  columns:
+    name:
+      type: string(128)
+      constraints: NOT NULL
+    source_kind:
+      type: string(32)
+      constraints: NOT NULL
+    endpoint_host:
+      type: string(256)
+      constraints: NOT NULL DEFAULT ''
+    endpoint_port:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    database_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    username:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    secret_version:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    ssl_mode:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'prefer'
+    read_only:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    health:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'unknown'
+    table_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    last_tested_at:
+      type: instant
+    last_test_error:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    owner_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - name
+  - source_kind
+  unique_constraints:
+  - name: uk_dc_data_source_scope_name
+    columns:
+    - tenant_id
+    - organization_id
+    - name
+  check_constraints:
+  - name: ck_dc_data_source_kind
+    expression: source_kind IN ('postgresql', 'mysql', 'platform', 'file')
+  - name: ck_dc_data_source_health
+    expression: health IN ('unknown', 'healthy', 'warning', 'error')
+  - name: ck_dc_data_source_values
+    expression: length(name) > 0 AND length(endpoint_host) <= 256 AND endpoint_port
+      >= 0 AND endpoint_port <= 65535 AND table_count >= 0 AND secret_version >= 0
+  indexes:
+  - name: idx_dc_data_source_scope_health
+    columns:
+    - tenant_id
+    - organization_id
+    - health
+    - id
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_data_source_credential
+  domain: data
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/sources
+  columns:
+    data_source_id:
+      type: int64
+      constraints: NOT NULL
+    secret_version:
+      type: int32
+      constraints: NOT NULL
+    secret_ciphertext:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    secret_digest:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    rotated_at:
+      type: instant
+  required_columns:
+  - data_source_id
+  - secret_ciphertext
+  - secret_digest
+  unique_constraints:
+  - name: uk_dc_data_source_credential_version
+    columns:
+    - tenant_id
+    - organization_id
+    - data_source_id
+    - secret_version
+  check_constraints:
+  - name: ck_dc_data_source_credential_values
+    expression: data_source_id > 0 AND secret_version >= 1
+  indexes:
+  - name: idx_dc_data_source_credential_source
+    columns:
+    - tenant_id
+    - organization_id
+    - data_source_id
+    - created_at
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_data_source_test_log
+  domain: data
+  profile: event_log
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: event_log
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/sources
+  columns:
+    data_source_id:
+      type: int64
+      constraints: NOT NULL
+    stage:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'connect'
+    result:
+      type: string(16)
+      constraints: NOT NULL
+    latency_ms:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - data_source_id
+  - result
+  unique_constraints: []
+  check_constraints:
+  - name: ck_dc_data_source_test_log_result
+    expression: result IN ('success', 'failure')
+  - name: ck_dc_data_source_test_log_values
+    expression: data_source_id > 0 AND latency_ms >= 0
+  indexes:
+  - name: idx_dc_data_source_test_log_source
+    columns:
+    - tenant_id
+    - organization_id
+    - data_source_id
+    - created_at
+    - id
+  - name: idx_dc_data_source_test_log_retention
+    columns:
+    - retention_until
+    - id
+  lifecycle:
+    storage_strategy: indexed_append_only
+    retention:
+      online_retention: 12mo
+      archive_retention: 5y
+      grace_period: 24h
+    cleanup:
+      owner: router-service
+      scope: platform_cross_tenant
+      authorization:
+        mode: service_identity
+        service: router-service
+        audit_required: true
+      candidate_recheck:
+        required: true
+        operations:
+        - archive
+        - delete
+        key_columns:
+        - tenant_id
+        - organization_id
+        - id
+      batch_size: 1000
+      predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold
+        = false
+      archive_before_delete: true
+      retry:
+        max_attempts: 5
+        backoff:
+          strategy: exponential
+          initial: 1s
+          maximum: 5m
+      monitoring:
+        metrics:
+        - cleanup_candidates
+        - cleanup_archived
+        - cleanup_deleted
+        - cleanup_skipped_legal_hold
+        - cleanup_failures
+        alerts:
+        - retention_lag
+        - retry_exhausted
+      dry_run:
+        supported: true
+        default: true
+  imported: false
+- table: dc_dataset
+  domain: data
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/datasets
+  columns:
+    dataset_key:
+      type: string(128)
+      constraints: NOT NULL
+    display_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    table_id:
+      type: int64
+    row_filter:
+      type: string(1024)
+      constraints: NOT NULL DEFAULT ''
+    lifecycle_state:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'draft'
+    owner_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    description:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - dataset_key
+  unique_constraints:
+  - name: uk_dc_dataset_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - dataset_key
+  check_constraints:
+  - name: ck_dc_dataset_state
+    expression: lifecycle_state IN ('draft', 'published', 'retired')
+  - name: ck_dc_dataset_values
+    expression: length(dataset_key) > 0
+  indexes:
+  - name: idx_dc_dataset_scope_state
+    columns:
+    - tenant_id
+    - organization_id
+    - lifecycle_state
+    - updated_at
+    - id
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_dataset_field
+  domain: data
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/datasets
+  columns:
+    dataset_id:
+      type: int64
+      constraints: NOT NULL
+    field_name:
+      type: string(128)
+      constraints: NOT NULL
+    alias:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    semantic:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    ordinal:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    sensitive:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
+  required_columns:
+  - dataset_id
+  - field_name
+  unique_constraints:
+  - name: uk_dc_dataset_field_name
+    columns:
+    - tenant_id
+    - organization_id
+    - dataset_id
+    - field_name
+  check_constraints:
+  - name: ck_dc_dataset_field_values
+    expression: dataset_id > 0 AND length(field_name) > 0 AND ordinal >= 0
+  indexes:
+  - name: idx_dc_dataset_field_dataset
+    columns:
+    - tenant_id
+    - organization_id
+    - dataset_id
+    - ordinal
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_export_job
+  domain: data
+  profile: tenant_entity
+  compliance_level: L3
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/exports
+  columns:
+    dataset_id:
+      type: int64
+    dataset_name:
+      type: string(128)
+      constraints: NOT NULL
+    export_format:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'csv'
+    purpose:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    export_status:
+      type: string(24)
+      constraints: NOT NULL DEFAULT 'pending_approval'
+    row_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    requested_by:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    approved_by:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    expires_at:
+      type: instant
+    completed_at:
+      type: instant
+    failure_reason:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - dataset_name
+  - export_status
+  unique_constraints: []
+  check_constraints:
+  - name: ck_dc_export_job_status
+    expression: export_status IN ('pending_approval', 'running', 'succeeded', 'failed',
+      'expired')
+  - name: ck_dc_export_job_format
+    expression: export_format IN ('csv', 'xlsx')
+  - name: ck_dc_export_job_values
+    expression: row_count >= 0 AND length(dataset_name) > 0
+  indexes:
+  - name: idx_dc_export_job_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - export_status
+    - created_at
+    - id
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_table
+  domain: data
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/tables
+  columns:
+    table_key:
+      type: string(128)
+      constraints: NOT NULL
+    display_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    table_kind:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'landed'
+    data_source_id:
+      type: int64
+    physical_schema:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'dc_data'
+    physical_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    row_count:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    column_count:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    storage_bytes:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    owner_name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    description:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    last_landed_at:
+      type: instant
+  required_columns:
+  - table_key
+  - table_kind
+  unique_constraints:
+  - name: uk_dc_table_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - table_key
+  check_constraints:
+  - name: ck_dc_table_kind
+    expression: table_kind IN ('landed', 'external', 'view')
+  - name: ck_dc_table_values
+    expression: length(table_key) > 0 AND row_count >= 0 AND column_count >= 0 AND
+      storage_bytes >= 0
+  indexes:
+  - name: idx_dc_table_scope_kind
+    columns:
+    - tenant_id
+    - organization_id
+    - table_kind
+    - updated_at
+    - id
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_table_column
+  domain: data
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/tables
+  columns:
+    table_id:
+      type: int64
+      constraints: NOT NULL
+    column_name:
+      type: string(128)
+      constraints: NOT NULL
+    data_type:
+      type: string(64)
+      constraints: NOT NULL
+    nullable:
+      type: bool
+      constraints: NOT NULL DEFAULT TRUE
+    ordinal:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    is_primary_key:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
+    sensitivity:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'public'
+    description:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+  required_columns:
+  - table_id
+  - column_name
+  - data_type
+  unique_constraints:
+  - name: uk_dc_table_column_name
+    columns:
+    - tenant_id
+    - organization_id
+    - table_id
+    - column_name
+  check_constraints:
+  - name: ck_dc_table_column_sensitivity
+    expression: sensitivity IN ('public', 'internal', 'confidential', 'restricted')
+  - name: ck_dc_table_column_values
+    expression: table_id > 0 AND length(column_name) > 0 AND ordinal >= 0
+  indexes:
+  - name: idx_dc_table_column_table
+    columns:
+    - tenant_id
+    - organization_id
+    - table_id
+    - ordinal
+  lifecycle:
+    storage_strategy: live_state
+  imported: false
+- table: dc_workspace
+  domain: data
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  soft_delete_policy: null
+  api_surfaces:
+  - backend
+  frontend_routes:
+  - /admin/data/overview
+  columns:
+    name:
+      type: string(128)
+      constraints: NOT NULL DEFAULT ''
+    description:
+      type: string(512)
+      constraints: NOT NULL DEFAULT ''
+    storage_quota_bytes:
+      type: int64
+      constraints: NOT NULL DEFAULT 5368709120
+    instance_concurrency_quota:
+      type: int32
+      constraints: NOT NULL DEFAULT 4
+    daily_export_row_quota:
+      type: int64
+      constraints: NOT NULL DEFAULT 10000
+    audit_retention_days:
+      type: int32
+      constraints: NOT NULL DEFAULT 30
+  required_columns:
+  - name
+  unique_constraints:
+  - name: uk_dc_workspace_scope_name
+    columns:
+    - tenant_id
+    - organization_id
+    - name
+  indexes:
+  - name: idx_dc_workspace_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - id
+  lifecycle:
+    storage_strategy: live_state
   imported: false
 - table: iam_gateway_access_policy
   domain: iam_gateway
@@ -7764,6 +9083,7 @@ tables:
   - /admin/recharges/settings
   - /admin/request-log
   - /admin/runtime-region
+  - /admin/iam/auth-settings
   - /admin/settings
   - /admin/site
   - /admin/storage/defaultBuckets
@@ -7910,6 +9230,7 @@ tables:
   frontend_routes:
   - /admin/cache
   - /admin/runtime-region
+  - /admin/iam/auth-settings
   - /admin/settings
   - /admin/site
   - /admin/upstream
@@ -8955,26 +10276,33 @@ tables:
   - name: ck_pricing_default_region_resource_key_blank
     expression: BTRIM(resource_key) <> ''
   indexes:
-  - name: uq_pricing_default_region_scope_reference
+  - name: uq_pricing_rate_scope_reference
     columns:
     - tenant_id
     - organization_id
     - id
     unique: true
-  - name: idx_pricing_default_region_catalog_key
+  - name: uq_pricing_rate_scope_book_reference
     columns:
     - tenant_id
     - organization_id
-    - vendor_code
-    - catalog_key
-    - default_region_code
     - id
-  - name: idx_pricing_default_region_resource_key
+    - price_book_id
+    unique: true
+  - name: idx_pricing_rate_resolve
     columns:
     - tenant_id
     - organization_id
-    - resource_key
-    - default_region_code
+    - catalog_key
+    - product_code
+    - operation_code
+    - meter_code
+    - provider_code
+    - region_code
+    - billability
+    - status
+    - priority
+    - effective_from
     - id
   imported: false
 - table: pricing_import_run
@@ -9305,6 +10633,21 @@ tables:
     calculation_mode:
       type: string(32)
       constraints: NOT NULL
+    price_item_type:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'usage'
+    metering_mode:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'per_quantity'
+    quantity_source:
+      type: string(24)
+      constraints: NOT NULL DEFAULT 'provider_usage'
+    rounding_mode:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'half_up'
+    included_quantity:
+      type: decimal
+      constraints: NOT NULL DEFAULT 0
     quantity_aggregation:
       type: string(32)
       constraints: NOT NULL
@@ -9459,6 +10802,14 @@ tables:
     - status
     - priority
     - effective_from
+    - id
+  - name: idx_pricing_rate_charge_model
+    columns:
+    - tenant_id
+    - organization_id
+    - price_item_type
+    - quantity_source
+    - status
     - id
   imported: false
 - table: sdkwork_node_registry

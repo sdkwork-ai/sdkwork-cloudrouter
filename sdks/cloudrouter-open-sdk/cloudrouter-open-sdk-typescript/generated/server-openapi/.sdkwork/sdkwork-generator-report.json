@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "615aef22d92f08204ace44cd768afbd513b1ebe2f755f47a40d8bda9cebbb71d",
+  "changeFingerprint": "4b10bbfa91f219eb8ba5787bf4d75a431f5039d627a5b14b18ee809a8c5fe71f",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -76,6 +76,7 @@
           "src/api/music-suno.ts",
           "src/api/paths.ts",
           "src/api/realtime.ts",
+          "src/api/recharge.ts",
           "src/api/responses-google.ts",
           "src/api/responses.ts",
           "src/api/threads.ts",
@@ -467,6 +468,7 @@
           "src/types/pixverse-video-generation-request.ts",
           "src/types/pixverse-video-generation-response.ts",
           "src/types/pixverse-video-generation-task.ts",
+          "src/types/problem-detail.ts",
           "src/types/provider-generated-media-metadata.ts",
           "src/types/provider-generated-media.ts",
           "src/types/provider-json-null.ts",
@@ -474,6 +476,11 @@
           "src/types/provider-json-schema.ts",
           "src/types/provider-json-value.ts",
           "src/types/provider-task-error.ts",
+          "src/types/recharge-balance.ts",
+          "src/types/recharge-option.ts",
+          "src/types/recharge-options.ts",
+          "src/types/recharge-order-create-request.ts",
+          "src/types/recharge-order.ts",
           "src/types/runway-image-to-video-request.ts",
           "src/types/runway-task-accepted.ts",
           "src/types/runway-task.ts",
@@ -700,10 +707,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 515,
-    "models": 427,
-    "apis": 65,
-    "types": 430
+    "totalFiles": 525,
+    "models": 436,
+    "apis": 66,
+    "types": 439
   },
   "warnings": [
     {
@@ -725,6 +732,14 @@
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
       "message": "Applied CloudRouter strict TypeScript contract normalization to src/types/provider-json-object.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/types/index.ts"
+    },
+    {
+      "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
+      "message": "Applied CloudRouter strict TypeScript contract normalization to src/api/recharge.ts"
     },
     {
       "code": "CLOUDROUTER_STRICT_TYPESCRIPT_CONTRACT",
@@ -750,12 +765,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 515,
+    "writtenFiles": 522,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "615aef22d92f08204ace44cd768afbd513b1ebe2f755f47a40d8bda9cebbb71d",
+    "changeFingerprint": "4b10bbfa91f219eb8ba5787bf4d75a431f5039d627a5b14b18ee809a8c5fe71f",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -815,6 +830,7 @@
         "src/api/music-suno.ts",
         "src/api/paths.ts",
         "src/api/realtime.ts",
+        "src/api/recharge.ts",
         "src/api/responses-google.ts",
         "src/api/responses.ts",
         "src/api/threads.ts",
@@ -1204,6 +1220,7 @@
         "src/types/pixverse-video-generation-request.ts",
         "src/types/pixverse-video-generation-response.ts",
         "src/types/pixverse-video-generation-task.ts",
+        "src/types/problem-detail.ts",
         "src/types/provider-generated-media-metadata.ts",
         "src/types/provider-generated-media.ts",
         "src/types/provider-json-null.ts",
@@ -1211,6 +1228,11 @@
         "src/types/provider-json-schema.ts",
         "src/types/provider-json-value.ts",
         "src/types/provider-task-error.ts",
+        "src/types/recharge-balance.ts",
+        "src/types/recharge-option.ts",
+        "src/types/recharge-options.ts",
+        "src/types/recharge-order-create-request.ts",
+        "src/types/recharge-order.ts",
         "src/types/runway-image-to-video-request.ts",
         "src/types/runway-task-accepted.ts",
         "src/types/runway-task.ts",
@@ -1345,6 +1367,7 @@
             "src/api/music-suno.ts",
             "src/api/paths.ts",
             "src/api/realtime.ts",
+            "src/api/recharge.ts",
             "src/api/responses-google.ts",
             "src/api/responses.ts",
             "src/api/threads.ts",
@@ -1736,6 +1759,7 @@
             "src/types/pixverse-video-generation-request.ts",
             "src/types/pixverse-video-generation-response.ts",
             "src/types/pixverse-video-generation-task.ts",
+            "src/types/problem-detail.ts",
             "src/types/provider-generated-media-metadata.ts",
             "src/types/provider-generated-media.ts",
             "src/types/provider-json-null.ts",
@@ -1743,6 +1767,11 @@
             "src/types/provider-json-schema.ts",
             "src/types/provider-json-value.ts",
             "src/types/provider-task-error.ts",
+            "src/types/recharge-balance.ts",
+            "src/types/recharge-option.ts",
+            "src/types/recharge-options.ts",
+            "src/types/recharge-order-create-request.ts",
+            "src/types/recharge-order.ts",
             "src/types/runway-image-to-video-request.ts",
             "src/types/runway-task-accepted.ts",
             "src/types/runway-task.ts",

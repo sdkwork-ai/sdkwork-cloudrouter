@@ -89,7 +89,7 @@ impl Default for AdminAuthSettings {
             qr_login_enabled: true,
             qr_login_type: "web".to_owned(),
             recovery_methods: vec!["email".to_owned(), "phone".to_owned()],
-            register_methods: vec!["email".to_owned(), "phone".to_owned()],
+            register_methods: vec!["username".to_owned(), "email".to_owned(), "phone".to_owned()],
             verification_policy: AdminAuthVerificationPolicy::default(),
             invite_code_policy: AdminAuthInviteCodePolicy::default(),
             wechat: AdminAuthWechatSettings::default(),
@@ -129,14 +129,11 @@ impl AdminAuthSettings {
             self.login_methods.push("password".to_owned());
         }
 
+        // An empty list is the explicit "flow disabled" state; only a missing
+        // field falls back to the defaults (handled by the serde default).
         self.recovery_methods = ordered_values(&self.recovery_methods, &["email", "phone"]);
-        if self.recovery_methods.is_empty() {
-            self.recovery_methods = vec!["email".to_owned(), "phone".to_owned()];
-        }
-        self.register_methods = ordered_values(&self.register_methods, &["email", "phone"]);
-        if self.register_methods.is_empty() {
-            self.register_methods = vec!["email".to_owned(), "phone".to_owned()];
-        }
+        self.register_methods =
+            ordered_values(&self.register_methods, &["username", "email", "phone"]);
 
         if !self.qr_login_enabled && self.left_rail_mode == "qr-only" {
             self.left_rail_mode = "highlights-only".to_owned();

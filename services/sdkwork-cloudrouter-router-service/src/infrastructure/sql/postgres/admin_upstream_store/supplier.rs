@@ -49,7 +49,61 @@ const SUPPLIER_COLUMNS: &str = r#"
     supplier.sort_order,
     supplier.status,
     supplier.version,
-    TO_CHAR(supplier.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
+    TO_CHAR(supplier.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at,
+    (
+        SELECT CASE
+            -- Accounts reporting different currencies cannot be added together;
+            -- report no amount rather than a meaningless cross-currency sum.
+            WHEN aggregated.currency_count > 1 THEN NULL
+            WHEN position('.' IN aggregated.total) > 0
+                THEN rtrim(rtrim(aggregated.total, '0'), '.')
+            ELSE aggregated.total
+        END
+        FROM (
+            SELECT
+                SUM(account.upstream_balance_amount)::text AS total,
+                (
+                    SELECT COUNT(DISTINCT NULLIF(scoped.upstream_balance_currency, ''))
+                    FROM ai_upstream_account scoped
+                    WHERE scoped.tenant_id = supplier.tenant_id
+                      AND scoped.organization_id = supplier.organization_id
+                      AND scoped.supplier_id = supplier.id
+                      AND scoped.deleted_at IS NULL
+                      AND scoped.upstream_balance_amount IS NOT NULL
+                ) AS currency_count
+            FROM ai_upstream_account account
+            WHERE account.tenant_id = supplier.tenant_id
+              AND account.organization_id = supplier.organization_id
+              AND account.supplier_id = supplier.id
+              AND account.deleted_at IS NULL
+              AND account.upstream_balance_amount IS NOT NULL
+        ) aggregated
+        WHERE aggregated.total IS NOT NULL
+    ) AS balance_amount,
+    (
+        SELECT CASE WHEN COUNT(DISTINCT account.upstream_balance_currency) = 1
+            THEN MIN(account.upstream_balance_currency)
+        END
+        FROM ai_upstream_account account
+        WHERE account.tenant_id = supplier.tenant_id
+          AND account.organization_id = supplier.organization_id
+          AND account.supplier_id = supplier.id
+          AND account.deleted_at IS NULL
+          AND account.upstream_balance_amount IS NOT NULL
+          AND NULLIF(account.upstream_balance_currency, '') IS NOT NULL
+    ) AS balance_currency,
+    (
+        SELECT TO_CHAR(
+            MAX(account.last_balance_checked_at) AT TIME ZONE 'UTC',
+            'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+        )
+        FROM ai_upstream_account account
+        WHERE account.tenant_id = supplier.tenant_id
+          AND account.organization_id = supplier.organization_id
+          AND account.supplier_id = supplier.id
+          AND account.deleted_at IS NULL
+          AND account.last_balance_checked_at IS NOT NULL
+    ) AS balance_checked_at
 "#;
 
 pub(super) async fn list(
@@ -579,6 +633,7 @@ async fn get_in_transaction(
 }
 
 fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
+    let balance = super::recharge::balance_fields(&row)?;
     Ok(AdminUpstreamSupplierItem {
         id: column(&row, "id", "failed to map upstream supplier id")?,
         uuid: column(&row, "uuid", "failed to map upstream supplier uuid")?,
@@ -670,6 +725,9 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "updated_at",
             "failed to map upstream supplier updated time",
         )?,
+        balance_amount: balance.0,
+        balance_currency: balance.1,
+        balance_checked_at: balance.2,
     })
 }
 

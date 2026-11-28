@@ -185,9 +185,35 @@ describe('vm instances console page', () => {
       }),
     );
 
+    // The frame says what the reader can do; the distinct cause stays visible
+    // underneath it so a 40401 route refusal and a 401 are not collapsed into
+    // the same generic apology.
     await waitFor(() => expect(screen.getByText('The VM instance list is unavailable.')).toBeTruthy());
-    expect(screen.getByText(/HTTP 401: unauthorized/u)).toBeTruthy();
+    expect(screen.getByText('HTTP 401: unauthorized')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'The request failed before the listing could be read. Retrying loads your VM instances again.',
+      ),
+    ).toBeTruthy();
     expect(screen.queryByText('No VM instances yet')).toBeNull();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+
+  test('retrying asks the transport again instead of only repainting', async () => {
+    const list = vi
+      .fn<SandboxInstancesClient['list']>()
+      .mockRejectedValueOnce(new Error('HTTP 404: unknown route'))
+      .mockResolvedValue({
+        items: [instance()],
+        pageInfo: { mode: 'offset' as const, page: 1, pageSize: 20, totalItems: '1' },
+      });
+    await renderPage(stubClient({ list }));
+
+    await waitFor(() => expect(screen.getByText('HTTP 404: unknown route')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(screen.getByText('agent-vm-01')).toBeTruthy());
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText('HTTP 404: unknown route')).toBeNull();
   });
 });

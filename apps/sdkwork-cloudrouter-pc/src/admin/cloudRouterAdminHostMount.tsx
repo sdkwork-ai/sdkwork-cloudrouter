@@ -10,6 +10,12 @@ import { MESSAGING_ADMIN_ROUTE_RECORDS } from '@sdkwork/messaging-pc-admin-notif
 import { HARDWARE_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-hardware/contribution';
 import { PRODUCT_CENTER_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-product/contribution';
 import { ENTERPRISE_ADMIN_ROUTE_RECORDS } from '@sdkwork/company-pc-admin-enterprise/contribution';
+/**
+ * Agent visibility route grammar. Imported from the package's side-effect-free
+ * `./route` entry (not its root, which binds runtime and lazy-loads pages), so
+ * the registered path and the catalog's governance action cannot drift.
+ */
+import { AGENT_VISIBILITY_ROUTE_SEGMENT } from '@sdkwork/cloudrouter-pc-admin-agent/route';
 import { ACCOUNT_ADMIN_ROUTE_ELEMENTS } from './accountAdminHostElement.tsx';
 import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 import { EnterpriseCenterHostElement } from './enterpriseCenterHostElement.tsx';
@@ -48,6 +54,12 @@ const DataCenterSourcesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter
 const DataCenterTablesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterTablesPage');
 const DataCenterExportsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterExportsPage');
 const DataCenterAuditsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterAuditsPage');
+/**
+ * Operator data wall. It renders full-bleed (no admin chrome), so the host
+ * exposes it through its own route table instead of the admin layout branch:
+ * see `CLOUDROUTER_ADMIN_FULLSCREEN_ROUTE_CONTRIBUTIONS`.
+ */
+const DataCenterScreenAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-data'), 'DataCenterScreenPage') as LazyExoticComponent<ComponentType<{ onExit: () => void; onOpenConsole: () => void }>>;
 const CacheAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-cache'), 'CacheAdmin');
 const UpstreamSupplierAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamSupplierAdmin');
 const UpstreamAccountAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-upstream'), 'UpstreamAccountAdmin');
@@ -63,8 +75,16 @@ const McpServerDetailAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-p
 const McpCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-connector'), 'McpCategoriesAdminPage');
 const AgentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentsAdminPage');
 const AgentCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentCategoriesAdminPage');
+/**
+ * Agent visibility is its own governance surface, not a section of the agent
+ * editor: creating an agent never decides reachability, and this route is where
+ * the scope and visible roles of a managed agent are granted.
+ */
+const AgentVisibilityAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-agent'), 'AgentVisibilityAdminPage');
 const PluginsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginsAdminPage');
 const PluginCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-plugin'), 'PluginCategoriesAdminPage');
+const CollectionsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-collection'), 'CollectionsAdminPage');
+const CollectionCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-collection'), 'CollectionCategoriesAdminPage');
 const MemoryAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memory'), 'MemoryAdminPage');
 const MemoryCategoriesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memory'), 'MemoryCategoriesAdminPage');
 const RecordAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-record'), 'RecordAdmin');
@@ -400,7 +420,13 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('plugin/categories', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginCategoriesAdmin />),
   route('plugin', 'sdkwork-plugins', '@sdkwork/cloudrouter-pc-admin-plugin', ['sdkwork-plugins-backend-sdk'], 'cloudrouter.admin.access', <PluginsAdmin />),
   route('agent/categories', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentCategoriesAdmin />),
+  route(AGENT_VISIBILITY_ROUTE_SEGMENT, 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentVisibilityAdmin />),
   route('agent', 'sdkwork-agents', '@sdkwork/cloudrouter-pc-admin-agent', ['sdkwork-agents-backend-sdk'], 'cloudrouter.admin.access', <AgentsAdmin />),
+  // Capability collections (合集) expose the whole AI-foundation catalog through
+  // one ordered list: the backend SDK answers both the category surface and the
+  // collection surface, so the admin package owns both routes.
+  route('collection/categories', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-collection', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CollectionCategoriesAdmin />),
+  route('collection', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-collection', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CollectionsAdmin />),
   route('memory/categories', 'sdkwork-memory', '@sdkwork/cloudrouter-pc-admin-memory', ['sdkwork-memory-backend-sdk'], 'cloudrouter.admin.access', <MemoryCategoriesAdmin />),
   route('memory', 'sdkwork-memory', '@sdkwork/cloudrouter-pc-admin-memory', ['sdkwork-memory-backend-sdk'], 'cloudrouter.admin.access', <MemoryAdmin />),
   route('record', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-record', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RecordAdmin />),
@@ -409,7 +435,8 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('cache', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-cache', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <CacheAdmin />),
   route('ratelimit', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-ratelimit', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RateLimitAdmin />),
   route('service-nodes', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-service-nodes', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <ServiceNodesAdmin />),
-  route('settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterAuthSettingsPage />),
+  route('iam/auth-settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterAuthSettingsPage />),
+  route('settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/iam/auth-settings" replace />),
   route('runtime-region', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-runtime-region', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RuntimeRegionAdmin />),
   route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <SiteSettingsRoute />),
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
@@ -657,8 +684,45 @@ function route(
   return { path, owner, adminPackage, backendSdkFamilies, requiredPermission, element };
 }
 
+/**
+ * Full-bleed admin surfaces.
+ *
+ * The operator data wall is mounted in its own browser window and must not carry
+ * the console sidebar, the top navigation bar, or the content gutters: the wall
+ * *is* the page. They therefore live outside the `/admin` layout branch, keep the
+ * admin session gate, and declare the modules they read so a dependency audit can
+ * trace the surface back to its owning API families without reading the UI.
+ */
+export const CLOUDROUTER_ADMIN_FULLSCREEN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
+  route(
+    '/admin/data/screen',
+    'sdkwork-cloudrouter',
+    '@sdkwork/cloudrouter-pc-admin-data',
+    ['cloudrouter-backend-sdk', 'sdkwork-payment-backend-sdk'],
+    'cloudrouter.admin.access',
+    <DataCenterScreenRoute />,
+  ),
+];
+
+function DataCenterScreenRoute() {
+  const navigate = useNavigate();
+  return (
+    <DataCenterScreenAdmin
+      onExit={() => navigate('/admin/data/overview')}
+      onOpenConsole={() => navigate('/admin/data/overview')}
+    />
+  );
+}
+
 export function CloudRouterAdminHostRoutes(): ReactElement[] {
   return CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS.map((contribution) => (
+    <Route key={contribution.path} path={contribution.path} element={contribution.element} />
+  ));
+}
+
+/** Route elements for the full-bleed admin surfaces declared above. */
+export function CloudRouterAdminFullscreenHostRoutes(): ReactElement[] {
+  return CLOUDROUTER_ADMIN_FULLSCREEN_ROUTE_CONTRIBUTIONS.map((contribution) => (
     <Route key={contribution.path} path={contribution.path} element={contribution.element} />
   ));
 }

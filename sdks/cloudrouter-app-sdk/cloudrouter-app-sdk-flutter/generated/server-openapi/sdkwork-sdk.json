@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "language": "flutter",
   "sdkType": "app",
-  "packageName": "sdkwork-cloudrouter-app-sdk-generated-typescript",
-  "transportPackageName": "sdkwork-cloudrouter-app-sdk-generated-typescript",
-  "consumerPackageName": "@sdkwork/cloudrouter-app-sdk",
+  "packageName": "cloudrouter_app_sdk",
+  "transportPackageName": "cloudrouter_app_sdk",
+  "consumerPackageName": "cloudrouter_app_sdk",
   "generator": "@sdkwork/sdk-generator",
   "capabilities": {
     "supportsGeneratedTests": true,

@@ -220,12 +220,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.runtime.retrieve",
     ),
-    HttpRoute::dual_token(
-        HttpMethod::Post,
-        "/app/v3/api/iam/api_keys/{apiKeyId}/reveal",
-        "iam",
-        "apiKeys.reveal",
-    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

@@ -26,6 +26,8 @@ import {
   hasPricingGroupSelection,
   resolveSelectedPricingGroups,
   type PricingGroupOption,
+  type PricingGroupSelection,
+  type PricingGroupTypeCode,
 } from '../types/pricingGroup';
 import { pricingRateIsActiveAt, pricingRateVariantKey, pricingRateVariantLabel } from '../types/pricingVariant';
 
@@ -52,7 +54,8 @@ export function PricingPage() {
   const [mismatchHint, setMismatchHint] = useState<string | null>(null);
   const [pricingGroups, setPricingGroups] = useState<PricingGroupOption[]>([]);
   const [groupCatalogState, setGroupCatalogState] = useState<'loading' | 'ready' | 'failed'>('loading');
-  const [groupSelection, setGroupSelection] = useState<{ tags: string[]; groupCodes: string[] }>({
+  const [groupSelection, setGroupSelection] = useState<PricingGroupSelection>({
+    types: [],
     tags: [],
     groupCodes: [],
   });
@@ -194,11 +197,15 @@ export function PricingPage() {
     setRegionCode('');
     setMeterCode('');
     setCurrencyCode('');
-    setGroupSelection({ tags: [], groupCodes: [] });
+    setGroupSelection({ types: [], tags: [], groupCodes: [] });
     setPage(1);
   };
   const clearGroupFilters = () => {
-    setGroupSelection({ tags: [], groupCodes: [] });
+    setGroupSelection({ types: [], tags: [], groupCodes: [] });
+    setPage(1);
+  };
+  const changeGroupTypes = (types: PricingGroupTypeCode[]) => {
+    setGroupSelection((current) => ({ ...current, types }));
     setPage(1);
   };
   const changeGroupTags = (tags: string[]) => {
@@ -274,6 +281,7 @@ export function PricingPage() {
             onRegionChange={updateFilter(setRegionCode)}
             onMeterChange={updateFilter(setMeterCode)}
             onCurrencyChange={updateFilter(setCurrencyCode)}
+            onGroupTypesChange={changeGroupTypes}
             onGroupTagsChange={changeGroupTags}
             onGroupCodesChange={changeGroupCodes}
             onClearGroups={clearGroupFilters}

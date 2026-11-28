@@ -56,6 +56,7 @@ const LOGIN_METHOD_OPTIONS: Array<{ labelKey: string, value: LoginMethod }> = [
 ];
 
 const REGISTER_METHOD_OPTIONS: Array<{ labelKey: string, value: RegisterMethod }> = [
+  { labelKey: 'admin.authSettings.options.contact.username', value: 'username' },
   { labelKey: 'admin.authSettings.options.contact.email', value: 'email' },
   { labelKey: 'admin.authSettings.options.contact.phone', value: 'phone' },
 ];
@@ -86,7 +87,7 @@ const DEFAULT_AUTH_SETTINGS_FORM: AuthSettingsForm = {
   qrLoginEnabled: true,
   qrLoginType: 'web',
   recoveryMethods: ['email', 'phone'],
-  registerMethods: ['email', 'phone'],
+  registerMethods: ['username', 'email', 'phone'],
   verificationPolicy: {
     emailCodeLoginEnabled: false,
     emailRegistrationVerificationRequired: false,
@@ -240,26 +241,29 @@ export function CloudRouterAuthSettingsPage() {
               />
               <CheckboxGroup
                 label={t('admin.authSettings.fields.loginMethods')}
+                hint={t('admin.authSettings.hints.loginMethods')}
                 options={LOGIN_METHOD_OPTIONS.map((option) => ({ ...option, label: t(option.labelKey) }))}
                 values={form.loginMethods}
                 onChange={(loginMethods) => setForm((current) => withLoginMethods(current, loginMethods))}
               />
               <CheckboxGroup
                 label={t('admin.authSettings.fields.registrationMethods')}
+                hint={t('admin.authSettings.hints.registrationMethods')}
                 options={REGISTER_METHOD_OPTIONS.map((option) => ({ ...option, label: t(option.labelKey) }))}
                 values={form.registerMethods}
                 onChange={(registerMethods) => setForm((current) => ({
                   ...current,
-                  registerMethods: registerMethods.length > 0 ? registerMethods : ['email'],
+                  registerMethods,
                 }))}
               />
               <CheckboxGroup
                 label={t('admin.authSettings.fields.recoveryMethods')}
+                hint={t('admin.authSettings.hints.recoveryMethods')}
                 options={RECOVERY_METHOD_OPTIONS.map((option) => ({ ...option, label: t(option.labelKey) }))}
                 values={form.recoveryMethods}
                 onChange={(recoveryMethods) => setForm((current) => ({
                   ...current,
-                  recoveryMethods: recoveryMethods.length > 0 ? recoveryMethods : ['email'],
+                  recoveryMethods,
                 }))}
               />
             </div>
@@ -459,11 +463,13 @@ function SegmentedControl<T extends string>({
 }
 
 function CheckboxGroup<T extends string>({
+  hint,
   label,
   onChange,
   options,
   values,
 }: {
+  hint?: string,
   label: string,
   onChange: (values: T[]) => void,
   options: Array<{ label: string, value: T }>,
@@ -473,6 +479,9 @@ function CheckboxGroup<T extends string>({
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">{label}</legend>
+      {hint ? (
+        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+      ) : null}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {options.map((option) => (
           <label
@@ -875,20 +884,35 @@ function loginMethods(value: unknown): LoginMethod[] {
 }
 
 function registerMethods(value: unknown): RegisterMethod[] {
-  return filteredOptions(value, REGISTER_METHOD_OPTIONS.map((option) => option.value), DEFAULT_AUTH_SETTINGS_FORM.registerMethods);
+  return filteredOptions(
+    value,
+    REGISTER_METHOD_OPTIONS.map((option) => option.value),
+    DEFAULT_AUTH_SETTINGS_FORM.registerMethods,
+    true,
+  );
 }
 
 function recoveryMethods(value: unknown): RecoveryMethod[] {
-  return filteredOptions(value, RECOVERY_METHOD_OPTIONS.map((option) => option.value), DEFAULT_AUTH_SETTINGS_FORM.recoveryMethods);
+  return filteredOptions(
+    value,
+    RECOVERY_METHOD_OPTIONS.map((option) => option.value),
+    DEFAULT_AUTH_SETTINGS_FORM.recoveryMethods,
+    true,
+  );
 }
 
-function filteredOptions<T extends string>(value: unknown, allowed: readonly T[], fallback: T[]): T[] {
+function filteredOptions<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T[],
+  allowEmpty = false,
+): T[] {
   if (!Array.isArray(value)) {
     return [...fallback];
   }
   const allowedSet = new Set<string>(allowed);
   const filtered = value.filter((item): item is T => typeof item === 'string' && allowedSet.has(item));
-  return filtered.length > 0 ? filtered : [...fallback];
+  return filtered.length > 0 || allowEmpty ? filtered : [...fallback];
 }
 
 export function formatOAuthProviders(values: readonly string[]): string {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Archive,
   CalendarClock,
+  Download,
   ExternalLink,
   FileCheck2,
   History,
@@ -20,6 +21,7 @@ import {
   AdminTableShell,
   ConfirmDialog,
   resolveProblemMessage,
+  type ProblemMessageTranslate,
 } from '@sdkwork/cloudroutes-pc-commons';
 
 import {
@@ -29,6 +31,7 @@ import {
   DomainFormDialog,
   DomainIconButton,
   DomainInlineNotice,
+  DomainPageFilterNotice,
   DomainPrimaryButton,
   DomainRadioGroup,
   DomainSecondaryButton,
@@ -37,9 +40,13 @@ import {
   DomainStateRows,
   DomainStatusPill,
   DomainTableHead,
+  DomainTableRefreshingBar,
   DomainTextInput,
   focusDomainField,
 } from '../components/domainUi';
+import { DomainPaginationFooter } from '../components/DomainPaginationFooter';
+import { copyToClipboard } from '../components/domainClipboard';
+import { certificateArtifactErrorKey, downloadCertificateArtifact } from '../domainCertificateArtifact';
 import { DomainCopyButton } from '../components/DomainCopyButton';
 import { domainCenterService, DomainSdkCapabilityError } from '../domainService';
 import {
@@ -50,7 +57,7 @@ import {
   certificateHostnameSuggestions,
   certificatePollStop,
   certificateValidationMethodOptions,
-  challengeNeedsOperatorAction,
+  manualChallengeActionState,
   challengeStatusByIdentifier,
   formatCountdown,
   isCertificateIssuanceFailure,
@@ -107,12 +114,13 @@ import type {
   DomainZone,
 } from '../domainTypes';
 import { useDomainCloudAccounts, useDomainZones, usableDnsAccounts } from '../hooks/useDomainResources';
+import { useDomainPagedList } from '../hooks/useDomainPagedList';
+import { useDomainTableScrollReset } from '../hooks/useDomainTableScrollReset';
 import {
   CERTIFICATE_FORM_FIELD_ORDER,
   firstDomainFieldError,
   toCreateCertificateInput,
   validateCertificateForm,
-  type CreateDomainCertificatePayload,
   type DomainCertificateForm,
   type DomainFieldErrors,
 } from '../domainValidation';
@@ -122,8 +130,8 @@ const EMPTY_CERTIFICATE_FORM: DomainCertificateForm = {
   domainIds: [],
   requestedIdentifiers: [],
   certificateScope: 'SINGLE_DOMAIN',
-  validationMethod: 'AUTO',
-  presentationMode: 'MANAGED',
+  validationMethod: 'DNS_01',
+  presentationMode: 'MANUAL',
   caProfile: 'LETS_ENCRYPT_PRODUCTION',
   preferredKeyAlgorithm: 'RSA',
   autoRenew: true,
@@ -202,6 +210,25 @@ interface ArchiveRead {
 /** Failure of the `retrieve` call, which carries no `problem` payload. */
 function isProblemDetailCarrying(cause: unknown): boolean {
   return typeof cause === 'object' && cause !== null && 'problem' in cause;
+}
+
+function resolveCertificateArtifactMessage(
+  cause: unknown,
+  t: ProblemMessageTranslate,
+): string {
+  const fallback = t('admin.domainCenter.certificates.artifact.errors.download', {
+    defaultValue: 'Certificate ZIP could not be downloaded',
+  });
+  const errorKey = certificateArtifactErrorKey(cause);
+  if (errorKey) {
+    return t(errorKey, { defaultValue: fallback });
+  }
+  // A transport failure carries no problem detail; keep the localized archive
+  // message instead of surfacing a raw JavaScript error string.
+  if (!isProblemDetailCarrying(cause)) {
+    return fallback;
+  }
+  return resolveProblemMessage(cause, t, fallback);
 }
 
 /** Upper bound on the archive-state hydration of one list refresh. */
@@ -294,10 +321,6 @@ export function DomainCertificatesPage({
   const { t, i18n } = useTranslation();
   const zones = useDomainZones();
   const accounts = useDomainCloudAccounts();
-  const [certificates, setCertificates] = useState<DomainCertificate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>(null);
-  const [reloadToken, setReloadToken] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [issueOpen, setIssueOpen] = useState(false);
@@ -305,39 +328,23 @@ export function DomainCertificatesPage({
   const [historyTarget, setHistoryTarget] = useState<DomainCertificate | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DomainCertificate | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const locale = i18n.resolvedLanguage ?? 'en-US';
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    domainCenterService
-      .listAllCertificates()
-      .then((items) => {
-        if (active) {
-          setCertificates(items);
-        }
-      })
-      .catch((cause: unknown) => {
-        if (active) {
-          setError(cause);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [reloadToken]);
+  const certificates = useDomainPagedList<DomainCertificate>({
+    queryKey: 'certificates',
+    load: (page, pageSize) => domainCenterService.listCertificates({ page, pageSize }),
+  });
+  const viewportRef = useDomainTableScrollReset(certificates.page);
 
+  // The certificate list accepts no filter parameters yet, so the search box and
+  // the status filter narrow the rows of the current page. The header states that
+  // scope explicitly rather than implying a zone-wide search.
   const rows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
-    return certificates.filter((certificate) => {
+    return certificates.items.filter((certificate) => {
       if (statusFilter !== 'ALL' && certificate.status !== statusFilter) {
         return false;
       }
@@ -350,12 +357,17 @@ export function DomainCertificatesPage({
         || (certificate.issuer ?? '').toLowerCase().includes(keyword)
       );
     });
-  }, [certificates, search, statusFilter]);
+  }, [certificates.items, search, statusFilter]);
+  const filtersActive = search.trim().length > 0 || statusFilter !== 'ALL';
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('ALL');
+  };
 
   const archiveTargets = useMemo<ArchiveTarget[]>(() => {
     const ids = new Set<string>();
     const targets: ArchiveTarget[] = [];
-    for (const certificate of certificates) {
+    for (const certificate of certificates.items) {
       if (
         certificate.certificateSource === 'MANAGED'
         && (certificate.status === 'ACTIVE' || certificate.status === 'EXPIRED')
@@ -366,7 +378,7 @@ export function DomainCertificatesPage({
       }
     }
     return targets;
-  }, [certificates]);
+  }, [certificates.items]);
 
   const archiveReads = useCertificateArchiveReads(archiveTargets);
 
@@ -396,6 +408,21 @@ export function DomainCertificatesPage({
     }
   };
 
+  const downloadArtifact = async (certificateId: string) => {
+    setDownloadingId(certificateId);
+    setActionError(null);
+    setNotice(null);
+    try {
+      const artifact = await domainCenterService.retrieveCertificateArtifact(certificateId);
+      await downloadCertificateArtifact(artifact);
+      setNotice(t('admin.domainCenter.certificates.artifact.downloaded', 'Certificate ZIP downloaded.'));
+    } catch (cause) {
+      setActionError(resolveCertificateArtifactMessage(cause, t));
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   const renew = async (certificate: DomainCertificate) => {
     setBusyId(certificate.id);
     setActionError(null);
@@ -407,7 +434,8 @@ export function DomainCertificatesPage({
           name: certificate.certName,
         }),
       );
-      setReloadToken((token) => token + 1);
+      certificates.goToPage(1);
+      certificates.reload();
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.certificates.errors.renew', 'Renewal could not be planned')),
@@ -425,8 +453,12 @@ export function DomainCertificatesPage({
     setActionError(null);
     try {
       await domainCenterService.deleteCertificate(deleteTarget.id);
-      setCertificates((current) => current.filter((item) => item.id !== deleteTarget.id));
+      const removedId = deleteTarget.id;
       setDeleteTarget(null);
+      certificates.updateItems((items) => items.filter((item) => item.id !== removedId));
+      // The total and the page count changed; the reload also steps back when this
+      // was the only row on the last page.
+      certificates.reload();
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.certificates.errors.delete', 'Certificate could not be removed')),
@@ -446,8 +478,8 @@ export function DomainCertificatesPage({
         )}
         actions={
           <>
-            <DomainSecondaryButton onClick={() => setReloadToken((token) => token + 1)} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <DomainSecondaryButton onClick={certificates.reload} disabled={certificates.status === 'loading'}>
+              <RefreshCw className={`h-4 w-4 ${certificates.status === 'loading' ? 'animate-spin' : ''}`} />
               {t('admin.domainCenter.actions.refresh', 'Refresh')}
             </DomainSecondaryButton>
             <DomainPrimaryButton onClick={() => setIssueOpen(true)} disabled={zones.data.length === 0}>
@@ -463,39 +495,80 @@ export function DomainCertificatesPage({
 
       <AdminTableShell
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
+        aria-busy={certificates.isRefreshing ? true : undefined}
+        viewportRef={viewportRef}
         header={
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={t('admin.domainCenter.certificates.search', 'Search certificate, identifier, or issuer')}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
-                />
+          <>
+            {certificates.isRefreshing ? (
+              <DomainTableRefreshingBar label={t('admin.domainCenter.pagination.loadingPage', 'Loading page')} />
+            ) : null}
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-md">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    title={t(
+                      'admin.domainCenter.certificates.searchHint',
+                      'The API filters certificates per page; this box searches the rows on the current page.',
+                    )}
+                    placeholder={t('admin.domainCenter.certificates.search', 'Filter this page')}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+                  />
+                </div>
+                <div className="w-full shrink-0 md:w-44">
+                  <DomainSelect
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                      { value: 'ALL', label: t('admin.domainCenter.filters.allStatuses', 'All statuses') },
+                      { value: 'ACTIVE', label: t('admin.domainCenter.status.active', 'Active') },
+                      { value: 'ISSUING', label: t('admin.domainCenter.status.issuing', 'Issuing') },
+                      { value: 'PENDING', label: t('admin.domainCenter.status.pending', 'Pending') },
+                      { value: 'EXPIRED', label: t('admin.domainCenter.status.expired', 'Expired') },
+                      { value: 'FAILED', label: t('admin.domainCenter.status.failed', 'Failed') },
+                      { value: 'REVOKED', label: t('admin.domainCenter.status.revoked', 'Revoked') },
+                    ]}
+                  />
+                </div>
               </div>
-              <div className="w-full shrink-0 md:w-44">
-                <DomainSelect
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  options={[
-                    { value: 'ALL', label: t('admin.domainCenter.filters.allStatuses', 'All statuses') },
-                    { value: 'ACTIVE', label: t('admin.domainCenter.status.active', 'Active') },
-                    { value: 'ISSUING', label: t('admin.domainCenter.status.issuing', 'Issuing') },
-                    { value: 'PENDING', label: t('admin.domainCenter.status.pending', 'Pending') },
-                    { value: 'EXPIRED', label: t('admin.domainCenter.status.expired', 'Expired') },
-                    { value: 'FAILED', label: t('admin.domainCenter.status.failed', 'Failed') },
-                    { value: 'REVOKED', label: t('admin.domainCenter.status.revoked', 'Revoked') },
-                  ]}
-                />
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                {filtersActive ? (
+                  <DomainPageFilterNotice
+                    label={t(
+                      'admin.domainCenter.pagination.pageMatches',
+                      '{{matched}} of {{pageRowCount}} on this page',
+                      { matched: rows.length, pageRowCount: certificates.items.length },
+                    )}
+                    clearLabel={t('admin.domainCenter.pagination.clearFilters', 'Clear filters')}
+                    onClear={clearFilters}
+                  />
+                ) : null}
               </div>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {t('admin.domainCenter.certificates.count', '{{count}} certificates', { count: rows.length })}
-            </div>
-          </div>
+          </>
+        }
+        footer={
+          <DomainPaginationFooter
+            page={certificates.page}
+            pageSize={certificates.pageSize}
+            pageRowCount={certificates.items.length}
+            totalItems={certificates.totalItems}
+            totalPages={certificates.totalPages}
+            hasMore={certificates.hasMore}
+            disabled={certificates.status === 'loading' || certificates.isRefreshing}
+            totalSummary={certificates.totalItems !== null
+              ? t('admin.domainCenter.certificates.count', '{{count}} certificates', {
+                  count: certificates.totalItems,
+                })
+              : undefined}
+            onPreviousPage={certificates.goToPreviousPage}
+            onNextPage={certificates.goToNextPage}
+            onPageSelect={certificates.goToPage}
+            onPageSizeChange={certificates.changePageSize}
+          />
         }
       >
         <table className="w-full min-w-[1520px] whitespace-nowrap text-left text-sm">
@@ -515,32 +588,43 @@ export function DomainCertificatesPage({
             ]}
           />
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:divide-white/5 dark:text-slate-300">
-            {loading ? (
+            {certificates.status === 'loading' ? (
               <DomainStateRows
                 colSpan={11}
                 kind="loading"
                 title={t('admin.domainCenter.certificates.loading', 'Loading certificates...')}
               />
-            ) : error ? (
+            ) : certificates.status === 'error' ? (
               <DomainStateRows
                 colSpan={11}
                 kind="error"
                 title={t('admin.domainCenter.certificates.loadError', 'Certificates could not be loaded')}
-                description={resolveProblemMessage(error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
-                onRetry={() => setReloadToken((token) => token + 1)}
+                description={resolveProblemMessage(certificates.error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
+                onRetry={certificates.reload}
                 retryLabel={t('common.actions.retry', 'Retry')}
               />
             ) : rows.length === 0 ? (
               <DomainStateRows
                 colSpan={11}
                 kind="empty"
-                title={t('admin.domainCenter.certificates.empty', 'No certificate issued yet')}
-                description={t(
-                  'admin.domainCenter.certificates.emptyDesc',
-                  'Issue a certificate for verified hostnames, or import one from your CA.',
-                )}
-                action={
-                  zones.data.length === 0
+                title={filtersActive
+                  ? t('admin.domainCenter.certificates.emptyFiltered', 'No certificate on this page matches')
+                  : t('admin.domainCenter.certificates.empty', 'No certificate issued yet')}
+                description={filtersActive
+                  ? t(
+                      'admin.domainCenter.certificates.emptyFilteredDesc',
+                      'The filter only covers the current page. Clear it, or move to another page.',
+                    )
+                  : t(
+                      'admin.domainCenter.certificates.emptyDesc',
+                      'Enter any domain you control and publish the DNS-01 TXT records, or import a certificate from your CA.',
+                    )}
+                action={filtersActive
+                  ? {
+                      label: t('admin.domainCenter.pagination.clearFilters', 'Clear filters'),
+                      onClick: clearFilters,
+                    }
+                  : zones.data.length === 0
                     ? {
                         label: t('admin.domainCenter.actions.addZone', 'Register root domain'),
                         onClick: () => onNavigate('zones'),
@@ -548,8 +632,7 @@ export function DomainCertificatesPage({
                     : {
                         label: t('admin.domainCenter.certificates.actions.issue', 'Issue certificate'),
                         onClick: () => setIssueOpen(true),
-                      }
-                }
+                      }}
               />
             ) : (
               rows.map((certificate) => {
@@ -696,6 +779,17 @@ export function DomainCertificatesPage({
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <DomainIconButton
+                          label={t('admin.domainCenter.certificates.artifact.download', 'Download certificate ZIP')}
+                          disabled={downloadingId === certificate.id || !certificate.currentVersionId}
+                          onClick={() => void downloadArtifact(certificate.id)}
+                        >
+                          <Download
+                            className={`h-4 w-4 ${
+                              downloadingId === certificate.id ? 'animate-pulse' : ''
+                            }`}
+                          />
+                        </DomainIconButton>
+                        <DomainIconButton
                           label={t('admin.domainCenter.certificates.actions.history', 'Renewal history')}
                           onClick={() => setHistoryTarget(certificate)}
                         >
@@ -733,7 +827,9 @@ export function DomainCertificatesPage({
           onClose={() => setIssueOpen(false)}
           onIssued={(certificate) => {
             setIssueOpen(false);
-            setReloadToken((token) => token + 1);
+            // A fresh order is the newest row (`updated_at DESC`): show page 1.
+            certificates.goToPage(1);
+            certificates.reload();
             setProgressTarget(certificate);
           }}
         />
@@ -743,7 +839,7 @@ export function DomainCertificatesPage({
         <CertificateProgressDialog
           certificate={progressTarget}
           onClose={() => setProgressTarget(null)}
-          onSettled={() => setReloadToken((token) => token + 1)}
+          onSettled={certificates.reload}
         />
       ) : null}
 
@@ -785,7 +881,9 @@ function IssueCertificateDialog({
 }) {
   const { t } = useTranslation();
   const [form, setForm] = useState<DomainCertificateForm>(EMPTY_CERTIFICATE_FORM);
-  const [zoneId, setZoneId] = useState(zones[0]?.id ?? '');
+  const [zoneId, setZoneId] = useState(
+    EMPTY_CERTIFICATE_FORM.presentationMode === 'MANUAL' ? '' : zones[0]?.id ?? '',
+  );
   const [hostnames, setHostnames] = useState<DomainHostname[]>([]);
   const [hostnamesLoading, setHostnamesLoading] = useState(false);
   const [hostnamesError, setHostnamesError] = useState<unknown>(null);
@@ -849,7 +947,15 @@ function IssueCertificateDialog({
       return;
     }
     const result = addCertificateIdentifiers(form.requestedIdentifiers, identifierDraft);
-    setForm((current) => ({ ...current, requestedIdentifiers: result.identifiers, domainIds: [] }));
+    setForm((current) => ({
+      ...current,
+      certName: current.certName.trim() || result.added || current.certName,
+      requestedIdentifiers: result.identifiers,
+      certificateScope: result.identifiers.some((identifier) => identifier.startsWith('*.'))
+        ? 'WILDCARD'
+        : current.certificateScope,
+      domainIds: [],
+    }));
     if (result.rejection === 'invalid') {
       setIdentifierRejection(t('admin.domainCenter.certificates.fields.hostnameInvalid', 'That is not a usable certificate hostname.'));
     } else if (result.rejection === 'duplicate') {
@@ -861,13 +967,20 @@ function IssueCertificateDialog({
   };
 
   const toggleSuggestion = (hostname: string) => {
-    setForm((current) => ({
-      ...current,
-      domainIds: [],
-      requestedIdentifiers: current.requestedIdentifiers.includes(hostname)
+    setForm((current) => {
+      const requestedIdentifiers = current.requestedIdentifiers.includes(hostname)
         ? removeCertificateIdentifier(current.requestedIdentifiers, hostname)
-        : addCertificateIdentifiers(current.requestedIdentifiers, hostname).identifiers,
-    }));
+        : addCertificateIdentifiers(current.requestedIdentifiers, hostname).identifiers;
+      return {
+        ...current,
+        certName: current.certName.trim() || hostname,
+        domainIds: [],
+        requestedIdentifiers,
+        certificateScope: requestedIdentifiers.some((identifier) => identifier.startsWith('*.'))
+          ? 'WILDCARD'
+          : current.certificateScope,
+      };
+    });
   };
 
   const submit = async () => {
@@ -904,10 +1017,15 @@ function IssueCertificateDialog({
       busy={busy}
       onClose={onClose}
       title={t('admin.domainCenter.certificates.dialog.issueTitle', 'Issue certificate')}
-      description={t(
-        'admin.domainCenter.certificates.dialog.issueDesc',
-        'Select verified hostnames as identifiers. A wildcard scope also plans the apex of each wildcard and always validates through DNS-01.',
-      )}
+      description={manual
+        ? t(
+            'admin.domainCenter.certificates.dialog.issueManualDesc',
+            'Enter any domain you control. We generate the DNS-01 TXT records; no hostname pre-verification or DNS cloud account is required.',
+          )
+        : t(
+            'admin.domainCenter.certificates.dialog.issueDesc',
+            'Select verified hostnames as identifiers. A wildcard scope also plans the apex of each wildcard and always validates through DNS-01.',
+          )}
       footer={
         <>
           <DomainSecondaryButton onClick={onClose} disabled={busy}>
@@ -916,7 +1034,9 @@ function IssueCertificateDialog({
           <DomainPrimaryButton onClick={() => void submit()} disabled={busy}>
             {busy
               ? t('admin.domainCenter.certificates.submitting', 'Requesting...')
-              : t('admin.domainCenter.certificates.actions.issue', 'Issue certificate')}
+              : manual
+                ? t('admin.domainCenter.certificates.actions.generateRecords', 'Generate DNS verification records')
+                : t('admin.domainCenter.certificates.actions.issue', 'Issue certificate')}
           </DomainPrimaryButton>
         </>
       }
@@ -966,9 +1086,12 @@ function IssueCertificateDialog({
         legend={t('admin.domainCenter.certificates.fields.presentationMode', 'Verification mode')}
         value={form.presentationMode}
         disabled={busy}
-        onChange={(value) =>
-          setForm((current) => reconcile({ ...current, presentationMode: value }))
-        }
+        onChange={(value) => {
+          setForm((current) => reconcile({ ...current, presentationMode: value }));
+          if (value === 'MANAGED' && !zoneId) {
+            setZoneId(zones[0]?.id ?? '');
+          }
+        }}
         options={[
           {
             value: 'MANAGED',
@@ -1041,22 +1164,24 @@ function IssueCertificateDialog({
             placeholder="30"
           />
         </DomainField>
-        <DomainField
-          label={t('admin.domainCenter.zones.fields.providerAccount', 'DNS cloud account')}
-          hint={t('admin.domainCenter.certificates.fields.providerAccountHint', 'Optional override for DNS-01 presentation')}
-        >
-          <DomainSelect
-            value={form.providerAccountId}
-            onChange={(value) => setForm((current) => ({ ...current, providerAccountId: value }))}
-            options={[
-              { value: '', label: t('admin.domainCenter.zones.autoAccount', 'Resolved per issuance') },
-              ...accounts.map((account) => ({
-                value: account.id,
-                label: `${account.displayName}${account.dnsProvider ? ` · ${account.dnsProvider}` : ''}`,
-              })),
-            ]}
-          />
-        </DomainField>
+        {!manual ? (
+          <DomainField
+            label={t('admin.domainCenter.zones.fields.providerAccount', 'DNS cloud account')}
+            hint={t('admin.domainCenter.certificates.fields.providerAccountHint', 'Optional override for DNS-01 presentation')}
+          >
+            <DomainSelect
+              value={form.providerAccountId}
+              onChange={(value) => setForm((current) => ({ ...current, providerAccountId: value }))}
+              options={[
+                { value: '', label: t('admin.domainCenter.zones.autoAccount', 'Resolved per issuance') },
+                ...accounts.map((account) => ({
+                  value: account.id,
+                  label: `${account.displayName}${account.dnsProvider ? ` · ${account.dnsProvider}` : ''}`,
+                })),
+              ]}
+            />
+          </DomainField>
+        ) : null}
       </div>
 
       <DomainCheckbox
@@ -1076,19 +1201,32 @@ function IssueCertificateDialog({
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400">
               {t(
-                'admin.domainCenter.certificates.fields.identifiersHint',
-                'Type the certificate hostnames. Each one must already be a verified hostname of this tenant.',
+                manual
+                  ? 'admin.domainCenter.certificates.fields.identifiersManualHint'
+                  : 'admin.domainCenter.certificates.fields.identifiersHint',
+                manual
+                  ? 'Enter any domain you control. Manual DNS-01 proves ownership when you publish the generated TXT record.'
+                  : 'Type the certificate hostnames. Each one must already be a verified hostname of this tenant.',
               )}
             </div>
           </div>
           <div className="w-full shrink-0 md:w-64">
             <DomainSelect
               value={zoneId}
+              ariaLabel={t('admin.domainCenter.certificates.fields.dnsZone', 'DNS zone')}
               onChange={(value) => {
                 setZoneId(value);
                 setForm((current) => ({ ...current, domainIds: [] }));
               }}
-              options={zones.map((zone) => ({ value: zone.id, label: zone.apexHostname }))}
+              options={[
+                ...(manual
+                  ? [{
+                      value: '',
+                      label: t('admin.domainCenter.certificates.fields.noZone', 'No zone — enter any domain'),
+                    }]
+                  : []),
+                ...zones.map((zone) => ({ value: zone.id, label: zone.apexHostname })),
+              ]}
             />
           </div>
         </div>
@@ -1100,7 +1238,7 @@ function IssueCertificateDialog({
           >
             {t('admin.domainCenter.certificates.fields.hostnameInputLabel', 'Certificate hostname')}
           </label>
-          <div className="flex gap-2">
+          <div className="flex min-w-0 gap-2">
             <input
               id="domain-certificate-identifier-input"
               type="text"
@@ -1126,7 +1264,7 @@ function IssueCertificateDialog({
                 }
               }}
               onBlur={commitDraftIdentifiers}
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-[#121212] dark:text-white"
             />
             <DomainSecondaryButton onClick={commitDraftIdentifiers} disabled={busy || identifierDraft.trim().length === 0}>
               {t('admin.domainCenter.certificates.fields.hostnameAdd', 'Add')}
@@ -1182,7 +1320,12 @@ function IssueCertificateDialog({
 
         <div className="mt-3 border-t border-slate-100 pt-3 dark:border-white/5">
           <div className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-            {t('admin.domainCenter.certificates.fields.suggestions', 'Verified hostnames in this zone')}
+            {t(
+              manual
+                ? 'admin.domainCenter.certificates.fields.suggestionsManual'
+                : 'admin.domainCenter.certificates.fields.suggestions',
+              manual ? 'Optional hostname suggestions' : 'Verified hostnames in this zone',
+            )}
           </div>
           {hostnamesLoading ? (
             <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -1194,7 +1337,12 @@ function IssueCertificateDialog({
             </div>
           ) : suggestions.length === 0 ? (
             <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              {t('admin.domainCenter.certificates.noHostnames', 'This zone has no hostname yet.')}
+              {manual && !zoneId
+                ? t(
+                    'admin.domainCenter.certificates.fields.enterDomainAbove',
+                    'Enter any domain above to generate its DNS-01 records.',
+                  )
+                : t('admin.domainCenter.certificates.noHostnames', 'This zone has no hostname yet.')}
             </div>
           ) : (
             <ul className="mt-2 grid gap-2 md:grid-cols-2">
@@ -1206,7 +1354,7 @@ function IssueCertificateDialog({
                       <input
                         type="checkbox"
                         checked={selected}
-                        disabled={busy}
+                        disabled={busy || (!manual && !suggestion.verified)}
                         onChange={() => toggleSuggestion(suggestion.hostname)}
                         className="mt-0.5 h-4 w-4 rounded border-slate-300 text-lobster-500 focus:ring-lobster-500"
                       />
@@ -1217,10 +1365,15 @@ function IssueCertificateDialog({
                         <span className="block text-[11px] text-slate-500 dark:text-slate-400">
                           {suggestion.verified
                             ? t('admin.domainCenter.status.verified', 'Verified')
-                            : t(
-                                'admin.domainCenter.certificates.fields.suggestionUnverified',
-                                'Not verified yet — the request will be refused',
-                              )}
+                            : manual
+                              ? t(
+                                  'admin.domainCenter.certificates.fields.suggestionManualUnverified',
+                                  'Not pre-verified — DNS-01 will confirm ownership',
+                                )
+                              : t(
+                                  'admin.domainCenter.certificates.fields.suggestionUnverified',
+                                  'Not verified yet — the request will be refused',
+                                )}
                         </span>
                       </span>
                     </label>
@@ -1276,53 +1429,70 @@ function CertificateProgressDialog({
   const [presentation, setPresentation] = useState<DomainCertificateChallengePresentation | null>(null);
   const [presentationError, setPresentationError] = useState<unknown>(null);
   const [verifying, setVerifying] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const abortRef = useRef<AbortController | null>(null);
+  const [documentHidden, setDocumentHidden] = useState(
+    () => typeof document !== 'undefined' && document.hidden,
+  );
+  const [presentationRevision, setPresentationRevision] = useState(0);
 
   const manual = parsePresentationMode(current.presentationMode ?? certificate.presentationMode) === 'MANUAL';
   const awaitingOperator =
     manual && shouldAwaitManualChallenge(presentation ?? undefined, current.status);
+  const pollStop = certificatePollStop({
+    attempt,
+    maxAttempts: CERTIFICATE_POLL_MAX_ATTEMPTS,
+    status: current.status,
+    awaitingOperator,
+    documentHidden,
+    aborted: false,
+  });
+
+  useEffect(() => {
+    const updateVisibility = () => setDocumentHidden(document.hidden);
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => document.removeEventListener('visibilitychange', updateVisibility);
+  }, []);
 
   // Poll until the certificate cannot change on its own any more.
   useEffect(() => {
-    if (isCertificateServing(current.status) || isCertificateIssuanceFailure(current.status)) {
+    if (pollStop.stop) {
       return;
     }
     const controller = new AbortController();
-    abortRef.current = controller;
     let cancelled = false;
     const tick = async (): Promise<void> => {
-      await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, certificatePollDelay(attempt));
-      });
-      if (cancelled || controller.signal.aborted) {
-        return;
-      }
       try {
-        const next = await domainCenterService.retrieveCertificate(current.id);
-        if (cancelled) {
+        await abortableDelay(certificatePollDelay(attempt), controller.signal);
+        if (cancelled || document.hidden) {
           return;
         }
-        setCurrent(next);
-      } catch {
-        // A transient read failure is not an issuance failure; the next attempt
-        // re-reads. Only the bounded attempt budget ends the loop.
+        const next = await domainCenterService.retrieveCertificate(current.id, {
+          signal: controller.signal,
+        });
+        if (!cancelled) {
+          setCurrent(next);
+          setAttempt((value) => value + 1);
+        }
+      } catch (cause) {
+        if (!cancelled && !isAbortError(cause)) {
+          setAttempt((value) => value + 1);
+        }
       }
-      setAttempt((value) => value + 1);
     };
     void tick();
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [attempt, current.id, current.status]);
+  }, [attempt, current.id, current.status, documentHidden, pollStop.stop]);
 
   // Read the TXT instructions while the order is manual; they appear once the
   // worker has prepared the order, so they are re-read as the order advances.
   useEffect(() => {
-    if (!manual || !domainCenterService.supportsCertificateChallenges()) {
+    if (!manual) {
       return;
     }
     const controller = new AbortController();
@@ -1344,7 +1514,7 @@ function CertificateProgressDialog({
       cancelled = true;
       controller.abort();
     };
-  }, [current.id, current.status, manual]);
+  }, [current.id, current.status, manual, presentationRevision]);
 
   // One clock for every countdown on the panel.
   useEffect(() => {
@@ -1353,17 +1523,8 @@ function CertificateProgressDialog({
   }, []);
 
   useEffect(() => {
-    setHaltReason(
-      certificatePollStop({
-        attempt,
-        maxAttempts: CERTIFICATE_POLL_MAX_ATTEMPTS,
-        status: current.status,
-        awaitingOperator,
-        documentHidden: typeof document !== 'undefined' && document.hidden,
-        aborted: false,
-      }).reason,
-    );
-  }, [attempt, awaitingOperator, current.status]);
+    setHaltReason(pollStop.reason);
+  }, [pollStop.reason]);
 
   useEffect(() => {
     if (isCertificateServing(current.status)) {
@@ -1372,7 +1533,30 @@ function CertificateProgressDialog({
     // The parent only needs to know that the list should be re-read.
   }, [current.status, onSettled]);
 
-  const rows = useMemo(() => buildManualTxtRows(presentation ?? undefined), [presentation]);
+  const apexHostname = current.identifiers.find((identifier) => identifier.startsWith('*.'));
+  const rows = useMemo(
+    () => buildManualTxtRows(presentation ?? undefined, { apexHostname }),
+    [presentation, apexHostname],
+  );
+  const rowsExpired = rows.some((row) => presentationSecondsRemaining(row.expiresAt, now) === 0);
+  const challengesReleased = presentation?.presentationReleased === true;
+  const challengeActionState = manualChallengeActionState(rows);
+  const challengesNeedAction = challengeActionState === 'pending';
+
+  const downloadArtifact = async () => {
+    setDownloading(true);
+    setActionError(null);
+    setNotice(null);
+    try {
+      const artifact = await domainCenterService.retrieveCertificateArtifact(current.id);
+      await downloadCertificateArtifact(artifact);
+      setNotice(t('admin.domainCenter.certificates.artifact.downloaded', 'Certificate ZIP downloaded.'));
+    } catch (cause) {
+      setActionError(resolveCertificateArtifactMessage(cause, t));
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const verify = async () => {
     setVerifying(true);
@@ -1392,6 +1576,7 @@ function CertificateProgressDialog({
             ),
       );
       setAttempt(0);
+      setPresentationRevision((revision) => revision + 1);
       const next = await domainCenterService.retrieveCertificate(current.id);
       setCurrent(next);
     } catch (cause) {
@@ -1409,10 +1594,10 @@ function CertificateProgressDialog({
 
   const copyAll = async () => {
     const payload = manualTxtCopyAllPayload(rows);
-    try {
-      await navigator.clipboard.writeText(payload);
+    const copied = await copyToClipboard(payload);
+    if (copied) {
       setNotice(t('admin.domainCenter.certificates.manual.copied', 'Copied to the clipboard.'));
-    } catch {
+    } else {
       setActionError(t('admin.domainCenter.certificates.manual.copyFailed', 'The clipboard is not available.'));
     }
   };
@@ -1461,8 +1646,9 @@ function CertificateProgressDialog({
         </span>
         {!serving && !failed && !awaitingOperator ? (
           <span className="text-[11px] text-slate-400 dark:text-slate-500">
-            {t('admin.domainCenter.certificates.progress.attempt', 'Checking again… ({{attempt}})', {
+            {t('admin.domainCenter.certificates.progress.attempt', 'Checking again… ({{attempt}} of {{max}})', {
               attempt,
+              max: CERTIFICATE_POLL_MAX_ATTEMPTS,
             })}
           </span>
         ) : null}
@@ -1475,7 +1661,8 @@ function CertificateProgressDialog({
           <span className="text-[11px] text-amber-600 dark:text-amber-300">
             {t(
               'admin.domainCenter.certificates.progress.exhausted',
-              'Still running. Close this and refresh the list later.',
+              'Still running after {{max}} checks. Close this and refresh the list later.',
+              { max: CERTIFICATE_POLL_MAX_ATTEMPTS },
             )}
           </span>
         ) : null}
@@ -1515,19 +1702,17 @@ function CertificateProgressDialog({
             ) : null}
           </div>
 
-          {!domainCenterService.supportsCertificateChallenges() ? (
-            <div className="mt-2 text-[11px] text-amber-600 dark:text-amber-300">
-              {t(
-                'admin.domainCenter.certificates.progress.manualUnsupported',
-                'This console build predates the manual DNS-01 surface; update the deployments SDK to see the records.',
-              )}
-            </div>
-          ) : rows.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              {t(
-                'admin.domainCenter.certificates.manual.waiting',
-                'The challenge records appear as soon as the order is prepared.',
-              )}
+                {challengesReleased
+                  ? t(
+                      'admin.domainCenter.certificates.manual.releasedWaiting',
+                      'The records are published. Waiting for the certificate authority to validate them.',
+                    )
+                  : t(
+                      'admin.domainCenter.certificates.manual.waiting',
+                      'The challenge records appear as soon as the order is prepared.',
+                    )}
             </div>
           ) : (
             <div className="mt-3 overflow-hidden rounded-lg border border-slate-200 dark:border-white/10">
@@ -1555,8 +1740,8 @@ function CertificateProgressDialog({
                             <div className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
                               {remaining === 0
                                 ? t('admin.domainCenter.certificates.manual.expired', 'Expired')
-                                : t('admin.domainCenter.certificates.manual.expiresIn', 'Expires in {{time}}', {
-                                    time: formatCountdown(remaining),
+                                : t('admin.domainCenter.certificates.manual.expiresIn', 'Expires in {{countdown}}', {
+                                    countdown: formatCountdown(remaining),
                                   })}
                             </div>
                           )}
@@ -1580,19 +1765,21 @@ function CertificateProgressDialog({
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <DomainPrimaryButton
               onClick={() => void verify()}
-              disabled={verifying || rows.length === 0 || serving || failed}
+              disabled={verifying || rows.length === 0 || !challengesNeedAction || challengesReleased || rowsExpired || serving || failed}
             >
               {verifying
                 ? t('admin.domainCenter.certificates.manual.verifying', 'Verifying…')
                 : t('admin.domainCenter.certificates.manual.verify', 'I published the records — verify')}
             </DomainPrimaryButton>
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              {challengeNeedsOperatorAction(rows[0]?.status)
+              {challengeActionState === 'pending'
                 ? t(
                     'admin.domainCenter.certificates.manual.statusPending',
                     'The platform checks the TXT records before asking the CA, so a missing record does not spend a validation attempt.',
                   )
-                : t(
+                : challengeActionState === 'invalid'
+                  ? t('admin.domainCenter.certificates.manual.statusInvalid', 'The challenge is invalid.')
+                  : t(
                     'admin.domainCenter.certificates.manual.statusValid',
                     'The challenge is validated.',
                   )}
@@ -1604,7 +1791,7 @@ function CertificateProgressDialog({
       {serving ? (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
           <div className="text-xs font-semibold text-emerald-800 dark:text-emerald-200">
-            {t('admin.domainCenter.certificates.result.title', 'Certificate requested')}
+            {t('admin.domainCenter.certificates.result.title', 'Certificate issued')}
           </div>
           <dl className="mt-2 grid gap-x-4 gap-y-1 text-[11px] md:grid-cols-[8rem_1fr]">
             <dt className="text-slate-500 dark:text-slate-400">
@@ -1622,6 +1809,20 @@ function CertificateProgressDialog({
               {current.identifiers.join(', ')}
             </dd>
           </dl>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <DomainSecondaryButton onClick={() => void downloadArtifact()} disabled={downloading}>
+              <Download className={`h-4 w-4 ${downloading ? 'animate-pulse' : ''}`} />
+              {downloading
+                ? t('admin.domainCenter.certificates.artifact.downloading', 'Preparing ZIP…')
+                : t('admin.domainCenter.certificates.artifact.download', 'Download certificate ZIP')}
+            </DomainSecondaryButton>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              {t(
+                'admin.domainCenter.certificates.artifact.hint',
+                'The ZIP contains the public certificate files. The private key stays in the secret manager and is never downloaded.',
+              )}
+            </span>
+          </div>
         </div>
       ) : null}
     </DomainFormDialog>

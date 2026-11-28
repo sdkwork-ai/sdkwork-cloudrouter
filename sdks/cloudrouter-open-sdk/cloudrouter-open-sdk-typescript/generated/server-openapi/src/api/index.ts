@@ -49,6 +49,7 @@ export * from './images';
 export * from './models';
 export * from './moderations';
 export * from './realtime';
+export * from './recharge';
 export * from './responses';
 export * from './threads';
 export * from './tool';

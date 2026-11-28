@@ -190,20 +190,18 @@ fn append_operations(
     }
 }
 
-/// Returns the literal text before the first `{parameter}` placeholder.
-fn static_path_prefix(pattern: &str) -> &str {
-    match pattern.find('{') {
-        Some(index) => &pattern[..index],
-        None => pattern,
-    }
-}
-
-/// Splits a pattern's literal leading text into segments the same way
+/// Splits a pattern's literal leading segments the same way
 /// [`sdkwork_cloudrouter_contract::matches_path_pattern`] splits a path.
+///
+/// A segment is literal only while it contains no `{parameter}` span. Mixed
+/// segments such as `/black_forest_labs/v1/flux-{model}` carry a literal prefix
+/// inside the value, so they must not be compared for equality here: doing so
+/// rejected every real request before the pattern matcher could accept it.
 fn static_path_segments(pattern: &str) -> Vec<String> {
-    static_path_prefix(pattern)
+    pattern
         .trim_matches('/')
         .split('/')
+        .take_while(|segment| !segment.contains('{'))
         .filter(|segment| !segment.is_empty())
         .map(str::to_owned)
         .collect()
@@ -358,6 +356,14 @@ mod tests {
             // The capability router has no separate music arm, so a music door
             // must still be claimed by the audio router — falling through to the
             // `_ => Llm` arm would route it as an LLM request.
+            (
+                // A vendor path may embed a parameter inside a literal segment
+                // (`flux-{model}`); the fast reject must stop before that
+                // segment and let the pattern matcher compare the prefix.
+                Method::POST,
+                "/black_forest_labs/v1/flux-3-image",
+                OpenApiCapability::Image,
+            ),
             (
                 Method::POST,
                 "/suno/v1/music/generations",

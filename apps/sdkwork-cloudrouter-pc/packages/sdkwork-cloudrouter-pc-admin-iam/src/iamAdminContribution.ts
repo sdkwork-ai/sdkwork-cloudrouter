@@ -63,6 +63,12 @@ export const IAM_ADMIN_MENU: CloudRouterIamAdminMenu = {
       ],
     },
     {
+      groupKey: 'admin.menu.iam.authentication',
+      items: [
+        { path: '/admin/iam/auth-settings', labelKey: 'admin.menu.iam.authSettings', icon: ShieldCheck },
+      ],
+    },
+    {
       groupKey: 'admin.menu.iam.accessControl',
       items: [
         { path: '/admin/iam/roles', labelKey: 'admin.menu.iam.roles', icon: UserCog },
@@ -148,6 +154,7 @@ export interface CloudRouterIamAdminPermissionHint {
 export const IAM_ADMIN_PERMISSION_HINTS: readonly CloudRouterIamAdminPermissionHint[] = [
   { pathPrefix: '/admin/iam', requiredPermission: 'iam.users.read' },
   { pathPrefix: '/admin/iam/users', requiredPermission: 'iam.users.read' },
+  { pathPrefix: '/admin/iam/auth-settings', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/iam/cloud-accounts', requiredPermission: 'iam.provider_accounts.read' },
   { pathPrefix: '/admin/iam/personnel', requiredPermission: 'iam.memberships.read' },
   { pathPrefix: '/admin/iam/tenants', requiredPermission: 'iam.tenants.read' },

@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "4d384e710655d39bd11a468768ea2c213baecdffcc679c1c1b99bb29c3510b3d",
+  "changeFingerprint": "651598aef6aed89d1f39570bb38c29eebd6dfd9794d3917aa50f89b4417b1545",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -32,7 +32,6 @@
           "lib/app_client.dart",
           "lib/src/api/ai.dart",
           "lib/src/api/api.dart",
-          "lib/src/api/chat.dart",
           "lib/src/api/iam.dart",
           "lib/src/api/notification.dart",
           "lib/src/api/paths.dart",
@@ -118,7 +117,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -143,7 +142,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -164,7 +163,7 @@
     "language": "flutter",
     "sdkType": "app",
     "protocol": "http",
-    "outputPath": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
+    "outputPath": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
     "packageName": "cloudrouter_app_sdk"
   },
   "versioning": {
@@ -172,21 +171,21 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 23,
-    "models": 97,
-    "apis": 6,
+    "totalFiles": 22,
+    "models": 136,
+    "apis": 5,
     "types": 1
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 23,
+    "writtenFiles": 22,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "4d384e710655d39bd11a468768ea2c213baecdffcc679c1c1b99bb29c3510b3d",
+    "changeFingerprint": "651598aef6aed89d1f39570bb38c29eebd6dfd9794d3917aa50f89b4417b1545",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -197,7 +196,6 @@
         "lib/cloudrouter_app_sdk.dart",
         "lib/src/api/ai.dart",
         "lib/src/api/api.dart",
-        "lib/src/api/chat.dart",
         "lib/src/api/iam.dart",
         "lib/src/api/notification.dart",
         "lib/src/api/paths.dart",
@@ -240,7 +238,6 @@
             "lib/app_client.dart",
             "lib/src/api/ai.dart",
             "lib/src/api/api.dart",
-            "lib/src/api/chat.dart",
             "lib/src/api/iam.dart",
             "lib/src/api/notification.dart",
             "lib/src/api/paths.dart",
@@ -313,7 +310,7 @@
           "title": "Unified package check",
           "required": true,
           "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
+          "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-flutter\\generated\\server-openapi",
           "command": "node",
           "args": [
             "./bin/publish-core.mjs",

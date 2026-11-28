@@ -6323,6 +6323,9 @@ importers:
       '@sdkwork/cloudrouter-pc-admin-cache':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-cache
+      '@sdkwork/cloudrouter-pc-admin-collection':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-admin-collection
       '@sdkwork/cloudrouter-pc-admin-community':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-community
@@ -7004,6 +7007,15 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-collection:
+    dependencies:
+      '@sdkwork/cloudrouter-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community:
     dependencies:

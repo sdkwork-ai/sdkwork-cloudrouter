@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
-    "@sdkwork/plugins-pc-admin": "workspace:*"
+    "@sdkwork/plugins-pc-admin": "workspace:*",
+    "sdkwork-drive-pc-upload-image": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=19.0.0 <20.0.0",

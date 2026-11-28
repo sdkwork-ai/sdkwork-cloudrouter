@@ -26,8 +26,18 @@ export type MembershipsAdminRecord = ApiRecord;
 /** Membership catalog classification (`token` Token Plan | `community` 圈子). */
 export type MembershipsAdminCategory = 'token' | 'community';
 
+/**
+ * Membership catalog audience.
+ *
+ * `personal` sells to a single user; `team` sells to an organization and is
+ * licensed per seat. The audience decides who can buy a plan and whether
+ * fulfillment creates a user or an organization subscription.
+ */
+export type MembershipsAdminAudience = 'personal' | 'team';
+
 export interface MembershipsAdminCatalogMeta {
   categories: MembershipsAdminCategory[];
+  audiences: MembershipsAdminAudience[];
   planStatuses: string[];
   packageStatuses: string[];
   packageGroupStatuses: string[];
@@ -39,6 +49,7 @@ export interface MembershipsAdminCatalogMeta {
 export interface MembershipsAdminPackageGroup {
   id: string;
   category: MembershipsAdminCategory;
+  audience: MembershipsAdminAudience;
   code: string;
   name: string;
   description?: string;
@@ -55,6 +66,7 @@ export interface MembershipsAdminPackageGroup {
 export interface MembershipsAdminPackageItem {
   id: string;
   category: MembershipsAdminCategory;
+  audience: MembershipsAdminAudience;
   packageNo: string;
   groupId: string;
   planId: string;
@@ -63,6 +75,8 @@ export interface MembershipsAdminPackageItem {
   priceAmount: string;
   currencyCode: string;
   durationDays: number;
+  /** Purchase recurrence cycle (`once` marks a one-time purchase). */
+  billingCycle: string;
   recurrenceCycle: string;
   discount: number;
   status: string;
@@ -71,6 +85,7 @@ export interface MembershipsAdminPackageItem {
 export interface MembershipsAdminPlanItem {
   id: string;
   category: MembershipsAdminCategory;
+  audience: MembershipsAdminAudience;
   planNo: string;
   levelCode: string;
   name: string;
@@ -78,6 +93,18 @@ export interface MembershipsAdminPlanItem {
   status: string;
   benefitCount: number;
   benefits: MembershipsAdminPlanBenefitInput[];
+  /**
+   * Number of non-disabled packages that sell this plan.
+   *
+   * A plan is only purchasable through packages, so this is its sellable
+   * coverage: zero means the plan exists but cannot be bought yet.
+   */
+  packageCount: number;
+  /**
+   * Purchase recurrence cycles of the packages that sell this plan, in
+   * canonical order (`once` | `day` | `week` | `month` | `quarter` | `year`).
+   */
+  billingCycles: string[];
   updatedAt: string;
   /** True when the row was auto-provisioned by an external integration. */
   autoProvisioned?: boolean;
@@ -146,6 +173,7 @@ export interface MembershipsAdminPlanBenefitInput {
 
 export interface MembershipsAdminPlanMutationInput {
   category: MembershipsAdminCategory;
+  audience: MembershipsAdminAudience;
   code: string;
   name: string;
   rank?: number;
@@ -155,6 +183,7 @@ export interface MembershipsAdminPlanMutationInput {
 
 export interface MembershipsAdminPlanCreateInput {
   category: MembershipsAdminCategory;
+  audience: MembershipsAdminAudience;
   code: string;
   name: string;
   rank?: number;
@@ -164,6 +193,8 @@ export interface MembershipsAdminPlanCreateInput {
 
 export interface MembershipsAdminPackageGroupMutationInput {
   category: MembershipsAdminCategory;
+  /** Catalog audience; defaults to `personal` when omitted. */
+  audience?: MembershipsAdminAudience;
   code: string;
   name: string;
   description?: string;
@@ -178,6 +209,12 @@ export interface MembershipsAdminPackageMutationInput {
   code: string;
   packageGroupId: string;
   planId: string;
+  /**
+   * Purchase recurrence cycle. Omitted values fall back to the duration-derived
+   * default on the server, which never implies `once`: a one-time purchase must
+   * be declared explicitly.
+   */
+  billingCycle?: string;
   name: string;
   priceAmount: string;
   currencyCode?: string;
@@ -206,6 +243,7 @@ export interface MembershipsAdminPackagesListParams {
   page?: number;
   pageSize?: number;
   category?: MembershipsAdminCategory;
+  audience?: MembershipsAdminAudience;
   packageGroupId?: string;
   planId?: string;
   status?: string;
@@ -215,13 +253,25 @@ export interface MembershipsAdminPackageGroupsListParams {
   page?: number;
   pageSize?: number;
   category?: MembershipsAdminCategory;
+  audience?: MembershipsAdminAudience;
   status?: string;
 }
+
+/**
+ * Derived purchase model of a plan.
+ *
+ * Not stored on the plan: the backend derives it from the plan's sellable
+ * package coverage, so the filter can be pushed to the server and stays correct
+ * across pagination.
+ */
+export type MembershipsAdminPurchaseModelFilter = 'subscription' | 'one_time';
 
 export interface MembershipsAdminPlansListParams {
   page?: number;
   pageSize?: number;
   category?: MembershipsAdminCategory;
+  audience?: MembershipsAdminAudience;
+  purchaseModel?: MembershipsAdminPurchaseModelFilter;
   status?: string;
 }
 
@@ -269,6 +319,10 @@ async function backendMembershipsPlansUpdate(
     planId,
     body,
   );
+}
+
+async function backendMembershipsPlansDelete(planId: string) {
+  return getSdkworkMembershipBackendSdkClient().memberships.plans.delete(planId);
 }
 
 async function backendMembershipsPackageGroupsList(params?: Parameters<BackendMembershipsService['packageGroups']['list']>[0]) {
@@ -404,6 +458,7 @@ export async function fetchMembershipAdminPackageGroups(
     page: requiredListPage(params.page),
     pageSize: requiredListPageSize(params.pageSize),
     category: params.category,
+    audience: params.audience,
     status: params.status,
   });
   return {
@@ -446,6 +501,7 @@ export async function fetchMembershipAdminPackages(
     page: requiredListPage(params.page),
     pageSize: requiredListPageSize(params.pageSize),
     category: params.category,
+    audience: params.audience,
     packageGroupId: params.packageGroupId,
     planId: params.planId,
     status: params.status,
@@ -489,6 +545,8 @@ export async function fetchMembershipAdminPlans(
     page: requiredListPage(params.page),
     pageSize: requiredListPageSize(params.pageSize),
     category: params.category,
+    audience: params.audience,
+    purchaseModel: params.purchaseModel,
     status: params.status,
   });
   return {
@@ -513,6 +571,20 @@ export async function updateMembershipAdminPlan(
     buildPlanMutationRequest(input),
   );
   return normalizeAdminPlan(readRequiredApiItem(result, 'Membership plan could not be updated'));
+}
+
+/**
+ * Disables a membership plan.
+ *
+ * The backend delete operation is a soft delete: the plan row moves to
+ * `disabled` and stops selling, while historical subscriptions keep resolving
+ * their plan. Admin surfaces label it as "Stop selling", never as a hard
+ * delete.
+ */
+export async function disableMembershipAdminPlan(planId: string): Promise<void> {
+  await backendMembershipsPlansDelete(
+    requiredMembershipText(planId, 'planId'),
+  );
 }
 
 export async function fetchMembershipAdminMembers(
@@ -563,6 +635,7 @@ export async function fetchMembershipAdminCatalogMeta(): Promise<MembershipsAdmi
   const item = readRequiredApiItem(result, 'Membership catalog meta could not be loaded') as ApiRecord;
   return {
     categories: readCategoryArray(item, 'categories'),
+    audiences: readAudienceArray(item, 'audiences'),
     planStatuses: readStringArray(item, 'planStatuses'),
     packageStatuses: readStringArray(item, 'packageStatuses'),
     packageGroupStatuses: readStringArray(item, 'packageGroupStatuses'),
@@ -652,9 +725,13 @@ function normalizeAdminPackage(value: unknown): MembershipsAdminPackageItem {
   const item = isRecord(value) ? value as ApiRecord : {} as ApiRecord;
   const code = requireRecordString(item, 'code', 'Membership package code is required');
   const durationDays = readNumber(item, 'durationDays', 30);
+  const recurrenceCycle = readString(item, 'billingCycle').trim()
+    || readString(item, 'recurrenceCycle').trim()
+    || inferAdminBillingCycle(durationDays);
   return {
     id: requireRecordString(item, 'id', 'Membership package id is required'),
     category: readAdminCategory(item),
+    audience: readAdminAudience(item),
     packageNo: code,
     groupId: requireRecordString(item, 'packageGroupId', 'Membership package group id is required'),
     planId: requireRecordString(item, 'planId', 'Membership package plan id is required'),
@@ -663,7 +740,8 @@ function normalizeAdminPackage(value: unknown): MembershipsAdminPackageItem {
     priceAmount: readString(item, 'priceAmount').trim() || '0',
     currencyCode: readString(item, 'currencyCode').trim() || 'CNY',
     durationDays,
-    recurrenceCycle: readString(item, 'recurrenceCycle').trim() || inferAdminBillingCycle(durationDays),
+    billingCycle: recurrenceCycle,
+    recurrenceCycle,
     discount: readNumber(item, 'discount', 100),
     status: readString(item, 'status') || 'active',
   };
@@ -678,6 +756,7 @@ function normalizeAdminPackageGroup(value: unknown): MembershipsAdminPackageGrou
   return {
     id: requireRecordString(item, 'id', 'Membership package group id is required'),
     category: readAdminCategory(item),
+    audience: readAdminAudience(item),
     code,
     name: requireRecordString(item, 'name', 'Membership package group name is required'),
     description,
@@ -770,6 +849,7 @@ function normalizeAdminPlan(value: unknown): MembershipsAdminPlanItem {
   return {
     id: requireRecordString(item, 'id', 'Membership plan id is required'),
     category: readAdminCategory(item),
+    audience: readAdminAudience(item),
     planNo: code,
     levelCode: code,
     name: requireRecordString(item, 'name', 'Membership plan name is required'),
@@ -777,9 +857,36 @@ function normalizeAdminPlan(value: unknown): MembershipsAdminPlanItem {
     status: readString(item, 'status') || 'active',
     benefitCount: benefits.length,
     benefits,
+    packageCount: readNumber(item, 'packageCount', 0),
+    billingCycles: readBillingCycleArray(item),
     updatedAt: readString(item, 'updatedAt').trim(),
     autoProvisioned: isAutoProvisionedDescription(readString(item, 'description').trim() || undefined),
   };
+}
+
+/**
+ * Reads the plan's purchase coverage.
+ *
+ * The backend already returns cycles in canonical order; sorting here keeps the
+ * UI independent of that guarantee, and unknown cycles are kept (at the end) so
+ * a future vocabulary extension is visible instead of silently dropped.
+ */
+function readBillingCycleArray(item: ApiRecord): string[] {
+  const value = item['billingCycles'];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const cycleOrder = ['once', 'day', 'week', 'month', 'quarter', 'year'];
+  return value
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .sort((left, right) => {
+      const leftIndex = cycleOrder.indexOf(left);
+      const rightIndex = cycleOrder.indexOf(right);
+      return (leftIndex < 0 ? cycleOrder.length : leftIndex)
+        - (rightIndex < 0 ? cycleOrder.length : rightIndex);
+    });
 }
 
 /** Detects the backend auto-provisioned placeholder marker. */
@@ -793,6 +900,23 @@ function readAdminCategory(item: ApiRecord): MembershipsAdminCategory {
     return 'community';
   }
   return 'token';
+}
+
+/**
+ * Reads the catalog audience.
+ *
+ * Older backends do not project the field; the fallback keeps rendering working
+ * instead of failing the whole list, and `personal` is the historical default.
+ */
+function readAdminAudience(item: ApiRecord): MembershipsAdminAudience {
+  const raw = readString(item, 'audience').trim().toLowerCase();
+  return raw === 'team' ? 'team' : 'personal';
+}
+
+function readAudienceArray(item: ApiRecord, key: string): MembershipsAdminAudience[] {
+  return readStringArray(item, key).filter(
+    (value): value is MembershipsAdminAudience => value === 'personal' || value === 'team',
+  );
 }
 
 function readCategoryArray(item: ApiRecord, key: string): MembershipsAdminCategory[] {
@@ -912,10 +1036,19 @@ function requiredMembershipCategory(value: string | undefined, fieldName: string
   throw new Error(`${fieldName} must be token or community`);
 }
 
+function requiredMembershipAudience(value: string | undefined, fieldName: string): MembershipsAdminAudience {
+  const normalized = requiredMembershipText(value, fieldName).toLowerCase();
+  if (normalized === 'personal' || normalized === 'team') {
+    return normalized;
+  }
+  throw new Error(`${fieldName} must be personal or team`);
+}
+
 function buildPlanMutationRequest(input: MembershipsAdminPlanMutationInput) {
   const rank = requiredNonNegativeInt64String(input.rank ?? 0, 'rank');
   return {
     category: requiredMembershipCategory(input.category, 'category'),
+    audience: requiredMembershipAudience(input.audience, 'audience'),
     code: requiredMembershipCode(input.code, 'code'),
     name: requiredMembershipText(input.name, 'name'),
     rank,
@@ -970,6 +1103,7 @@ function buildPlanBenefitMutationRequest(
 function buildPackageGroupMutationRequest(input: MembershipsAdminPackageGroupMutationInput) {
   return {
     category: requiredMembershipCategory(input.category, 'category'),
+    audience: requiredMembershipAudience(input.audience ?? 'personal', 'audience'),
     code: requiredMembershipCode(input.code, 'code'),
     name: requiredMembershipText(input.name, 'name'),
     description: optionalBoundedText(input.description),
@@ -981,11 +1115,13 @@ function buildPackageGroupMutationRequest(input: MembershipsAdminPackageGroupMut
 }
 
 function buildPackageMutationRequest(input: MembershipsAdminPackageMutationInput) {
+  const billingCycle = input.billingCycle?.trim().toLowerCase();
   return {
     category: requiredMembershipCategory(input.category, 'category'),
     code: requiredMembershipCode(input.code, 'code'),
     packageGroupId: requiredMembershipText(input.packageGroupId, 'packageGroupId'),
     planId: requiredMembershipText(input.planId, 'planId'),
+    ...(billingCycle ? { billingCycle: requiredBillingCycle(billingCycle) } : {}),
     name: requiredMembershipText(input.name, 'name'),
     priceAmount: requiredMoneyAmount(input.priceAmount, 'priceAmount'),
     currencyCode: normalizeCurrencyCode(input.currencyCode),
@@ -993,6 +1129,32 @@ function buildPackageMutationRequest(input: MembershipsAdminPackageMutationInput
     discount: requiredDiscountRange(input.discount, 'discount'),
     status: requiredResourceStatus(input.status, 'status'),
   };
+}
+
+/** Billing cycle vocabulary shared with the backend catalog CHECK constraint. */
+export type MembershipsAdminBillingCycle =
+  | 'once'
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'quarter'
+  | 'year';
+
+const MEMBERSHIP_BILLING_CYCLE_VALUES: readonly MembershipsAdminBillingCycle[] = [
+  'once',
+  'day',
+  'week',
+  'month',
+  'quarter',
+  'year',
+];
+
+function requiredBillingCycle(value: string): MembershipsAdminBillingCycle {
+  const match = MEMBERSHIP_BILLING_CYCLE_VALUES.find((cycle) => cycle === value);
+  if (!match) {
+    throw new Error('billingCycle must be once, day, week, month, quarter, or year');
+  }
+  return match;
 }
 
 function buildRechargePackageMutationRequest(

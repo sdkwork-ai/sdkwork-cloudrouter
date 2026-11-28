@@ -774,7 +774,6 @@ async fn upsert_usage_fact(
         .bind(&command.currency)
         .bind(&command.pricing_plan_code)
         .bind(&command.pricing_snapshot)
-        .bind(&command.pricing_layer)
         .bind(context.ended_at_epoch_millis)
         .bind(SETTLEMENT_PENDING)
         .bind(usage_idempotency_key(command))
@@ -962,7 +961,15 @@ async fn upsert_billing_ledger(
         .bind(currency)
         .bind(&command.billing_components)
         .bind(&command.pricing_snapshot)
+        // `UPSERT_RATING_DECISION` deliberately swaps the last two
+        // placeholders: `decided_at` is `$42` (so the millisecond timestamp
+        // reads uniformly with the other upserts) and `pricing_layer` is
+        // `$43`. Binding them in column order left `$43` unbound, so every
+        // rating decision write died with SQLSTATE 08P01 ("bind message
+        // supplies 42 parameters, but prepared statement requires 43") and
+        // the accounting retry path dead-lettered the usage record.
         .bind(context.ended_at_epoch_millis)
+        .bind(&command.pricing_layer)
         .fetch_optional(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert cloudrouter rating decision", error))?
@@ -1605,5 +1612,70 @@ mod tests {
             ..GatewayUsageRecordCommand::default()
         };
         assert_eq!(command_debit_points(&command), None);
+    }
+
+    /// Every accounting upsert must bind exactly the placeholders its SQL
+    /// declares.
+    ///
+    /// sqlx resolves `$N` placeholders at prepare time, so a statement whose
+    /// body grew a column without a matching `.bind(..)` compiles cleanly and
+    /// only fails on the wire with SQLSTATE 08P01 ("bind message supplies N
+    /// parameters, but prepared statement requires N+1"). Production hit
+    /// exactly that: `UPSERT_RATING_DECISION` gained a `pricing_layer`
+    /// placeholder while the binder still produced 42 of the 43 parameters, so
+    /// every rating decision write failed, the accounting retry dead-lettered
+    /// the usage fact, and readiness latched at 503. This guard pins the
+    /// parameter/bind symmetry for the whole module.
+    #[test]
+    fn every_accounting_upsert_binds_exactly_its_declared_placeholders() {
+        const SOURCE: &str = include_str!("gateway_usage_recorder.rs");
+        let statements = [
+            ("UPSERT_TRACE", UPSERT_TRACE),
+            ("UPSERT_USAGE_FACT", UPSERT_USAGE_FACT),
+            ("UPSERT_USAGE_MEASUREMENT", UPSERT_USAGE_MEASUREMENT),
+            ("UPSERT_RATING_DECISION", UPSERT_RATING_DECISION),
+            ("UPSERT_CHARGE_LINE", UPSERT_CHARGE_LINE),
+        ];
+        for (constant, sql) in statements {
+            let placeholders = sql
+                .split('$')
+                .skip(1)
+                .filter_map(|fragment| {
+                    let digits: String =
+                        fragment.chars().take_while(char::is_ascii_digit).collect();
+                    if digits.is_empty() {
+                        None
+                    } else {
+                        digits.parse::<usize>().ok()
+                    }
+                })
+                .max()
+                .unwrap_or(0);
+            assert!(
+                placeholders > 0,
+                "{constant} must declare at least one positional placeholder"
+            );
+
+            let marker = format!("({constant})");
+            let start = SOURCE
+                .find(&marker)
+                .unwrap_or_else(|| panic!("{constant} is not used by a query builder"));
+            let tail = &SOURCE[start..];
+            let end = [
+                ".execute(",
+                ".fetch_optional(",
+                ".fetch_one(",
+                ".fetch_all(",
+            ]
+            .iter()
+            .filter_map(|terminator| tail.find(terminator))
+            .min()
+            .unwrap_or_else(|| panic!("{constant} builder has no terminating call"));
+            let binds = tail[..end].matches(".bind(").count();
+            assert_eq!(
+                placeholders, binds,
+                "{constant} declares ${placeholders} placeholders but the builder binds {binds} parameters"
+            );
+        }
     }
 }

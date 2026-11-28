@@ -16,7 +16,7 @@ type OAuthProviderRegion = NonNullable<SdkworkAuthRuntimeConfig['oauthProviderRe
 type BackendQrLoginType = 'web' | 'official' | 'mini';
 
 const LOGIN_METHODS = ['password', 'emailCode', 'phoneCode', 'sessionBridge'] as const satisfies readonly LoginMethod[];
-const REGISTER_METHODS = ['email', 'phone'] as const satisfies readonly RegisterMethod[];
+const REGISTER_METHODS = ['username', 'email', 'phone'] as const satisfies readonly RegisterMethod[];
 const RECOVERY_METHODS = ['email', 'phone'] as const satisfies readonly RecoveryMethod[];
 const LEFT_RAIL_MODES = ['auto', 'highlights-only', 'qr-only'] as const satisfies readonly LeftRailMode[];
 const OAUTH_REGIONS = ['mainland', 'overseas'] as const satisfies readonly OAuthProviderRegion[];
@@ -29,7 +29,7 @@ export const DEFAULT_CLOUD_ROUTER_AUTH_RUNTIME_CONFIG: SdkworkAuthRuntimeConfig 
   oauthProviders: [],
   qrLoginEnabled: true,
   recoveryMethods: ['email', 'phone'],
-  registerMethods: ['email', 'phone'],
+  registerMethods: ['username', 'email', 'phone'],
   verificationPolicy: {
     emailCodeLoginEnabled: false,
     emailRegistrationVerificationRequired: false,
@@ -87,8 +87,8 @@ export function mergeCloudRouterAuthRuntimeConfig(record: ApiRecord): SdkworkAut
       ? {}
       : { oauthProviderRegion: readOptionalEnum(record, 'oauthRegion', OAUTH_REGIONS, 'Unsupported auth oauthRegion') }),
     qrLoginEnabled: readRequiredBoolean(record, 'qrLoginEnabled', 'Auth qrLoginEnabled flag is required'),
-    recoveryMethods: readRequiredEnumArray(record, 'recoveryMethods', RECOVERY_METHODS, 'Auth recoveryMethods are required', 'Unsupported auth recoveryMethods'),
-    registerMethods: readRequiredEnumArray(record, 'registerMethods', REGISTER_METHODS, 'Auth registerMethods are required', 'Unsupported auth registerMethods'),
+    recoveryMethods: readRequiredEnumArray(record, 'recoveryMethods', RECOVERY_METHODS, 'Auth recoveryMethods are required', 'Unsupported auth recoveryMethods', true),
+    registerMethods: readRequiredEnumArray(record, 'registerMethods', REGISTER_METHODS, 'Auth registerMethods are required', 'Unsupported auth registerMethods', true),
     verificationPolicy: readVerificationPolicy(record.verificationPolicy),
   };
 }
@@ -157,9 +157,10 @@ function readRequiredEnumArray<T extends string>(
   allowed: readonly T[],
   missingMessage: string,
   unsupportedPrefix: string,
+  allowEmpty = false,
 ): T[] {
   const values = record[key];
-  if (!Array.isArray(values) || values.length === 0) {
+  if (!Array.isArray(values) || (values.length === 0 && !allowEmpty)) {
     throw new Error(missingMessage);
   }
   const allowedValues = new Set<string>(allowed);

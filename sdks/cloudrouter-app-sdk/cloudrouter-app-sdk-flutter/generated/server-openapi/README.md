@@ -21,7 +21,7 @@ client.setAuthToken('your-auth-token');
 client.setAccessToken('your-access-token');
 
 // Use the SDK
-final result = await client.ai.channelGroupsList();
+final result = await client.ai.agentsList();
 print(result);
 ```
 
@@ -44,54 +44,61 @@ client.setHeader('X-Custom-Header', 'value');
 
 ## API Modules
 
-- `client.system` - system API
 - `client.ai` - ai API
-- `client.chat` - chat API
 - `client.iam` - iam API
+- `client.system` - system API
 - `client.notification` - notification API
 - `client.runtime` - runtime API
 
 ## Usage Examples
 
-### system
-```dart
-// List
-final result = await client.system.afterSalesRequestsList();
-print(result);
-```
-
 ### ai
 ```dart
-// List
-final result = await client.ai.channelGroupsList();
-print(result);
-```
-
-### chat
-```dart
-// List
-final result = await client.chat.conversationsList();
+// Resolve console hardware agents
+final result = await client.ai.agentsList();
 print(result);
 ```
 
 ### iam
 ```dart
-// List
-final result = await client.iam.apiKeysList();
+// List settings
+final result = await client.iam.usersSettingsRetrieve();
+print(result);
+```
+
+### system
+```dart
+// Resolve console hardware devices
+final result = await client.system.iotDevicesList();
 print(result);
 ```
 
 ### notification
 ```dart
-// List
-final result = await client.notification.notificationsList();
+// List notifications
+final params = <String, dynamic>{
+  'app_id': '1',
+  'include_archived': false,
+  'page': 3,
+  'page_size': 4,
+};
+final result = await client.notification.notificationsList(params);
 print(result);
 ```
 
 ### runtime
 ```dart
-// List
-final result = await client.runtime.invocationsList();
+// List runtime invocations
+final params = <String, dynamic>{
+  'page': 1,
+  'page_size': 2,
+  'conversation_id': '1',
+  'chat_turn_id': '1',
+  'agent_session_id': '1',
+  'runtime': 'runtime',
+  'status': 'pending',
+};
+final result = await client.runtime.invocationsList(params);
 print(result);
 ```
 
@@ -99,7 +106,7 @@ print(result);
 
 ```dart
 try {
-  final result = await client.ai.channelGroupsList();
+  final result = await client.ai.agentsList();
   print(result);
 } catch (e) {
   print('Error: $e');

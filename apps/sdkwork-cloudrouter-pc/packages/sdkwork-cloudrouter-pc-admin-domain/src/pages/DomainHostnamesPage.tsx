@@ -17,11 +17,13 @@ import {
   resolveProblemMessage,
 } from '@sdkwork/cloudroutes-pc-commons';
 
+import { DomainPaginationFooter } from '../components/DomainPaginationFooter';
 import {
   DomainField,
   DomainFormDialog,
   DomainIconButton,
   DomainInlineNotice,
+  DomainPageFilterNotice,
   DomainPrimaryButton,
   DomainSecondaryButton,
   DomainSectionIntro,
@@ -29,6 +31,7 @@ import {
   DomainStateRows,
   DomainStatusPill,
   DomainTableHead,
+  DomainTableRefreshingBar,
   DomainTextInput,
 } from '../components/domainUi';
 import { domainCenterService } from '../domainService';
@@ -44,7 +47,9 @@ import type {
   DomainHostname,
   DomainVerifyResult,
 } from '../domainTypes';
+import { useDomainPagedList } from '../hooks/useDomainPagedList';
 import { useDomainZones } from '../hooks/useDomainResources';
+import { useDomainTableScrollReset } from '../hooks/useDomainTableScrollReset';
 import {
   isValidRelativeName,
   normalizeRelativeName,
@@ -61,10 +66,6 @@ export function DomainHostnamesPage({
   const { t, i18n } = useTranslation();
   const zones = useDomainZones();
   const [selectedZoneId, setSelectedZoneId] = useState(initialZoneId ?? '');
-  const [hostnames, setHostnames] = useState<DomainHostname[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const [reloadToken, setReloadToken] = useState(0);
   const [search, setSearch] = useState('');
   const [verificationFilter, setVerificationFilter] = useState<'ALL' | 'PENDING' | 'VERIFIED'>('ALL');
   const [createOpen, setCreateOpen] = useState(false);
@@ -73,6 +74,7 @@ export function DomainHostnamesPage({
   const [verifyResult, setVerifyResult] = useState<{ hostname: DomainHostname; result: DomainVerifyResult } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const locale = i18n.resolvedLanguage ?? 'en-US';
 
   useEffect(() => {
@@ -85,46 +87,39 @@ export function DomainHostnamesPage({
     }
   }, [selectedZoneId, zones.data, zones.status]);
 
-  useEffect(() => {
-    if (!selectedZoneId) {
-      setHostnames([]);
-      return;
-    }
-    let active = true;
-    setLoading(true);
-    setError(null);
-    domainCenterService
-      .listAllHostnames(selectedZoneId)
-      .then((items) => {
-        if (active) {
-          setHostnames(items);
-        }
-      })
-      .catch((cause: unknown) => {
-        if (active) {
-          setError(cause);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedZoneId, reloadToken]);
+  const hostnames = useDomainPagedList<DomainHostname>({
+    queryKey: `hostnames|${selectedZoneId}`,
+    load: (page, pageSize) => domainCenterService.listHostnames(selectedZoneId, { page, pageSize }),
+    enabled: Boolean(selectedZoneId),
+  });
+  const viewportRef = useDomainTableScrollReset(hostnames.page);
 
   const selectedZone = zones.zoneById.get(selectedZoneId);
-  const filtered = useMemo(() => {
+  // The hostname endpoint accepts no filter parameters yet, so search and the
+  // verification filter scope the rows of the *current page*. The header states
+  // that explicitly instead of pretending to search the whole zone.
+  const visible = useMemo(() => {
     const keyword = search.trim().toLowerCase();
-    return hostnames.filter((hostname) => {
+    return hostnames.items.filter((hostname) => {
       if (verificationFilter !== 'ALL' && hostname.verificationStatus !== verificationFilter) {
         return false;
       }
       return keyword.length === 0 || hostname.hostname.toLowerCase().includes(keyword);
     });
-  }, [hostnames, search, verificationFilter]);
+  }, [hostnames.items, search, verificationFilter]);
+  const filtersActive = search.trim().length > 0 || verificationFilter !== 'ALL';
+  const clearFilters = () => {
+    setSearch('');
+    setVerificationFilter('ALL');
+  };
+  /** Folds a saved relative name back into the FQDN the operator recognises. */
+  const hostnameOf = (relativeName: string) => {
+    const apex = selectedZone?.apexHostname;
+    if (!apex) {
+      return relativeName;
+    }
+    return relativeName === '@' ? apex : `${relativeName}.${apex}`;
+  };
 
   const verifyHostname = async (hostname: DomainHostname) => {
     setBusyId(hostname.id);
@@ -132,7 +127,7 @@ export function DomainHostnamesPage({
     try {
       const result = await domainCenterService.verifyHostname(hostname.zoneId, hostname.id);
       setVerifyResult({ hostname, result });
-      setReloadToken((token) => token + 1);
+      hostnames.reload();
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.hostnames.errors.verify', 'Ownership could not be verified')),
@@ -150,8 +145,13 @@ export function DomainHostnamesPage({
     setActionError(null);
     try {
       await domainCenterService.deleteHostname(deleteTarget.zoneId, deleteTarget.id);
-      setHostnames((current) => current.filter((item) => item.id !== deleteTarget.id));
+      const removed = deleteTarget;
       setDeleteTarget(null);
+      hostnames.updateItems((items) => items.filter((item) => item.id !== removed.id));
+      hostnames.reload();
+      setNotice(
+        t('admin.domainCenter.hostnames.deleted', '{{hostname}} was deleted.', { hostname: removed.hostname }),
+      );
     } catch (cause) {
       setActionError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.hostnames.errors.delete', 'Hostname could not be deleted')),
@@ -171,8 +171,8 @@ export function DomainHostnamesPage({
         )}
         actions={
           <>
-            <DomainSecondaryButton onClick={() => setReloadToken((token) => token + 1)} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <DomainSecondaryButton onClick={hostnames.reload} disabled={hostnames.status === 'loading'}>
+              <RefreshCw className={`h-4 w-4 ${hostnames.status === 'loading' ? 'animate-spin' : ''}`} />
               {t('admin.domainCenter.actions.refresh', 'Refresh')}
             </DomainSecondaryButton>
             <DomainPrimaryButton onClick={() => setCreateOpen(true)} disabled={!selectedZoneId}>
@@ -184,54 +184,89 @@ export function DomainHostnamesPage({
       />
 
       {actionError ? <DomainInlineNotice tone="danger" title={actionError} /> : null}
+      {notice ? <DomainInlineNotice tone="success" title={notice} /> : null}
 
       <AdminTableShell
         className="min-h-0 flex-1 rounded-xl dark:bg-[#1a1a1a]"
+        aria-busy={hostnames.isRefreshing ? true : undefined}
+        viewportRef={viewportRef}
         header={
-          <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-              <div className="w-full shrink-0 md:w-64">
-                <DomainSelect
-                  value={selectedZoneId}
-                  onChange={setSelectedZoneId}
-                  options={
-                    zones.data.length === 0
-                      ? [{ value: '', label: t('admin.domainCenter.hostnames.noZone', 'No root domain') }]
-                      : zones.data.map((zone) => ({ value: zone.id, label: zone.apexHostname }))
-                  }
-                />
+          <>
+            {hostnames.isRefreshing ? (
+              <DomainTableRefreshingBar label={t('admin.domainCenter.pagination.loadingPage', 'Loading page')} />
+            ) : null}
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-3 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                <div className="w-full shrink-0 md:w-64">
+                  <DomainSelect
+                    value={selectedZoneId}
+                    onChange={setSelectedZoneId}
+                    options={
+                      zones.data.length === 0
+                        ? [{ value: '', label: t('admin.domainCenter.hostnames.noZone', 'No root domain') }]
+                        : zones.data.map((zone) => ({ value: zone.id, label: zone.apexHostname }))
+                    }
+                  />
+                </div>
+                <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-sm">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    title={t(
+                      'admin.domainCenter.hostnames.searchHint',
+                      'The API filters hostnames per page; this box searches the rows on the current page.',
+                    )}
+                    placeholder={t('admin.domainCenter.hostnames.search', 'Filter this page')}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
+                  />
+                </div>
+                <div className="w-full shrink-0 md:w-48">
+                  <DomainSelect
+                    value={verificationFilter}
+                    onChange={setVerificationFilter}
+                    options={[
+                      { value: 'ALL', label: t('admin.domainCenter.filters.allVerification', 'All verification states') },
+                      { value: 'PENDING', label: t('admin.domainCenter.status.pending', 'Pending') },
+                      { value: 'VERIFIED', label: t('admin.domainCenter.status.verified', 'Verified') },
+                    ]}
+                  />
+                </div>
               </div>
-              <div className="relative min-w-0 flex-1 md:min-w-[200px] md:max-w-sm">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder={t('admin.domainCenter.hostnames.search', 'Search hostname')}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-[#121212] dark:text-white"
-                />
-              </div>
-              <div className="w-full shrink-0 md:w-48">
-                <DomainSelect
-                  value={verificationFilter}
-                  onChange={setVerificationFilter}
-                  options={[
-                    { value: 'ALL', label: t('admin.domainCenter.filters.allVerification', 'All verification states') },
-                    { value: 'PENDING', label: t('admin.domainCenter.status.pending', 'Pending') },
-                    { value: 'VERIFIED', label: t('admin.domainCenter.status.verified', 'Verified') },
-                  ]}
-                />
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                {filtersActive ? (
+                  <DomainPageFilterNotice
+                    label={t(
+                      'admin.domainCenter.pagination.pageMatches',
+                      '{{matched}} of {{pageRowCount}} on this page',
+                      { matched: visible.length, pageRowCount: hostnames.items.length },
+                    )}
+                    clearLabel={t('admin.domainCenter.pagination.clearFilters', 'Clear filters')}
+                    onClear={clearFilters}
+                  />
+                ) : null}
               </div>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              {selectedZone
-                ? t('admin.domainCenter.hostnames.zoneHint', '{{count}} hostnames under {{apex}}', {
-                    count: Number(formatDomainCount(selectedZone.hostnameCount)),
-                    apex: selectedZone.apexHostname,
-                  })
-                : null}
-            </div>
-          </div>
+          </>
+        }
+        footer={
+          <DomainPaginationFooter
+            page={hostnames.page}
+            pageSize={hostnames.pageSize}
+            pageRowCount={hostnames.items.length}
+            totalItems={hostnames.totalItems}
+            totalPages={hostnames.totalPages}
+            hasMore={hostnames.hasMore}
+            disabled={hostnames.status === 'loading' || hostnames.isRefreshing}
+            totalSummary={hostnames.totalItems !== null
+              ? t('admin.domainCenter.hostnames.count', '{{count}} hostnames', { count: hostnames.totalItems })
+              : undefined}
+            onPreviousPage={hostnames.goToPreviousPage}
+            onNextPage={hostnames.goToNextPage}
+            onPageSelect={hostnames.goToPage}
+            onPageSizeChange={hostnames.changePageSize}
+          />
         }
       >
         <table className="w-full min-w-[1120px] whitespace-nowrap text-left text-sm">
@@ -258,21 +293,6 @@ export function DomainHostnamesPage({
                 onRetry={zones.reload}
                 retryLabel={t('common.actions.retry', 'Retry')}
               />
-            ) : loading ? (
-              <DomainStateRows
-                colSpan={9}
-                kind="loading"
-                title={t('admin.domainCenter.hostnames.loading', 'Loading hostnames...')}
-              />
-            ) : error ? (
-              <DomainStateRows
-                colSpan={9}
-                kind="error"
-                title={t('admin.domainCenter.hostnames.loadError', 'Hostnames could not be loaded')}
-                description={resolveProblemMessage(error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
-                onRetry={() => setReloadToken((token) => token + 1)}
-                retryLabel={t('common.actions.retry', 'Retry')}
-              />
             ) : !selectedZoneId ? (
               <DomainStateRows
                 colSpan={9}
@@ -287,19 +307,49 @@ export function DomainHostnamesPage({
                   onClick: () => onNavigate('zones'),
                 }}
               />
-            ) : filtered.length === 0 ? (
+            ) : hostnames.status === 'loading' ? (
+              <DomainStateRows
+                colSpan={9}
+                kind="loading"
+                title={t('admin.domainCenter.hostnames.loading', 'Loading hostnames...')}
+              />
+            ) : hostnames.status === 'error' ? (
+              <DomainStateRows
+                colSpan={9}
+                kind="error"
+                title={t('admin.domainCenter.hostnames.loadError', 'Hostnames could not be loaded')}
+                description={resolveProblemMessage(hostnames.error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
+                onRetry={hostnames.reload}
+                retryLabel={t('common.actions.retry', 'Retry')}
+              />
+            ) : visible.length === 0 ? (
               <DomainStateRows
                 colSpan={9}
                 kind="empty"
-                title={t('admin.domainCenter.hostnames.empty', 'No hostname found')}
-                description={t('admin.domainCenter.hostnames.emptyDesc', 'Add a hostname or adjust the filters.')}
-                action={{
-                  label: t('admin.domainCenter.hostnames.actions.create', 'Add hostname'),
-                  onClick: () => setCreateOpen(true),
-                }}
+                title={filtersActive
+                  ? t('admin.domainCenter.hostnames.emptyFiltered', 'No hostname on this page matches')
+                  : t('admin.domainCenter.hostnames.empty', 'No hostname found')}
+                description={filtersActive
+                  ? t(
+                      'admin.domainCenter.hostnames.emptyFilteredDesc',
+                      'The filter only covers the current page. Clear it, or move to another page.',
+                    )
+                  : t(
+                      'admin.domainCenter.hostnames.emptyDesc',
+                      'Add the first hostname for this root domain.',
+                    )}
+                action={filtersActive
+                  ? {
+                      label: t('admin.domainCenter.pagination.clearFilters', 'Clear filters'),
+                      onClick: clearFilters,
+                    }
+                  : {
+                      label: t('admin.domainCenter.hostnames.actions.create', 'Add hostname'),
+                      onClick: () => setCreateOpen(true),
+                    }}
               />
             ) : (
-              filtered.map((hostname) => (
+              visible.map((hostname) => (
                 <tr key={hostname.id} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -367,9 +417,16 @@ export function DomainHostnamesPage({
           zoneId={selectedZoneId}
           mode="create"
           onClose={() => setCreateOpen(false)}
-          onSaved={() => {
+          onSaved={(savedName) => {
             setCreateOpen(false);
-            setReloadToken((token) => token + 1);
+            // Hostnames sort apex-first and then alphabetically, so a new name can
+            // land on a page other than the one on screen. Say it was created.
+            setNotice(
+              t('admin.domainCenter.hostnames.created', '{{hostname}} was added.', {
+                hostname: hostnameOf(savedName),
+              }),
+            );
+            hostnames.reload();
           }}
         />
       ) : null}
@@ -380,9 +437,14 @@ export function DomainHostnamesPage({
           mode="rename"
           hostname={renameTarget}
           onClose={() => setRenameTarget(null)}
-          onSaved={() => {
+          onSaved={(savedName) => {
             setRenameTarget(null);
-            setReloadToken((token) => token + 1);
+            setNotice(
+              t('admin.domainCenter.hostnames.renamed', '{{hostname}} was renamed.', {
+                hostname: hostnameOf(savedName),
+              }),
+            );
+            hostnames.reload();
           }}
         />
       ) : null}
@@ -423,7 +485,8 @@ function HostnameFormDialog({
   mode: 'create' | 'rename';
   hostname?: DomainHostname;
   onClose: () => void;
-  onSaved: () => void;
+  /** Receives the saved relative name so the caller can confirm what was written. */
+  onSaved: (relativeName: string) => void;
 }) {
   const { t } = useTranslation();
   const [relativeName, setRelativeName] = useState(hostname?.relativeName ?? '');
@@ -445,13 +508,14 @@ function HostnameFormDialog({
     setBusy(true);
     setSubmitError(null);
     try {
-      const input = { relativeName: normalizeRelativeName(relativeName) };
+      const normalized = normalizeRelativeName(relativeName);
+      const input = { relativeName: normalized };
       if (mode === 'create') {
         await domainCenterService.createHostname(zoneId, input);
       } else if (hostname) {
         await domainCenterService.renameHostname(zoneId, hostname.id, input);
       }
-      onSaved();
+      onSaved(normalized);
     } catch (cause) {
       setSubmitError(
         resolveProblemMessage(cause, t, t('admin.domainCenter.hostnames.errors.save', 'Hostname could not be saved')),

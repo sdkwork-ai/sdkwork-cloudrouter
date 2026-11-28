@@ -314,7 +314,7 @@ test('admin host composes owner admin modules through the backend-admin core SDK
   // therefore not counted here. Current literal set: the first-party/relay
   // records, the federated capability records for skills, MCP, plugins, agents,
   // documents, and the application factory administration modules.
-  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 70);
+  assert.equal((hostSource.match(/\broute\('/g) ?? []).length, 75);
   assert.match(hostSource, /'sdkwork-models', '@sdkwork\/models-pc-admin-catalog', \['sdkwork-models-backend-sdk'\]/);
   assert.match(hostSource, /'sdkwork-cloudrouter', '@sdkwork\/cloudrouter-pc-admin-upstream', \['cloudrouter-backend-sdk'\]/);
   assert.match(

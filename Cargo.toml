@@ -14,6 +14,8 @@ members = [
     "crates/sdkwork-cloudrouter-security",
     "crates/sdkwork-cloudrouter-http",
     "crates/sdkwork-cloudrouter-observability",
+    "crates/sdkwork-cloudrouter-upstream-recharge",
+    "crates/sdkwork-cloudrouter-open-recharge-repository-sqlx",
     "crates/sdkwork-cloudrouter-test-support",
     "crates/sdkwork-routes-cloudrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
@@ -40,6 +42,7 @@ members = [
     "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx",
     "crates/sdkwork-cloudrouter-admin-dashboard-repository-sqlx",
     "crates/sdkwork-cloudrouter-admin-analytics-repository-sqlx",
+    "crates/sdkwork-cloudrouter-admin-data-center-repository-sqlx",
     "crates/sdkwork-cloudrouter-settlements-dashboard-repository-sqlx",
 ]
 default-members = [
@@ -54,6 +57,8 @@ default-members = [
     "crates/sdkwork-cloudrouter-security",
     "crates/sdkwork-cloudrouter-http",
     "crates/sdkwork-cloudrouter-observability",
+    "crates/sdkwork-cloudrouter-upstream-recharge",
+    "crates/sdkwork-cloudrouter-open-recharge-repository-sqlx",
     "crates/sdkwork-cloudrouter-test-support",
     "crates/sdkwork-routes-cloudrouter-llm-open-api",
     "crates/sdkwork-routes-image-open-api",
@@ -190,9 +195,12 @@ sdkwork-cloudrouter-paas-plugin = { path = "crates/sdkwork-cloudrouter-paas-plug
 sdkwork-cloudrouter-security = { path = "crates/sdkwork-cloudrouter-security" }
 sdkwork-cloudrouter-http = { path = "crates/sdkwork-cloudrouter-http" }
 sdkwork-cloudrouter-observability = { path = "crates/sdkwork-cloudrouter-observability" }
+sdkwork-cloudrouter-upstream-recharge = { path = "crates/sdkwork-cloudrouter-upstream-recharge" }
+sdkwork-cloudrouter-open-recharge-repository-sqlx = { path = "crates/sdkwork-cloudrouter-open-recharge-repository-sqlx" }
 sdkwork-cloudrouter-admin-monitor-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx" }
 sdkwork-cloudrouter-admin-dashboard-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-dashboard-repository-sqlx" }
 sdkwork-cloudrouter-admin-analytics-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-analytics-repository-sqlx" }
+sdkwork-cloudrouter-admin-data-center-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-data-center-repository-sqlx" }
 sdkwork-cloudrouter-settlements-dashboard-repository-sqlx = { path = "crates/sdkwork-cloudrouter-settlements-dashboard-repository-sqlx" }
 sdkwork-cloudrouter-test-support = { path = "crates/sdkwork-cloudrouter-test-support" }
 sdkwork-test = { path = "../sdkwork-test/rust" }

@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 45,
+  "materializedTableCount": 59,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -58,6 +58,10 @@
     "ai_chat_message",
     "ai_chat_message_part",
     "ai_chat_turn",
+    "ai_collection",
+    "ai_collection_category",
+    "ai_collection_item",
+    "ai_collection_release",
     "ai_config_change_event",
     "ai_config_version",
     "ai_metering_async_task",
@@ -86,6 +90,16 @@
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
     "ai_user_account_group_route",
+    "dc_audit_log",
+    "dc_data_source",
+    "dc_data_source_credential",
+    "dc_data_source_test_log",
+    "dc_dataset",
+    "dc_dataset_field",
+    "dc_export_job",
+    "dc_table",
+    "dc_table_column",
+    "dc_workspace",
     "iam_user_preference",
     "integration_webhook_endpoint",
     "storage_bucket",
@@ -103,6 +117,7 @@
     "ai_",
     "iam_user_",
     "integration_",
-    "storage_"
+    "storage_",
+    "dc_"
   ]
 }

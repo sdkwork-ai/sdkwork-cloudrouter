@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../http/client.dart';
 import '../models.dart';
 
@@ -10,25 +11,35 @@ class RuntimeApi {
 
   RuntimeApi(this._client);
 
-  /// List
-  Future<InvocationsListResult?> invocationsList() async {
-    final response = await _client.get(ApiPaths.appPath('/runtime/invocations'));
+  /// List runtime invocations
+  Future<InvocationsListResult?> invocationsList([int? page, int? pageSize, String? conversationId, String? chatTurnId, String? agentSessionId, String? runtime, String? status]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('page', page, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('conversation_id', conversationId, 'form', true, false, null),
+      QueryParameterSpec('chat_turn_id', chatTurnId, 'form', true, false, null),
+      QueryParameterSpec('agent_session_id', agentSessionId, 'form', true, false, null),
+      QueryParameterSpec('runtime', runtime, 'form', true, false, null),
+      QueryParameterSpec('status', status, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/runtime/invocations'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : InvocationsListResult.fromJson(map);
     })();
   }
 
-  /// Create
-  Future<InvocationsCreateResult?> invocationsCreate() async {
-    final response = await _client.post(ApiPaths.appPath('/runtime/invocations'));
+  /// Create runtime invocation
+  Future<InvocationsCreateResult?> invocationsCreate(CreateRuntimeInvocationRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.appPath('/runtime/invocations'), body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : InvocationsCreateResult.fromJson(map);
     })();
   }
 
-  /// Retrieve
+  /// Retrieve runtime invocation
   Future<InvocationsRetrieveResult?> invocationsRetrieve(String invocationId) async {
     final response = await _client.get(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}'));
     return (() {
@@ -37,57 +48,71 @@ class RuntimeApi {
     })();
   }
 
-  /// List
-  Future<ArtifactsListResult?> artifactsList(String invocationId) async {
-    final response = await _client.get(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/artifacts'));
+  /// List runtime artifacts
+  Future<InvocationsArtifactsListResult?> invocationsArtifactsList(String invocationId, [int? page, int? pageSize]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('page', page, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/artifacts'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : ArtifactsListResult.fromJson(map);
+      return map == null ? null : InvocationsArtifactsListResult.fromJson(map);
     })();
   }
 
-  /// Create
-  Future<ArtifactsCreateResult?> artifactsCreate(String invocationId) async {
-    final response = await _client.post(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/artifacts'));
+  /// Create runtime artifact
+  Future<InvocationsArtifactsCreateResult?> invocationsArtifactsCreate(String invocationId, CreateRuntimeArtifactRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/artifacts'), body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : ArtifactsCreateResult.fromJson(map);
+      return map == null ? null : InvocationsArtifactsCreateResult.fromJson(map);
     })();
   }
 
-  /// Create
-  Future<InvocationsSubmitResult?> invocationsSubmit(String invocationId) async {
-    final response = await _client.post(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/complete'));
+  /// Complete runtime invocation
+  Future<InvocationsCompletionsCreateResult?> invocationsCompletionsCreate(String invocationId, CompleteRuntimeInvocationRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/completions'), body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : InvocationsSubmitResult.fromJson(map);
+      return map == null ? null : InvocationsCompletionsCreateResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<InvocationEventsListResult?> invocationEventsList(String invocationId) async {
-    final response = await _client.get(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/events'));
+  /// List runtime events
+  Future<InvocationsEventsListResult?> invocationsEventsList(String invocationId, [int? page, int? pageSize]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('page', page, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/events'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : InvocationEventsListResult.fromJson(map);
+      return map == null ? null : InvocationsEventsListResult.fromJson(map);
     })();
   }
 
-  /// Create
-  Future<InvocationEventsCreateResult?> invocationEventsCreate(String invocationId) async {
-    final response = await _client.post(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/events'));
+  /// Create runtime event
+  Future<InvocationsEventsCreateResult?> invocationsEventsCreate(String invocationId, CreateRuntimeEventRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/events'), body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : InvocationEventsCreateResult.fromJson(map);
+      return map == null ? null : InvocationsEventsCreateResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<InvocationEventStreamsListResult?> invocationEventStreamsList(String invocationId) async {
-    final response = await _client.get(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/events/stream'));
+  /// Stream runtime events
+  Future<InvocationsEventsStreamRetrieveResult?> invocationsEventsStreamRetrieve(String invocationId, [String? afterEventNo]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('after_event_no', afterEventNo, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/runtime/invocations/${serializePathParameter(invocationId, const PathParameterSpec('invocationId', 'simple', false))}/events/stream'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : InvocationEventStreamsListResult.fromJson(map);
+      return map == null ? null : InvocationsEventsStreamRetrieveResult.fromJson(map);
     })();
   }
 }
@@ -163,3 +188,135 @@ String pathPrefix(String name, String style) {
 String pathPrimitivePrefix(String name, String style) {
   return style == 'matrix' ? ';$name=' : pathPrefix(name, style);
 }
+class QueryParameterSpec {
+  final String name;
+  final dynamic value;
+  final String style;
+  final bool explode;
+  final bool allowReserved;
+  final String? contentType;
+
+  const QueryParameterSpec(
+    this.name,
+    this.value,
+    this.style,
+    this.explode,
+    this.allowReserved,
+    this.contentType,
+  );
+}
+
+String buildQueryString(List<QueryParameterSpec> parameters) {
+  final pairs = <String>[];
+  for (final parameter in parameters) {
+    appendSerializedParameter(pairs, parameter);
+  }
+  return pairs.join('&');
+}
+
+void appendSerializedParameter(List<String> pairs, QueryParameterSpec parameter) {
+  final value = parameter.value;
+  if (value == null) return;
+
+  final contentType = parameter.contentType;
+  if (contentType != null && contentType.trim().isNotEmpty) {
+    pairs.add('${urlEncode(parameter.name)}=${encodeQueryValue(jsonEncode(value), parameter.allowReserved)}');
+    return;
+  }
+
+  final style = parameter.style.trim().isEmpty ? 'form' : parameter.style;
+  if (style == 'deepObject' && value is Map) {
+    appendDeepObjectParameter(pairs, parameter.name, value, parameter.allowReserved);
+    return;
+  }
+  if (value is Iterable) {
+    appendArrayParameter(pairs, parameter.name, value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+  if (value is Map) {
+    appendObjectParameter(pairs, parameter.name, value, style, parameter.explode, parameter.allowReserved);
+    return;
+  }
+  pairs.add('${urlEncode(parameter.name)}=${encodeQueryValue(value.toString(), parameter.allowReserved)}');
+}
+
+void appendArrayParameter(
+  List<String> pairs,
+  String name,
+  Iterable values,
+  String style,
+  bool explode,
+  bool allowReserved,
+) {
+  final serialized = values.where((item) => item != null).map((item) => item.toString()).toList();
+  if (serialized.isEmpty) return;
+  if (style == 'form' && explode) {
+    for (final item in serialized) {
+      pairs.add('${urlEncode(name)}=${encodeQueryValue(item, allowReserved)}');
+    }
+    return;
+  }
+  pairs.add('${urlEncode(name)}=${encodeQueryValue(serialized.join(','), allowReserved)}');
+}
+
+void appendObjectParameter(
+  List<String> pairs,
+  String name,
+  Map values,
+  String style,
+  bool explode,
+  bool allowReserved,
+) {
+  final serialized = <String>[];
+  values.forEach((key, value) {
+    if (value == null) return;
+    if (style == 'form' && explode) {
+      pairs.add('${urlEncode(key.toString())}=${encodeQueryValue(value.toString(), allowReserved)}');
+      return;
+    }
+    serialized.add(key.toString());
+    serialized.add(value.toString());
+  });
+  if (serialized.isNotEmpty) {
+    pairs.add('${urlEncode(name)}=${encodeQueryValue(serialized.join(','), allowReserved)}');
+  }
+}
+
+void appendDeepObjectParameter(List<String> pairs, String name, Map values, bool allowReserved) {
+  values.forEach((key, value) {
+    if (value != null) {
+      pairs.add('${urlEncode('$name[$key]')}=${encodeQueryValue(value.toString(), allowReserved)}');
+    }
+  });
+}
+
+String encodeQueryValue(String value, bool allowReserved) {
+  var encoded = urlEncode(value);
+  if (!allowReserved) return encoded;
+  const replacements = <String, String>{
+    '%3A': ':',
+    '%2F': '/',
+    '%3F': '?',
+    '%23': '#',
+    '%5B': '[',
+    '%5D': ']',
+    '%40': '@',
+    '%21': '!',
+    '%24': r'$',
+    '%26': '&',
+    '%27': "'",
+    '%28': '(',
+    '%29': ')',
+    '%2A': '*',
+    '%2B': '+',
+    '%2C': ',',
+    '%3B': ';',
+    '%3D': '=',
+  };
+  replacements.forEach((escaped, reserved) {
+    encoded = encoded.replaceAll(escaped, reserved);
+  });
+  return encoded;
+}
+
+String urlEncode(String value) => Uri.encodeQueryComponent(value);

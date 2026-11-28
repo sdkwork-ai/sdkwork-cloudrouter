@@ -144,28 +144,6 @@
       "packageByLanguage": {
         "typescript": "@sdkwork/drive-app-sdk"
       }
-    },
-    {
-      "workspace": "sdkwork-agents-app-sdk",
-      "role": "agents-app-capability",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/app/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/agents-app-sdk"
-      }
-    },
-    {
-      "workspace": "sdkwork-aiot-app-sdk",
-      "role": "aiot-app-capability",
-      "required": true,
-      "dependencyMode": "consumer-sdk",
-      "apiPrefix": "/app/v3/api",
-      "generatedTransportImportPolicy": "forbidden",
-      "packageByLanguage": {
-        "typescript": "@sdkwork/aiot-app-sdk"
-      }
     }
   ],
   "dependencyApiExports": [],

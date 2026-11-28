@@ -42,6 +42,83 @@ const CASH_TO_POINTS_RULE_NO: &str = "CASH_TO_POINTS";
 const PLATFORM_CATALOG_ORGANIZATION_ID: i64 = 0;
 const ENV_PLATFORM_CATALOG_TENANT_ID: &str = "SDKWORK_ORDER_PLATFORM_CATALOG_TENANT_ID";
 const DEFAULT_PLATFORM_CATALOG_TENANT_ID: i64 = 100_001;
+/// Bounded attempts for one account mutation that lost the wallet's optimistic
+/// version race.
+///
+/// Every hold/ledger write on `acct_account` is guarded by
+/// `UPDATE ... WHERE id = $1 AND version = $n`, and the account repository does
+/// not retry: the loser of a concurrent mutation on the SAME wallet receives
+/// `CommerceServiceErrorKind::Conflict` ("commerce account balance update was
+/// not applied atomically"). One wallet serves every parallel request of one
+/// user, so under concurrency this is a normal outcome, not an exceptional one.
+/// A settle that loses the race used to be dropped on the floor: the provider
+/// had already completed, so `BillingTransactionInterceptor::on_error`
+/// deliberately keeps the reservation, and the frozen amount stayed unavailable
+/// for the whole hold TTL while the invocation's usage fact stayed unbilled.
+/// Each mutation below is idempotent on its request-scoped key, so replaying it
+/// after a conflict either applies the same change against the fresh version or
+/// replays the already-committed outcome. The loop is bounded and jittered so a
+/// genuinely hot wallet cannot turn a request into an unbounded retry storm.
+const ACCOUNT_CONFLICT_ATTEMPTS: u32 = 4;
+/// Base backoff for a lost version race (doubles per attempt, plus jitter).
+const ACCOUNT_CONFLICT_BACKOFF_MS: u64 = 4;
+
+/// Whether an account-store rejection is the optimistic-version race that a
+/// replay can resolve.
+///
+/// Only `Conflict` qualifies, and only when the conflict is the wallet row's
+/// version race. An idempotency-key conflict ("used with a different request
+/// hash") is also reported as `Conflict`, but it is terminal: replaying the same
+/// key cannot make a drifted payload match. Insufficient balance, invalid state,
+/// validation and storage failures are terminal for the same reason — retrying a
+/// shortfall would only burn the request budget and delay the 402 the caller
+/// needs in order to recharge.
+fn is_account_conflict(error: &CommerceServiceError) -> bool {
+    matches!(error.kind(), CommerceServiceErrorKind::Conflict)
+        && !error.message().to_ascii_lowercase().contains("idempotency")
+}
+
+/// Replays an idempotent account mutation while it loses the wallet's version
+/// race, up to [`ACCOUNT_CONFLICT_ATTEMPTS`] total attempts.
+async fn retry_account_conflict<T, F, Fut>(mut attempt: F) -> Result<T, CommerceServiceError>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T, CommerceServiceError>>,
+{
+    let mut failures = 0_u32;
+    loop {
+        match attempt().await {
+            Ok(value) => return Ok(value),
+            Err(error)
+                if is_account_conflict(&error) && failures + 1 < ACCOUNT_CONFLICT_ATTEMPTS =>
+            {
+                failures += 1;
+                tracing::debug!(
+                    attempt = failures,
+                    error = %error.message(),
+                    "account balance mutation lost the version race; replaying the idempotent operation"
+                );
+                let shift = failures.min(4);
+                let backoff = ACCOUNT_CONFLICT_BACKOFF_MS
+                    .saturating_mul(1_u64 << shift)
+                    // Jitter keeps parallel losers of the same wallet from
+                    // replaying in lockstep and re-colliding on every round.
+                    .saturating_add(jitter_millis());
+                tokio::time::sleep(std::time::Duration::from_millis(backoff)).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+}
+
+/// Sub-millisecond jitter sourced from the runtime clock so the retry needs no
+/// extra dependency in this crate.
+fn jitter_millis() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| u64::from(elapsed.subsec_nanos()) % 5)
+        .unwrap_or(0)
+}
 
 pub struct PostgresGatewayBillingStore {
     pool: PgPool,
@@ -161,10 +238,15 @@ impl PostgresGatewayBillingStore {
         );
         let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
             .map_err(|error| DomainError::new(error.message().to_owned()))?;
-        self.account_store
-            .append_ledger_entry(command, hash)
-            .await
-            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        let account_store = Arc::clone(&self.account_store);
+        retry_account_conflict(|| {
+            let account_store = Arc::clone(&account_store);
+            let command = command.clone();
+            let hash = hash.clone();
+            async move { account_store.append_ledger_entry(command, hash).await }
+        })
+        .await
+        .map_err(|error| DomainError::new(error.message().to_owned()))?;
         Ok(())
     }
 
@@ -234,11 +316,20 @@ impl PostgresGatewayBillingStore {
         );
         let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
             .map_err(|error| DomainError::new(error.message().to_owned()))?;
-        let outcome = self
-            .account_store
-            .create_account_hold(command, hash)
-            .await
-            .map_err(account_hold_error)?;
+        // The command (and therefore the request hash) is built ONCE per hold.
+        // Rebuilding it inside the retry would recompute `expires_at` from a new
+        // `Utc::now()`, so a replayed precharge would arrive with a different
+        // hash and the account store would reject it as payload drift instead of
+        // replaying the hold that already exists.
+        let account_store = Arc::clone(&self.account_store);
+        let outcome = retry_account_conflict(|| {
+            let account_store = Arc::clone(&account_store);
+            let command = command.clone();
+            let hash = hash.clone();
+            async move { account_store.create_account_hold(command, hash).await }
+        })
+        .await
+        .map_err(account_hold_error)?;
         Ok(outcome.hold.uuid)
     }
 
@@ -266,7 +357,15 @@ impl PostgresGatewayBillingStore {
         );
         let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
             .map_err(|error| DomainError::new(error.message().to_owned()))?;
-        match self.account_store.release_account_hold(command, hash).await {
+        let account_store = Arc::clone(&self.account_store);
+        let outcome = retry_account_conflict(|| {
+            let account_store = Arc::clone(&account_store);
+            let command = command.clone();
+            let hash = hash.clone();
+            async move { account_store.release_account_hold(command, hash).await }
+        })
+        .await;
+        match outcome {
             Ok(_) => Ok(()),
             Err(error) => {
                 let message = error.message().to_owned();
@@ -505,7 +604,15 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
             );
             let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
                 .map_err(|error| DomainError::new(error.message().to_owned()))?;
-            match self.account_store.settle_account_hold(command, hash).await {
+            let account_store = Arc::clone(&self.account_store);
+            let settled = retry_account_conflict(|| {
+                let account_store = Arc::clone(&account_store);
+                let command = command.clone();
+                let hash = hash.clone();
+                async move { account_store.settle_account_hold(command, hash).await }
+            })
+            .await;
+            match settled {
                 Ok(_) => Ok(()),
                 Err(error) if hold_is_gone(error.message()) => {
                     // The hold expired (TTL sweep returned the frozen amount to
@@ -882,14 +989,116 @@ fn prepay_hold_ttl_from_value(value: Option<&str>) -> Duration {
 mod tests {
     use super::{
         hold_is_gone, parse_charge_mode, parse_settlement_mode, prepay_hold_ttl_from_value,
-        truncate_message, EXPIRED_HOLD_CAPTURE_SUFFIX,
+        retry_account_conflict, truncate_message, ACCOUNT_CONFLICT_ATTEMPTS,
+        EXPIRED_HOLD_CAPTURE_SUFFIX,
     };
     use chrono::Duration;
     use sdkwork_account_service::CreateAccountHoldCommand;
     use sdkwork_cloudrouter_router_service::ports::{
         CustomerChargeMode, GatewayBillingContext, GatewayBillingSettlementMode,
     };
-    use sdkwork_contract_service::{CommerceAccountAssetType, CommerceMoney};
+    use sdkwork_contract_service::{CommerceAccountAssetType, CommerceMoney, CommerceServiceError};
+    use std::sync::atomic::{AtomicU32, Ordering};
+
+    /// The account repository reports a lost optimistic version race as
+    /// `Conflict`; that is the only rejection a replay can resolve. A shortfall
+    /// or a validation failure is terminal, so retrying it would only delay the
+    /// caller's actionable 402.
+    #[tokio::test]
+    async fn conflict_retry_replays_only_lost_version_races() {
+        let attempts = AtomicU32::new(0);
+        let value = retry_account_conflict(|| {
+            let attempt = attempts.fetch_add(1, Ordering::SeqCst);
+            async move {
+                if attempt < 2 {
+                    Err(CommerceServiceError::conflict(
+                        "commerce account balance update was not applied atomically",
+                    ))
+                } else {
+                    Ok("hold-uuid")
+                }
+            }
+        })
+        .await
+        .expect("a replayed conflict resolves");
+        assert_eq!("hold-uuid", value);
+        assert_eq!(
+            3,
+            attempts.load(Ordering::SeqCst),
+            "two replays then success"
+        );
+
+        let shortfall_attempts = AtomicU32::new(0);
+        let error = retry_account_conflict(|| {
+            shortfall_attempts.fetch_add(1, Ordering::SeqCst);
+            async move {
+                Err::<(), _>(CommerceServiceError::insufficient_balance(
+                    "insufficient available balance for hold",
+                ))
+            }
+        })
+        .await
+        .expect_err("a shortfall stays an error");
+        assert!(matches!(
+            error.kind(),
+            sdkwork_contract_service::CommerceServiceErrorKind::InsufficientBalance
+        ));
+        assert_eq!(
+            1,
+            shortfall_attempts.load(Ordering::SeqCst),
+            "a terminal rejection must not be replayed"
+        );
+
+        // An idempotency-key drift is also a `Conflict`, but it is terminal: no
+        // replay can make a different payload match the stored hash.
+        let drift_attempts = AtomicU32::new(0);
+        let drift = retry_account_conflict(|| {
+            drift_attempts.fetch_add(1, Ordering::SeqCst);
+            async move {
+                Err::<(), _>(CommerceServiceError::conflict(
+                    "idempotency key was used with a different request hash",
+                ))
+            }
+        })
+        .await
+        .expect_err("an idempotency drift stays an error");
+        assert!(matches!(
+            drift.kind(),
+            sdkwork_contract_service::CommerceServiceErrorKind::Conflict
+        ));
+        assert_eq!(
+            1,
+            drift_attempts.load(Ordering::SeqCst),
+            "idempotency drift must not be replayed"
+        );
+    }
+
+    /// A persistently hot wallet must not turn one request into an unbounded
+    /// retry storm: the loop stops at the documented attempt budget and still
+    /// reports the conflict so the caller can fail closed.
+    #[tokio::test]
+    async fn conflict_retry_is_bounded_and_keeps_the_last_error() {
+        let attempts = AtomicU32::new(0);
+        let error = retry_account_conflict(|| {
+            attempts.fetch_add(1, Ordering::SeqCst);
+            async move {
+                Err::<(), _>(CommerceServiceError::conflict(
+                    "commerce account balance update was not applied atomically",
+                ))
+            }
+        })
+        .await
+        .expect_err("an exhausted retry budget surfaces the conflict");
+        assert!(matches!(
+            error.kind(),
+            sdkwork_contract_service::CommerceServiceErrorKind::Conflict
+        ));
+        assert_eq!(
+            ACCOUNT_CONFLICT_ATTEMPTS,
+            attempts.load(Ordering::SeqCst),
+            "the retry budget bounds every account mutation"
+        );
+    }
 
     /// The two account-domain messages that mean "there is nothing to capture".
     /// Both must route the measured spend to the ledger fallback instead of

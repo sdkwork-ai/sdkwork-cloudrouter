@@ -4,7 +4,7 @@ import { DataCenterService, type DataCenterTableSummary } from '../dataCenterSer
 import { useDataCenterQuery } from '../dataCenterHooks.ts';
 import {
   DataCenterPageHeader,
-  DataCenterPendingNotice,
+  DataCenterReadOnlyBadge,
   DataCenterTable,
   type DataCenterColumn,
 } from '../components/DataCenterShell.tsx';
@@ -39,17 +39,17 @@ export function DataCenterTablesPage() {
       key: 'columns',
       label: t('admin.dataCenter.tables.columns.columns', 'Columns'),
       align: 'right',
-      render: (row) => row.columnCount,
+      render: (row) => String(row.columnCount),
     },
     {
       key: 'owner',
       label: t('admin.dataCenter.tables.columns.owner', 'Owner'),
-      render: (row) => row.owner,
+      render: (row) => row.owner || '—',
     },
     {
       key: 'updatedAt',
       label: t('admin.dataCenter.tables.columns.updatedAt', 'Updated'),
-      render: (row) => row.updatedAt,
+      render: (row) => row.updatedAt || '—',
     },
   ];
 
@@ -59,11 +59,17 @@ export function DataCenterTablesPage() {
         title={t('admin.dataCenter.tables.title', 'Data Tables')}
         description={t(
           'admin.dataCenter.tables.description',
-          'Landed tables live in the dedicated dc_data schema. External tables stay read-only; only landed tables expose row-level maintenance with batch snapshots and rollback.',
+          'Landed tables live in the dedicated dc_data schema. External tables stay read-only; only landed tables expose row-level maintenance.',
+        )}
+        actions={(
+          <DataCenterReadOnlyBadge
+            reason={t(
+              'admin.dataCenter.tables.readOnlyReason',
+              'Table and row maintenance (DDL/DML change orders) is not part of this release.',
+            )}
+          />
         )}
       />
-
-      <DataCenterPendingNotice />
 
       <DataCenterTable
         columns={columns}
@@ -73,6 +79,7 @@ export function DataCenterTablesPage() {
         )}
         emptyTitle={t('admin.dataCenter.tables.empty.title', 'No tables yet')}
         loadingLabel={t('admin.dataCenter.loading', 'Loading…')}
+        onRetry={() => void load()}
         state={state}
       />
     </div>

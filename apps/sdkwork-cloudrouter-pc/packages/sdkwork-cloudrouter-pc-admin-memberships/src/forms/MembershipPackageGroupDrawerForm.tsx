@@ -7,21 +7,23 @@ import {
 } from '../components/MembershipFormControls';
 import { membershipStatusLabel } from '../components/MembershipStatusBadge';
 import { membershipCategoryLabel } from '../components/MembershipCategoryBadge';
+import { membershipAudienceLabel } from '../components/MembershipAudienceBadge';
 import {
   formatMembershipFormValidationError,
   parseOptionalNonNegativeIntegerField,
   parseRequiredPositiveIntegerField,
 } from './membershipFormValues';
 import type {
+  MembershipsAdminAudience,
   MembershipsAdminCategory,
   MembershipsAdminPackageGroup,
   MembershipsAdminPackageGroupMutationInput,
 } from '../membershipsService';
 
-type MembershipPackageGroupBillingCycle = 'one_time' | 'day' | 'week' | 'month' | 'quarter' | 'year';
+type MembershipPackageGroupBillingCycle = 'once' | 'day' | 'week' | 'month' | 'quarter' | 'year';
 
 const billingCycleDurationDays: Record<MembershipPackageGroupBillingCycle, string> = {
-  one_time: '30',
+  once: '30',
   day: '1',
   week: '7',
   month: '30',
@@ -46,6 +48,9 @@ export function MembershipPackageGroupDrawerForm({
   const [category, setCategory] = useState<MembershipsAdminCategory>(
     initialValue?.category === 'community' ? 'community' : 'token',
   );
+  const [audience, setAudience] = useState<MembershipsAdminAudience>(
+    initialValue?.audience === 'team' ? 'team' : 'personal',
+  );
   const [name, setName] = useState(initialValue?.name ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
   const [billingCycle, setBillingCycle] = useState<MembershipPackageGroupBillingCycle>(
@@ -60,7 +65,7 @@ export function MembershipPackageGroupDrawerForm({
   );
   const [error, setError] = useState<string | null>(null);
   const billingCycleOptions = [
-    { value: 'one_time', label: t('admin.commerce.memberships.groups.form.billingCycle.oneTime', 'One-time') },
+    { value: 'once', label: t('admin.commerce.memberships.groups.form.billingCycle.once', 'One-time') },
     { value: 'day', label: t('admin.commerce.memberships.groups.form.billingCycle.day', 'Daily') },
     { value: 'week', label: t('admin.commerce.memberships.groups.form.billingCycle.week', 'Weekly') },
     { value: 'month', label: t('admin.commerce.memberships.groups.form.billingCycle.month', 'Monthly') },
@@ -79,6 +84,7 @@ export function MembershipPackageGroupDrawerForm({
     try {
       await onSubmit({
         category,
+        audience,
         code: mode === 'edit' && initialValue?.code ? initialValue.code : buildPackageGroupCode(name),
         name,
         description,
@@ -112,6 +118,21 @@ export function MembershipPackageGroupDrawerForm({
         ]}
         onChange={(value) => setCategory(value as MembershipsAdminCategory)}
       />
+      <MembershipSelectField
+        label={t('admin.commerce.memberships.audience.label', 'Audience')}
+        value={audience}
+        options={[
+          { value: 'personal', label: membershipAudienceLabel('personal', t) },
+          { value: 'team', label: membershipAudienceLabel('team', t) },
+        ]}
+        onChange={(value) => setAudience(value === 'team' ? 'team' : 'personal')}
+      />
+      <p className="-mt-2 text-[11px] text-slate-400 dark:text-slate-500">
+        {t(
+          'admin.commerce.memberships.groups.form.audienceHint',
+          'Packages in this group inherit the audience; it must match the audience of the plans they sell.',
+        )}
+      </p>
       <MembershipTextField label={t('admin.commerce.memberships.groups.form.description', 'Description')} value={description} onChange={setDescription} />
       <div className="grid grid-cols-2 gap-4">
         <MembershipSelectField
@@ -163,13 +184,16 @@ function buildPackageGroupCode(name: string): string {
 
 function normalizeBillingCycle(value: string | undefined): MembershipPackageGroupBillingCycle {
   switch (value) {
-    case 'one_time':
+    case 'once':
     case 'day':
     case 'week':
     case 'month':
     case 'quarter':
     case 'year':
       return value;
+    // Legacy admin forms persisted the retired `one_time` spelling.
+    case 'one_time':
+      return 'once';
     default:
       return 'month';
   }

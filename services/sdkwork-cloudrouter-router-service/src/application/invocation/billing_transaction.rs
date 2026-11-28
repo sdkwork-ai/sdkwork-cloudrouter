@@ -168,51 +168,36 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
                 "billing precharge reserving"
             );
-            // Concurrent invocations on the same wallet race the optimistic
-            // version check; the precharge is idempotent (request-scoped
-            // transaction id), so a bounded retry re-reads the fresh balance
-            // and applies cleanly instead of failing the whole invocation.
-            let mut precharge_attempt = 0_u32;
-            loop {
+            // Concurrent invocations on the same wallet race the account's
+            // optimistic version check. The billing store replays the idempotent
+            // operation on that conflict itself, with the command — and therefore
+            // the request hash — built once. Retrying here would rebuild the hold
+            // command with a new `expires_at`, which the account store classifies
+            // as payload drift for the same idempotency key: the retry fails while
+            // the hold created by the first attempt stays frozen and its id is
+            // never recorded on the invocation, so no later hook can settle or
+            // release it.
+            let outcome = if invocation.charging.settlement_mode
+                == crate::ports::GatewayBillingSettlementMode::Synchronous
+            {
                 // Synchronous billing freezes the reservation into an account
                 // hold (no ledger entry) so the wallet history ends up with a
                 // single actual-consumption debit rather than a provisional
                 // "消费" followed by a "返还" correction. Asynchronous billing
                 // keeps the legacy direct precharge ledger; the usage
                 // settlement worker reconciles those reservations itself.
-                let outcome = if invocation.charging.settlement_mode
-                    == crate::ports::GatewayBillingSettlementMode::Synchronous
-                {
-                    self.store
-                        .precharge_hold(context.clone(), amount.clone())
-                        .await
-                        .map(Some)
-                } else {
-                    self.store
-                        .precharge(context.clone(), amount.clone())
-                        .await
-                        .map(|()| None)
-                };
-                match outcome {
-                    Ok(hold_id) => {
-                        invocation.charging.hold_id = hold_id;
-                        break;
-                    }
-                    Err(error) if precharge_attempt < 2 => {
-                        precharge_attempt += 1;
-                        tracing::debug!(
-                            stage = "billing_precharge",
-                            attempt = precharge_attempt,
-                            %error,
-                            request_id = %invocation.request.request_id,
-                            trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
-                            "billing precharge conflict; retrying"
-                        );
-                        continue;
-                    }
-                    Err(error) => return Err(billing_port_error(error)),
-                }
-            }
+                self.store
+                    .precharge_hold(context.clone(), amount.clone())
+                    .await
+                    .map(Some)
+            } else {
+                self.store
+                    .precharge(context.clone(), amount.clone())
+                    .await
+                    .map(|()| None)
+            };
+            let hold_id = outcome.map_err(billing_port_error)?;
+            invocation.charging.hold_id = hold_id;
             invocation.charging.reserved_amount = Some(amount);
             tracing::debug!(
                 stage = "billing_precharge",

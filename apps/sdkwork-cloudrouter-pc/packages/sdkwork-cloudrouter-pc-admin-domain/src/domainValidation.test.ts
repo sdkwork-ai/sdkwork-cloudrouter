@@ -15,16 +15,22 @@ import {
   toCreateZoneInput,
   toDnsRecordInput,
   toVerificationFileInput,
+  toZoneFilingInput,
+  toZonePoliceFilingInput,
   validateCertificateForm,
   validateCloudAccountForm,
   validateDnsRecordForm,
   validateVerificationFileForm,
   validateZoneForm,
+  validateZoneFilingForm,
+  validateZonePoliceFilingForm,
   type DomainCertificateForm,
   type DomainCloudAccountForm,
   type DomainDnsRecordForm,
   type DomainVerificationFileForm,
+  type DomainZoneFilingForm,
   type DomainZoneForm,
+  type DomainZonePoliceFilingForm,
 } from './domainValidation';
 
 const validZone: DomainZoneForm = {
@@ -156,6 +162,69 @@ describe('form validation', () => {
     });
     expect(errors.apexHostname).toBe('admin.domainCenter.validation.invalidApexHostname');
     expect(errors.displayName).toBe('admin.domainCenter.validation.tooLong');
+  });
+
+  it('validates and normalizes optional root-domain filing fields', () => {
+    const filing: DomainZoneFilingForm = {
+      recordNumber: ' 京ICP备12345678号-1 ',
+      entityName: ' Example Co., Ltd. ',
+      websiteName: ' Example ',
+      reviewDate: '2024-02-29',
+    };
+    expect(validateZoneFilingForm(filing, '2026-11-28')).toEqual({});
+    expect(toZoneFilingInput(filing)).toEqual({
+      recordNumber: '京ICP备12345678号-1',
+      entityName: 'Example Co., Ltd.',
+      websiteName: 'Example',
+      reviewDate: '2024-02-29',
+    });
+    expect(toZoneFilingInput({ recordNumber: '', entityName: ' ', websiteName: '', reviewDate: '' })).toEqual({});
+  });
+
+  it('rejects over-long filing values, invalid dates, and future review dates', () => {
+    const errors = validateZoneFilingForm({
+      recordNumber: 'x'.repeat(65),
+      entityName: 'x'.repeat(201),
+      websiteName: 'x'.repeat(201),
+      reviewDate: '2023-02-29',
+    }, '2026-11-28');
+    expect(errors.recordNumber).toBe('admin.domainCenter.validation.filingRecordNumberTooLong');
+    expect(errors.entityName).toBe('admin.domainCenter.validation.filingEntityNameTooLong');
+    expect(errors.websiteName).toBe('admin.domainCenter.validation.filingWebsiteNameTooLong');
+    expect(errors.reviewDate).toBe('admin.domainCenter.validation.invalidFilingReviewDate');
+    expect(validateZoneFilingForm({
+      recordNumber: '', entityName: '', websiteName: '', reviewDate: '2026-11-29',
+    }, '2026-11-28').reviewDate).toBe('admin.domainCenter.validation.invalidFilingReviewDate');
+  });
+
+  it('validates and normalizes optional public security filing fields', () => {
+    const policeFiling: DomainZonePoliceFilingForm = {
+      recordNumber: ' 京公网安备11010502000000号 ',
+      recordUrl: ' https://beian.mps.gov.cn/#record ',
+    };
+    expect(validateZonePoliceFilingForm(policeFiling)).toEqual({});
+    expect(toZonePoliceFilingInput(policeFiling)).toEqual({
+      recordNumber: '京公网安备11010502000000号',
+      recordUrl: 'https://beian.mps.gov.cn/#record',
+    });
+    expect(toZonePoliceFilingInput({ recordNumber: ' ', recordUrl: '' })).toEqual({});
+    expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl: '' })).toEqual({});
+    expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl: 'http://example.com/record' })).toEqual({});
+  });
+
+  it('rejects over-long or non-HTTP public security filing values', () => {
+    expect(validateZonePoliceFilingForm({
+      recordNumber: 'x'.repeat(65),
+      recordUrl: '',
+    }).recordNumber).toBe('admin.domainCenter.validation.policeFilingRecordNumberTooLong');
+    expect(validateZonePoliceFilingForm({
+      recordNumber: '',
+      recordUrl: `https://example.com/${'x'.repeat(2048)}`,
+    }).recordUrl).toBe('admin.domainCenter.validation.policeFilingRecordUrlTooLong');
+    for (const recordUrl of ['example.com', 'javascript:alert(1)', 'ftp://example.com', 'https://']) {
+      expect(validateZonePoliceFilingForm({ recordNumber: '', recordUrl }).recordUrl)
+        .toBe('admin.domainCenter.validation.invalidPoliceFilingRecordUrl');
+    }
   });
 
   it('accepts a valid A record and converts optional fields', () => {

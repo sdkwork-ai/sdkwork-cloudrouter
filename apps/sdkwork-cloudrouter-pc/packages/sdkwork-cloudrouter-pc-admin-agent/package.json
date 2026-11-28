@@ -4,7 +4,7 @@
   "private": true,
   "license": "SEE LICENSE IN ../../../../LICENSE",
   "type": "module",
-  "description": "SDKWork Cloud Router PC admin console Agents management integration block.",
+  "description": "SDKWork Cloud Router PC admin console Agents management and visibility integration block.",
   "main": "./src/index.tsx",
   "module": "./src/index.tsx",
   "types": "./src/index.tsx",
@@ -13,6 +13,11 @@
       "types": "./src/index.tsx",
       "import": "./src/index.tsx",
       "default": "./src/index.tsx"
+    },
+    "./route": {
+      "types": "./src/agentVisibilityRoute.ts",
+      "import": "./src/agentVisibilityRoute.ts",
+      "default": "./src/agentVisibilityRoute.ts"
     }
   },
   "scripts": {
@@ -25,7 +30,8 @@
   },
   "peerDependencies": {
     "react": ">=19.0.0 <20.0.0",
-    "react-dom": ">=19.0.0 <20.0.0"
+    "react-dom": ">=19.0.0 <20.0.0",
+    "react-router-dom": ">=7.0.0 <8.0.0"
   },
   "devDependencies": {
     "@types/react": "catalog:",

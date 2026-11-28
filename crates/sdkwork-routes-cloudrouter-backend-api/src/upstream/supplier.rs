@@ -156,6 +156,9 @@ struct SupplierResponse {
     status: i32,
     version: String,
     updated_at: String,
+    balance_amount: Option<String>,
+    balance_currency: Option<String>,
+    balance_updated_at: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1007,6 +1010,9 @@ impl From<AdminUpstreamSupplierItem> for SupplierResponse {
             status: item.status,
             version: item.version.to_string(),
             updated_at: item.updated_at,
+            balance_amount: item.balance_amount,
+            balance_currency: item.balance_currency,
+            balance_updated_at: item.balance_checked_at,
         }
     }
 }

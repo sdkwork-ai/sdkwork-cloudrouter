@@ -13,6 +13,7 @@ import {
   isCertificateIssuanceFailure,
   isValidCertificateIdentifier,
   isWildcardCertificateIdentifier,
+  manualChallengeActionState,
   manualTxtCopyAllPayload,
   normalizeCertificateIdentifier,
   normalizePresentationMode,
@@ -240,6 +241,19 @@ describe('manual DNS-01 presentation', () => {
     expect(challengeNeedsOperatorAction('PROCESSING')).toBe(true);
     expect(challengeNeedsOperatorAction(undefined)).toBe(true);
     expect(challengeNeedsOperatorAction('VALID')).toBe(false);
+  });
+
+  it('aggregates wildcard and apex challenge states without hiding a failure', () => {
+    const rows = buildManualTxtRows(manual);
+    expect(manualChallengeActionState(rows)).toBe('pending');
+    expect(manualChallengeActionState(rows.map((row) => ({ ...row, status: 'VALID' })))).toBe('valid');
+    expect(
+      manualChallengeActionState(rows.map((row, index) => ({
+        ...row,
+        status: index === 0 ? 'VALID' : 'INVALID',
+      }))),
+    ).toBe('invalid');
+    expect(manualChallengeActionState([])).toBe('pending');
   });
 
   it('counts down to the presentation deadline and formats it', () => {

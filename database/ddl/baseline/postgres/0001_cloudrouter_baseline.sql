@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: ea595b61127842a4510be4e58f764c5a147abbacb6380d6743cbac7a532a9281.
+-- Registry SHA-256: 140c8f3941e13b4e0c0b1bc4c051f84db086c0e1370cc08ba8deb5af2a4180dd.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -296,6 +296,146 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_chat_message_part_scope_id ON ai_chat_me
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_chat_message_part_scope_uuid ON ai_chat_message_part (tenant_id, organization_id, user_id, uuid);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_chat_message_part_scope_message_no ON ai_chat_message_part (tenant_id, organization_id, user_id, message_id, part_no);
 CREATE INDEX IF NOT EXISTS idx_ai_chat_message_part_item ON ai_chat_message_part (tenant_id, organization_id, user_id, item_id, message_id, part_no, id);
+
+CREATE TABLE IF NOT EXISTS ai_collection_category (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    collection_kind VARCHAR(32) NOT NULL,
+    category_code VARCHAR(128) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(4000) NOT NULL DEFAULT '',
+    icon_ref VARCHAR(512) NOT NULL DEFAULT '',
+    parent_id BIGINT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT ck_ai_collection_category_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_collection_category_parent FOREIGN KEY (parent_id) REFERENCES ai_collection_category (id) ON DELETE SET NULL,
+    CONSTRAINT ck_ai_collection_category_kind CHECK (collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin')),
+    CONSTRAINT ck_ai_collection_category_code CHECK ((category_code ~ '^[a-z0-9][a-z0-9_-]{0,127}$' OR category_code ~ '^[a-z0-9][a-z0-9_-]{0,99}#deleted-[0-9]{1,19}$')),
+    CONSTRAINT ck_ai_collection_category_values CHECK (length(trim(name)) > 0 AND sort_order >= 0 AND (parent_id IS NULL OR parent_id > 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_collection_category_scope_code ON ai_collection_category (tenant_id, organization_id, collection_kind, category_code);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_category_scope_kind ON ai_collection_category (tenant_id, organization_id, collection_kind, sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_category_parent ON ai_collection_category (parent_id);
+
+CREATE TABLE IF NOT EXISTS ai_collection (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    collection_key VARCHAR(128) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    summary VARCHAR(1024) NOT NULL DEFAULT '',
+    description VARCHAR(8000) NOT NULL DEFAULT '',
+    icon_ref VARCHAR(512) NOT NULL DEFAULT '',
+    collection_kind VARCHAR(32) NOT NULL,
+    category_id BIGINT,
+    visibility VARCHAR(32) NOT NULL DEFAULT 'organization',
+    publish_status VARCHAR(32) NOT NULL DEFAULT 'draft',
+    published_at TIMESTAMPTZ,
+    item_count BIGINT NOT NULL DEFAULT 0,
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    featured BOOLEAN NOT NULL DEFAULT false,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    owner_user_id BIGINT NOT NULL DEFAULT 0,
+    created_by BIGINT NOT NULL DEFAULT 0,
+    updated_by BIGINT NOT NULL DEFAULT 0,
+    CONSTRAINT ck_ai_collection_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_collection_category FOREIGN KEY (category_id) REFERENCES ai_collection_category (id) ON DELETE RESTRICT,
+    CONSTRAINT ck_ai_collection_kind CHECK (collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin')),
+    CONSTRAINT ck_ai_collection_visibility CHECK (visibility IN ('private', 'organization', 'public')),
+    CONSTRAINT ck_ai_collection_publish_status CHECK (publish_status IN ('draft', 'published', 'archived')),
+    CONSTRAINT ck_ai_collection_values CHECK (length(trim(collection_key)) > 0 AND length(trim(name)) > 0 AND item_count >= 0 AND sort_order >= 0 AND (publish_status <> 'published' OR published_at IS NOT NULL)),
+    CONSTRAINT ck_ai_collection_tags_array CHECK (jsonb_typeof(tags) = 'array')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_collection_scope_key ON ai_collection (tenant_id, organization_id, collection_key);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_scope_kind_status ON ai_collection (tenant_id, organization_id, collection_kind, publish_status, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_scope_category ON ai_collection (tenant_id, organization_id, category_id, sort_order, id);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_scope_featured ON ai_collection (tenant_id, organization_id, featured, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS ai_collection_item (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    collection_id BIGINT NOT NULL,
+    collection_kind VARCHAR(32) NOT NULL,
+    capability_type VARCHAR(32) NOT NULL,
+    capability_key VARCHAR(191) NOT NULL,
+    capability_name VARCHAR(255) NOT NULL DEFAULT '',
+    capability_version VARCHAR(64) NOT NULL DEFAULT '',
+    capability_icon_ref VARCHAR(512) NOT NULL DEFAULT '',
+    config JSONB NOT NULL DEFAULT '{}'::jsonb,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    CONSTRAINT ck_ai_collection_item_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_collection_item_collection FOREIGN KEY (collection_id) REFERENCES ai_collection (id) ON DELETE CASCADE,
+    CONSTRAINT ck_ai_collection_item_capability_type CHECK (capability_type IN ('skill', 'mcp', 'agent', 'plugin')),
+    CONSTRAINT ck_ai_collection_item_kind_matches CHECK (collection_kind IN ('mixed', 'skill', 'mcp', 'agent', 'plugin') AND (collection_kind = 'mixed' OR collection_kind = capability_type)),
+    CONSTRAINT ck_ai_collection_item_values CHECK (length(trim(capability_key)) > 0 AND sort_order >= 0),
+    CONSTRAINT ck_ai_collection_item_config_object CHECK (jsonb_typeof(config) = 'object')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_collection_item_capability ON ai_collection_item (collection_id, capability_type, capability_key);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_item_order ON ai_collection_item (collection_id, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS ai_collection_release (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    collection_id BIGINT NOT NULL,
+    release_no INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
+    item_count BIGINT NOT NULL DEFAULT 0,
+    item_snapshot JSONB NOT NULL DEFAULT '[]'::jsonb,
+    release_status VARCHAR(32) NOT NULL DEFAULT 'published',
+    notes VARCHAR(1024) NOT NULL DEFAULT '',
+    published_by BIGINT NOT NULL DEFAULT 0,
+    published_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_ai_collection_release_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT fk_ai_collection_release_collection FOREIGN KEY (collection_id) REFERENCES ai_collection (id) ON DELETE CASCADE,
+    CONSTRAINT ck_ai_collection_release_values CHECK (release_no > 0 AND item_count >= 0 AND release_status IN ('published', 'revoked')),
+    CONSTRAINT ck_ai_collection_release_snapshot_array CHECK (jsonb_typeof(item_snapshot) = 'array')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_collection_release_order ON ai_collection_release (collection_id, release_no);
+CREATE INDEX IF NOT EXISTS idx_ai_collection_release_published ON ai_collection_release (collection_id, published_at, id);
 
 CREATE TABLE IF NOT EXISTS ai_config_change_event (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1961,6 +2101,296 @@ CREATE TABLE IF NOT EXISTS commerce_refund_item (
 );
 
 CREATE INDEX IF NOT EXISTS idx_commerce_refund_item_refund ON commerce_refund_item (tenant_id, refund_id);
+
+CREATE TABLE IF NOT EXISTS dc_audit_log (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT,
+    request_id VARCHAR(128),
+    trace_id VARCHAR(128),
+    payload_hash VARCHAR(128),
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    retention_until TIMESTAMPTZ,
+    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    actor VARCHAR(128) NOT NULL DEFAULT '',
+    audit_action VARCHAR(24) NOT NULL,
+    object_type VARCHAR(32) NOT NULL DEFAULT '',
+    object_key VARCHAR(256) NOT NULL DEFAULT '',
+    row_count BIGINT NOT NULL DEFAULT 0,
+    audit_result VARCHAR(16) NOT NULL,
+    detail VARCHAR(512) NOT NULL DEFAULT '',
+    CONSTRAINT ck_dc_audit_log_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_dc_audit_log_action CHECK (audit_action IN ('connect', 'query', 'download', 'ddl', 'dml', 'publish', 'approve', 'rollback')),
+    CONSTRAINT ck_dc_audit_log_result CHECK (audit_result IN ('success', 'failure')),
+    CONSTRAINT ck_dc_audit_log_values CHECK (row_count >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dc_audit_log_scope_created ON dc_audit_log (tenant_id, organization_id, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_dc_audit_log_retention ON dc_audit_log (retention_until, id);
+
+CREATE TABLE IF NOT EXISTS dc_data_source (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    name VARCHAR(128) NOT NULL,
+    source_kind VARCHAR(32) NOT NULL,
+    endpoint_host VARCHAR(256) NOT NULL DEFAULT '',
+    endpoint_port INTEGER NOT NULL DEFAULT 0,
+    database_name VARCHAR(128) NOT NULL DEFAULT '',
+    username VARCHAR(128) NOT NULL DEFAULT '',
+    secret_version INTEGER NOT NULL DEFAULT 0,
+    ssl_mode VARCHAR(16) NOT NULL DEFAULT 'prefer',
+    read_only BOOLEAN NOT NULL DEFAULT TRUE,
+    health VARCHAR(16) NOT NULL DEFAULT 'unknown',
+    table_count BIGINT NOT NULL DEFAULT 0,
+    last_tested_at TIMESTAMPTZ,
+    last_test_error VARCHAR(512) NOT NULL DEFAULT '',
+    owner_name VARCHAR(128) NOT NULL DEFAULT '',
+    CONSTRAINT ck_dc_data_source_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_data_source_kind CHECK (source_kind IN ('postgresql', 'mysql', 'platform', 'file')),
+    CONSTRAINT ck_dc_data_source_health CHECK (health IN ('unknown', 'healthy', 'warning', 'error')),
+    CONSTRAINT ck_dc_data_source_values CHECK (length(name) > 0 AND length(endpoint_host) <= 256 AND endpoint_port >= 0 AND endpoint_port <= 65535 AND table_count >= 0 AND secret_version >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_data_source_scope_name ON dc_data_source (tenant_id, organization_id, name);
+CREATE INDEX IF NOT EXISTS idx_dc_data_source_scope_health ON dc_data_source (tenant_id, organization_id, health, id);
+
+CREATE TABLE IF NOT EXISTS dc_data_source_credential (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    data_source_id BIGINT NOT NULL,
+    secret_version INTEGER NOT NULL,
+    secret_ciphertext TEXT NOT NULL DEFAULT '',
+    secret_digest VARCHAR(128) NOT NULL DEFAULT '',
+    rotated_at TIMESTAMPTZ,
+    CONSTRAINT ck_dc_data_source_credential_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_data_source_credential_values CHECK (data_source_id > 0 AND secret_version >= 1)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_data_source_credential_version ON dc_data_source_credential (tenant_id, organization_id, data_source_id, secret_version);
+CREATE INDEX IF NOT EXISTS idx_dc_data_source_credential_source ON dc_data_source_credential (tenant_id, organization_id, data_source_id, created_at);
+
+CREATE TABLE IF NOT EXISTS dc_data_source_test_log (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    user_id BIGINT,
+    request_id VARCHAR(128),
+    trace_id VARCHAR(128),
+    payload_hash VARCHAR(128),
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    retention_until TIMESTAMPTZ,
+    legal_hold BOOLEAN NOT NULL DEFAULT FALSE,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    data_source_id BIGINT NOT NULL,
+    stage VARCHAR(32) NOT NULL DEFAULT 'connect',
+    result VARCHAR(16) NOT NULL,
+    latency_ms BIGINT NOT NULL DEFAULT 0,
+    CONSTRAINT ck_dc_data_source_test_log_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_dc_data_source_test_log_result CHECK (result IN ('success', 'failure')),
+    CONSTRAINT ck_dc_data_source_test_log_values CHECK (data_source_id > 0 AND latency_ms >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dc_data_source_test_log_source ON dc_data_source_test_log (tenant_id, organization_id, data_source_id, created_at, id);
+CREATE INDEX IF NOT EXISTS idx_dc_data_source_test_log_retention ON dc_data_source_test_log (retention_until, id);
+
+CREATE TABLE IF NOT EXISTS dc_dataset (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    dataset_key VARCHAR(128) NOT NULL,
+    display_name VARCHAR(128) NOT NULL DEFAULT '',
+    table_id BIGINT,
+    row_filter VARCHAR(1024) NOT NULL DEFAULT '',
+    lifecycle_state VARCHAR(16) NOT NULL DEFAULT 'draft',
+    owner_name VARCHAR(128) NOT NULL DEFAULT '',
+    description VARCHAR(512) NOT NULL DEFAULT '',
+    CONSTRAINT ck_dc_dataset_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_dataset_state CHECK (lifecycle_state IN ('draft', 'published', 'retired')),
+    CONSTRAINT ck_dc_dataset_values CHECK (length(dataset_key) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_dataset_scope_key ON dc_dataset (tenant_id, organization_id, dataset_key);
+CREATE INDEX IF NOT EXISTS idx_dc_dataset_scope_state ON dc_dataset (tenant_id, organization_id, lifecycle_state, updated_at, id);
+
+CREATE TABLE IF NOT EXISTS dc_dataset_field (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    dataset_id BIGINT NOT NULL,
+    field_name VARCHAR(128) NOT NULL,
+    alias VARCHAR(128) NOT NULL DEFAULT '',
+    semantic VARCHAR(64) NOT NULL DEFAULT '',
+    ordinal INTEGER NOT NULL DEFAULT 0,
+    sensitive BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT ck_dc_dataset_field_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_dataset_field_values CHECK (dataset_id > 0 AND length(field_name) > 0 AND ordinal >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_dataset_field_name ON dc_dataset_field (tenant_id, organization_id, dataset_id, field_name);
+CREATE INDEX IF NOT EXISTS idx_dc_dataset_field_dataset ON dc_dataset_field (tenant_id, organization_id, dataset_id, ordinal);
+
+CREATE TABLE IF NOT EXISTS dc_export_job (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    dataset_id BIGINT,
+    dataset_name VARCHAR(128) NOT NULL,
+    export_format VARCHAR(16) NOT NULL DEFAULT 'csv',
+    purpose VARCHAR(512) NOT NULL DEFAULT '',
+    export_status VARCHAR(24) NOT NULL DEFAULT 'pending_approval',
+    row_count BIGINT NOT NULL DEFAULT 0,
+    requested_by VARCHAR(128) NOT NULL DEFAULT '',
+    approved_by VARCHAR(128) NOT NULL DEFAULT '',
+    expires_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    failure_reason VARCHAR(512) NOT NULL DEFAULT '',
+    CONSTRAINT ck_dc_export_job_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_export_job_status CHECK (export_status IN ('pending_approval', 'running', 'succeeded', 'failed', 'expired')),
+    CONSTRAINT ck_dc_export_job_format CHECK (export_format IN ('csv', 'xlsx')),
+    CONSTRAINT ck_dc_export_job_values CHECK (row_count >= 0 AND length(dataset_name) > 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_dc_export_job_scope_status ON dc_export_job (tenant_id, organization_id, export_status, created_at, id);
+
+CREATE TABLE IF NOT EXISTS dc_table (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    table_key VARCHAR(128) NOT NULL,
+    display_name VARCHAR(128) NOT NULL DEFAULT '',
+    table_kind VARCHAR(16) NOT NULL DEFAULT 'landed',
+    data_source_id BIGINT,
+    physical_schema VARCHAR(64) NOT NULL DEFAULT 'dc_data',
+    physical_name VARCHAR(128) NOT NULL DEFAULT '',
+    row_count BIGINT NOT NULL DEFAULT 0,
+    column_count INTEGER NOT NULL DEFAULT 0,
+    storage_bytes BIGINT NOT NULL DEFAULT 0,
+    owner_name VARCHAR(128) NOT NULL DEFAULT '',
+    description VARCHAR(512) NOT NULL DEFAULT '',
+    last_landed_at TIMESTAMPTZ,
+    CONSTRAINT ck_dc_table_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_table_kind CHECK (table_kind IN ('landed', 'external', 'view')),
+    CONSTRAINT ck_dc_table_values CHECK (length(table_key) > 0 AND row_count >= 0 AND column_count >= 0 AND storage_bytes >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_table_scope_key ON dc_table (tenant_id, organization_id, table_key);
+CREATE INDEX IF NOT EXISTS idx_dc_table_scope_kind ON dc_table (tenant_id, organization_id, table_kind, updated_at, id);
+
+CREATE TABLE IF NOT EXISTS dc_table_column (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    table_id BIGINT NOT NULL,
+    column_name VARCHAR(128) NOT NULL,
+    data_type VARCHAR(64) NOT NULL,
+    nullable BOOLEAN NOT NULL DEFAULT TRUE,
+    ordinal INTEGER NOT NULL DEFAULT 0,
+    is_primary_key BOOLEAN NOT NULL DEFAULT FALSE,
+    sensitivity VARCHAR(16) NOT NULL DEFAULT 'public',
+    description VARCHAR(512) NOT NULL DEFAULT '',
+    CONSTRAINT ck_dc_table_column_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_dc_table_column_sensitivity CHECK (sensitivity IN ('public', 'internal', 'confidential', 'restricted')),
+    CONSTRAINT ck_dc_table_column_values CHECK (table_id > 0 AND length(column_name) > 0 AND ordinal >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_table_column_name ON dc_table_column (tenant_id, organization_id, table_id, column_name);
+CREATE INDEX IF NOT EXISTS idx_dc_table_column_table ON dc_table_column (tenant_id, organization_id, table_id, ordinal);
+
+CREATE TABLE IF NOT EXISTS dc_workspace (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    name VARCHAR(128) NOT NULL DEFAULT '',
+    description VARCHAR(512) NOT NULL DEFAULT '',
+    storage_quota_bytes BIGINT NOT NULL DEFAULT 5368709120,
+    instance_concurrency_quota INTEGER NOT NULL DEFAULT 4,
+    daily_export_row_quota BIGINT NOT NULL DEFAULT 10000,
+    audit_retention_days INTEGER NOT NULL DEFAULT 30,
+    CONSTRAINT ck_dc_workspace_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_dc_workspace_scope_name ON dc_workspace (tenant_id, organization_id, name);
+CREATE INDEX IF NOT EXISTS idx_dc_workspace_scope_status ON dc_workspace (tenant_id, organization_id, status, id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (
     id BIGINT NOT NULL PRIMARY KEY,

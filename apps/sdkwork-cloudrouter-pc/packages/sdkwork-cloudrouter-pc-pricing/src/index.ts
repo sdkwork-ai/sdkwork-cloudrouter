@@ -7,4 +7,6 @@ export type {
   PricingGroupOption,
   PricingGroupSelection,
   PricingGroupTagFacet,
+  PricingGroupTypeCode,
+  PricingGroupTypeFacet,
 } from './types/pricingGroup';

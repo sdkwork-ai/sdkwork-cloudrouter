@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, PlugZap, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Table2 } from 'lucide-react';
 import { BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons/components/BusinessState';
 import type { DataCenterQueryState } from '../dataCenterHooks.ts';
 
@@ -40,34 +40,6 @@ export function DataCenterPageHeader({
   );
 }
 
-/**
- * Deployment gap notice.
- *
- * The Data Center ships ahead of its own backend. Saying so on every page is
- * deliberate: an empty table would read as "no data", while the truth is "this
- * deployment has no datacenter service bound yet".
- */
-export function DataCenterPendingNotice() {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="flex items-start gap-3 rounded-lg border border-amber-300/60 bg-amber-50 px-4 py-3 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
-      role="status"
-    >
-      <PlugZap aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-      <div className="min-w-0">
-        <div className="text-sm font-medium">{t('admin.dataCenter.pending.title', 'Data center backend is not connected yet')}</div>
-        <div className="mt-0.5 text-xs leading-5 opacity-90">
-          {t(
-            'admin.dataCenter.pending.description',
-            'This admin module is provisioned, but the deployment has no datacenter service bound. Lists stay empty and write actions are disabled until the backend is wired.',
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function DataCenterErrorNotice({ message, onRetry }: { message: string; onRetry?: () => void }) {
   const { t } = useTranslation();
   return (
@@ -91,6 +63,27 @@ export function DataCenterErrorNotice({ message, onRetry }: { message: string; o
         </button>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Marks a capability that this deployment exposes as read-only until its
+ * write path ships. Unlike a "backend missing" badge, the read lists underneath
+ * are live data from the datacenter service.
+ */
+export function DataCenterReadOnlyBadge({ reason }: { reason: string }) {
+  const { t } = useTranslation();
+  return (
+    <span
+      className="inline-flex flex-col items-end gap-0.5"
+      title={reason}
+    >
+      <span className="inline-flex items-center gap-1 rounded-md border border-amber-300/60 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+        <Table2 aria-hidden="true" className="h-3 w-3" />
+        {t('admin.dataCenter.badge.readOnly', 'Read-only in this release')}
+      </span>
+      <span className="max-w-64 text-right text-[11px] leading-4 text-slate-400 dark:text-slate-500">{reason}</span>
+    </span>
   );
 }
 
@@ -139,14 +132,6 @@ export function DataCenterTable<T>({
           {state.phase === 'loading' ? (
             <BusinessStateTableRow colSpan={columns.length} kind="loading" title={loadingLabel} />
           ) : null}
-          {state.phase === 'pending-backend' ? (
-            <BusinessStateTableRow
-              colSpan={columns.length}
-              kind="empty"
-              title={emptyTitle}
-              description={emptyDescription}
-            />
-          ) : null}
           {state.phase === 'error' ? (
             <BusinessStateTableRow
               colSpan={columns.length}
@@ -182,21 +167,5 @@ export function DataCenterTable<T>({
         </tbody>
       </table>
     </div>
-  );
-}
-
-export function DataCenterDisabledAction({ label, reason }: { label: string; reason: string }) {
-  return (
-    <span className="inline-flex flex-col items-end gap-0.5">
-      <button
-        className="cursor-not-allowed rounded-md bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 dark:bg-white/10 dark:text-slate-400"
-        disabled
-        title={reason}
-        type="button"
-      >
-        {label}
-      </button>
-      <span className="max-w-48 text-[11px] leading-4 text-slate-400 dark:text-slate-500">{reason}</span>
-    </span>
   );
 }
