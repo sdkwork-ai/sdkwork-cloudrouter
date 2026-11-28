@@ -1642,11 +1642,52 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-company/apps/sdkwork-company-common/packages/sdkwork-company-contracts: {}
+
+  ../sdkwork-company/apps/sdkwork-company-common/packages/sdkwork-company-runtime:
+    dependencies:
+      '@sdkwork/company-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-company-app-sdk/sdkwork-company-app-sdk-typescript
+      '@sdkwork/company-contracts':
+        specifier: workspace:*
+        version: link:../sdkwork-company-contracts
+      '@sdkwork/company-sdk-ports':
+        specifier: workspace:*
+        version: link:../sdkwork-company-sdk-ports
+      '@sdkwork/company-service':
+        specifier: workspace:*
+        version: link:../sdkwork-company-service
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
+  ../sdkwork-company/apps/sdkwork-company-common/packages/sdkwork-company-sdk-ports:
+    dependencies:
+      '@sdkwork/company-contracts':
+        specifier: workspace:*
+        version: link:../sdkwork-company-contracts
+
+  ../sdkwork-company/apps/sdkwork-company-common/packages/sdkwork-company-service:
+    dependencies:
+      '@sdkwork/company-contracts':
+        specifier: workspace:*
+        version: link:../sdkwork-company-contracts
+      '@sdkwork/company-sdk-ports':
+        specifier: workspace:*
+        version: link:../sdkwork-company-sdk-ports
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
   ../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-admin-enterprise:
     dependencies:
-      '@sdkwork/company-backend-sdk':
+      '@sdkwork/company-pc-core':
         specifier: workspace:*
-        version: link:../../../../sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript
+        version: link:../sdkwork-company-pc-core
       lucide-react:
         specifier: 'catalog:'
         version: 1.31.0(react@19.2.8)
@@ -1669,6 +1710,24 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+
+  ../sdkwork-company/apps/sdkwork-company-pc/packages/sdkwork-company-pc-core:
+    dependencies:
+      '@sdkwork/company-backend-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript
+      '@sdkwork/company-runtime':
+        specifier: workspace:*
+        version: link:../../../sdkwork-company-common/packages/sdkwork-company-runtime
+
+  ../sdkwork-company/sdks/sdkwork-company-app-sdk/sdkwork-company-app-sdk-typescript:
+    dependencies:
+      '@sdkwork/sdk-common':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
   ../sdkwork-company/sdks/sdkwork-company-backend-sdk/sdkwork-company-backend-sdk-typescript:
     dependencies:
@@ -2550,6 +2609,9 @@ importers:
 
   ../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react:
     dependencies:
+      '@sdkwork/auth-runtime-pc-react':
+        specifier: workspace:*
+        version: link:../sdkwork-auth-runtime-pc-react
       '@sdkwork/i18n-pc-react':
         specifier: workspace:*
         version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react
