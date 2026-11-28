@@ -570,6 +570,12 @@ importers:
 
   ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-admin:
     dependencies:
+      '@sdkwork/agents-pc-agent-authoring':
+        specifier: workspace:*
+        version: link:../sdkwork-agents-pc-agent-authoring
+      '@sdkwork/agents-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-agents-pc-commons
       '@sdkwork/agents-pc-core':
         specifier: workspace:*
         version: link:../sdkwork-agents-pc-core
@@ -579,9 +585,46 @@ importers:
       react:
         specifier: ^19.1.0
         version: 19.2.8
+      sdkwork-drive-pc-upload-image:
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image
+
+  ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-agent-authoring:
+    dependencies:
+      '@sdkwork/agents-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-agents-pc-commons
+      '@sdkwork/agents-pc-core':
+        specifier: workspace:*
+        version: link:../sdkwork-agents-pc-core
+      '@sdkwork/drive-upload-image-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-common/packages/sdkwork-drive-upload-image-core
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      sdkwork-drive-pc-upload-image:
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
 
   ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-agents:
     dependencies:
+      '@sdkwork/agents-pc-agent-authoring':
+        specifier: workspace:*
+        version: link:../sdkwork-agents-pc-agent-authoring
       '@sdkwork/agents-pc-chat':
         specifier: workspace:*
         version: link:../sdkwork-agents-pc-chat
@@ -1062,6 +1105,18 @@ importers:
         specifier: workspace:*
         version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
 
+  ../sdkwork-appbase/packages/common/intelligence/sdkwork-agent-contracts:
+    dependencies:
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+
+  ../sdkwork-appbase/packages/common/intelligence/sdkwork-featured-contracts:
+    devDependencies:
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.3
+
   ../sdkwork-appbase/packages/common/system/sdkwork-settings-core:
     dependencies:
       '@sdkwork/utils':
@@ -1168,6 +1223,16 @@ importers:
         version: 19.2.3(@types/react@19.2.14)
       typescript:
         specifier: ^6.0.3
+        version: 6.0.3
+
+  ../sdkwork-appbase/packages/pc-react/foundation/sdkwork-featured-pc-react:
+    dependencies:
+      '@sdkwork/featured-contracts':
+        specifier: workspace:*
+        version: link:../../../common/intelligence/sdkwork-featured-contracts
+    devDependencies:
+      typescript:
+        specifier: ^6.0.2
         version: 6.0.3
 
   ../sdkwork-appbase/packages/pc-react/foundation/sdkwork-i18n-pc-react:
@@ -4804,6 +4869,12 @@ importers:
 
   ../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-marketplace:
     dependencies:
+      '@sdkwork/featured-contracts':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/common/intelligence/sdkwork-featured-contracts
+      '@sdkwork/featured-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-appbase/packages/pc-react/foundation/sdkwork-featured-pc-react
       '@sdkwork/plugins-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-plugins-app-sdk/sdkwork-plugins-app-sdk-typescript
@@ -5057,6 +5128,12 @@ importers:
 
   ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-admin-skill:
     dependencies:
+      '@sdkwork/drive-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
+      '@sdkwork/drive-upload-image-core':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-common/packages/sdkwork-drive-upload-image-core
       '@sdkwork/skills-pc-admin':
         specifier: workspace:*
         version: link:../sdkwork-skills-pc-admin
@@ -5078,6 +5155,9 @@ importers:
       react-router-dom:
         specifier: ^7.18.4
         version: 7.18.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      sdkwork-drive-pc-upload-image:
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image
 
   ../sdkwork-skills/apps/sdkwork-skills-pc/packages/sdkwork-skills-pc-commons:
     dependencies:
@@ -7012,7 +7092,7 @@ importers:
     dependencies:
       '@sdkwork/cloudrouter-backend-sdk':
         specifier: workspace:*
-        version: link:../../../../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript
+        version: link:../../../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
@@ -7126,6 +7206,9 @@ importers:
       react-i18next:
         specifier: 'catalog:'
         version: 17.0.11(i18next@26.6.0(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
+      react-router-dom:
+        specifier: 'catalog:'
+        version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       vitest:
         specifier: 'catalog:'
@@ -7370,6 +7453,9 @@ importers:
       '@sdkwork/plugins-pc-admin':
         specifier: workspace:*
         version: link:../../../../../sdkwork-plugins/apps/sdkwork-plugins-pc/packages/sdkwork-plugins-pc-admin
+      sdkwork-drive-pc-upload-image:
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image
     devDependencies:
       '@types/react':
         specifier: ^19.0.0
