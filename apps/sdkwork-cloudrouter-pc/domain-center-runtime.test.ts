@@ -100,6 +100,14 @@ test('the domain center catalog translates navigation and validation keys into b
   assert.equal(adminDomainCenterMessages.zh['admin.header.domainCenter'], '域名中心');
   assert.equal(adminDomainCenterMessages.zh['admin.menu.domains.dns'], '解析记录');
   assert.equal(adminDomainCenterMessages.zh['admin.menu.domains.certificates'], '证书管理');
+  assert.equal(
+    adminDomainCenterMessages.en['admin.domainCenter.zones.filing.police.fields.recordNumber'],
+    'Public security filing number',
+  );
+  assert.equal(
+    adminDomainCenterMessages.zh['admin.domainCenter.zones.filing.police.fields.recordUrl'],
+    '公安备案链接',
+  );
   assert.match(
     adminDomainCenterMessages.zh['admin.domainCenter.validation.wildcardRequiresDns01'],
     /DNS-01/u,
