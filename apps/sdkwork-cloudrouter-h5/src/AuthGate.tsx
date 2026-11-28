@@ -6,6 +6,7 @@ import { CLOUDROUTER_CONSOLE_ROUTES } from '@sdkwork/cloudrouter-contracts';
 
 import { APP_OAUTH_CALLBACK_PATH } from './oauth/appAuthorizeEntry.js';
 import { useConsoleRuntime } from './providers/AppProviders.js';
+import { useCloudRouterH5AuthRuntimeConfig } from './authRuntimeConfig.js';
 
 /**
  * Console sign-in route.
@@ -17,6 +18,7 @@ import { useConsoleRuntime } from './providers/AppProviders.js';
  */
 export function ConsoleSignInRoute() {
   const runtime = useConsoleRuntime();
+  const authRuntimeConfig = useCloudRouterH5AuthRuntimeConfig();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -62,6 +64,7 @@ export function ConsoleSignInRoute() {
       locale={runtime.locale}
       oauthCallbackPath={APP_OAUTH_CALLBACK_PATH}
       onAuthenticated={handleAuthenticated}
+      runtimeConfig={authRuntimeConfig}
       {...(canGoBack ? { onBack: handleBack } : {})}
     />
   );
@@ -81,6 +84,7 @@ export interface AppAuthGateProps {
  */
 export function AppAuthGate({ children }: AppAuthGateProps) {
   const runtime = useConsoleRuntime();
+  const authRuntimeConfig = useCloudRouterH5AuthRuntimeConfig();
 
   if (runtime.authenticated) {
     return <>{children}</>;
@@ -91,6 +95,7 @@ export function AppAuthGate({ children }: AppAuthGateProps) {
       controller={runtime.iamAuthController}
       locale={runtime.locale}
       oauthCallbackPath={APP_OAUTH_CALLBACK_PATH}
+      runtimeConfig={authRuntimeConfig}
     />
   );
 }

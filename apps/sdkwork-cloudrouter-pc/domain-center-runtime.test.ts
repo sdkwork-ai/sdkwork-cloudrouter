@@ -70,6 +70,23 @@ test('the host mount wires all six sections to the deployments domain SDK', () =
   assert.match(source, /'sdkwork-deployments-app-sdk'/);
 });
 
+test('root-domain filings are edited independently through the deployments zone update contract', () => {
+  const page = readFileSync(new URL(
+    './packages/sdkwork-cloudrouter-pc-admin-domain/src/pages/DomainZonesPage.tsx',
+    import.meta.url,
+  ), 'utf8');
+  const dialog = readFileSync(new URL(
+    './packages/sdkwork-cloudrouter-pc-admin-domain/src/components/DomainZoneFilingDialog.tsx',
+    import.meta.url,
+  ), 'utf8');
+  assert.match(page, /admin\.domainCenter\.zones\.actions\.filing/);
+  assert.match(page, /zone\.policeFiling\?\.recordNumber/);
+  assert.match(dialog, /filing: toZoneFilingInput\(form\)/);
+  assert.match(dialog, /policeFiling: toZonePoliceFilingInput\(policeForm\)/);
+  assert.match(dialog, /kind === 'icp' \? \{ filing: null \} : \{ policeFiling: null \}/);
+  assert.doesNotMatch(dialog, /fetch\(|axios|Authorization/);
+});
+
 test('the domain center catalog translates navigation and validation keys into both locales', async () => {
   const { adminDomainCenterMessages } = await import(
     './packages/sdkwork-cloudrouter-pc-i18n/src/resources/admin/domain-center.ts'

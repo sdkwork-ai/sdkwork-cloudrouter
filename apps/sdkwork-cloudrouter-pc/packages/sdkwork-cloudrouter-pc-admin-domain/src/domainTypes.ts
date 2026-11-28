@@ -33,6 +33,8 @@ export type {
   DomainDnsRecordStatusRequest as DomainDnsRecordStatusInput,
   DomainDnsSyncResponse as DomainDnsSyncResult,
   DomainHostnameResponse as DomainHostname,
+  DomainZoneFiling as DomainZoneFiling,
+  DomainZonePoliceFiling as DomainZonePoliceFiling,
   DomainVerificationFileCheckResponse as DomainVerificationFileCheck,
   DomainVerificationFileResponse as DomainVerificationFile,
   DomainVerifyResponse as DomainVerifyResult,

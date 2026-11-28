@@ -1143,7 +1143,9 @@ test("cloud router app auth composes the appbase IAM OAuth dependency SDK withou
   assert.doesNotMatch(appSdkSource, /public readonly auth: AuthApi/);
   assert.doesNotMatch(appSdkSource, new RegExp(`public readonly ${retiredProviderPlatformCamel}:`));
   assert.doesNotMatch(appSdkSource, /@sdkwork\/appbase-app-sdk/);
-  assert.doesNotMatch(appSdkTypesSource, /auth-runtime-settings-response/);
+  // CloudRouter owns the anonymous app auth-runtime policy endpoint; the IAM
+  // app SDK still owns the session/registration transport types.
+  assert.match(appSdkTypesSource, /app-auth-runtime-settings-response/);
   assert.doesNotMatch(appSdkTypesSource, /iam-session-create-request/);
   assert.doesNotMatch(appSdkTypesSource, /iam-registration-create-request/);
   assert.doesNotMatch(appSdkTypesSource, /iam-verification-code/);
@@ -1172,7 +1174,9 @@ test("cloud router app auth composes the appbase IAM OAuth dependency SDK withou
   }
   assert.doesNotMatch(appOpenApiSource, /\/app\/v3\/api\/auth\//);
   assert.doesNotMatch(appOpenApiSource, /\/app\/v3\/api\/oauth\//);
-  assert.doesNotMatch(appSdkTypesSource, /auth-runtime-settings-response/);
+  // CloudRouter owns the anonymous app auth-runtime policy endpoint; the IAM
+  // app SDK still owns the session/registration transport types.
+  assert.match(appSdkTypesSource, /app-auth-runtime-settings-response/);
   assert.doesNotMatch(appSdkTypesSource, /auth-verification-policy/);
   assert.doesNotMatch(appSdkTypesSource, /iam-registration-create-request/);
   assert.doesNotMatch(appSdkTypesSource, /iam-session-create-request/);

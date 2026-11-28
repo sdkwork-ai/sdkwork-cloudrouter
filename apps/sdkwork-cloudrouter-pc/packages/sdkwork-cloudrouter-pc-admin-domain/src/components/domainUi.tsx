@@ -205,15 +205,17 @@ export function DomainTextInput({
   mono = false,
   autoFocus = false,
   inputMode,
+  max,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  type?: 'text' | 'password';
+  type?: 'text' | 'password' | 'date' | 'url';
   disabled?: boolean;
   mono?: boolean;
   autoFocus?: boolean;
   inputMode?: 'text' | 'numeric' | 'decimal';
+  max?: string;
 }) {
   return (
     <input
@@ -222,6 +224,7 @@ export function DomainTextInput({
       disabled={disabled}
       autoFocus={autoFocus}
       inputMode={inputMode}
+      max={max}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
       className={`${INPUT_CLASS} ${mono ? 'font-mono' : ''}`.trim()}

@@ -17,6 +17,8 @@ import type {
   CreateDomainVerificationFileInput,
   CreateDomainZoneInput,
   DomainDnsRecordType,
+  DomainZoneFiling,
+  DomainZonePoliceFiling,
   DomainVerificationFilePlatform,
 } from './domainTypes';
 import {
@@ -211,6 +213,104 @@ export function toCreateZoneInput(form: DomainZoneForm): CreateDomainZoneInput {
     input.providerAccountId = form.providerAccountId.trim();
   }
   return input;
+}
+
+export interface DomainZoneFilingForm {
+  recordNumber: string;
+  entityName: string;
+  websiteName: string;
+  reviewDate: string;
+}
+
+export function localIsoDate(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function isValidIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+export function validateZoneFilingForm(
+  form: DomainZoneFilingForm,
+  today = localIsoDate(),
+): DomainFieldErrors {
+  const errors: DomainFieldErrors = {};
+  if (form.recordNumber.trim().length > 64) {
+    errors.recordNumber = validationKey('filingRecordNumberTooLong');
+  }
+  if (form.entityName.trim().length > 200) {
+    errors.entityName = validationKey('filingEntityNameTooLong');
+  }
+  if (form.websiteName.trim().length > 200) {
+    errors.websiteName = validationKey('filingWebsiteNameTooLong');
+  }
+  const reviewDate = form.reviewDate.trim();
+  if (reviewDate && (!isValidIsoDate(reviewDate) || reviewDate > today)) {
+    errors.reviewDate = validationKey('invalidFilingReviewDate');
+  }
+  return errors;
+}
+
+export function toZoneFilingInput(form: DomainZoneFilingForm): DomainZoneFiling {
+  const filing: DomainZoneFiling = {};
+  const recordNumber = form.recordNumber.trim();
+  const entityName = form.entityName.trim();
+  const websiteName = form.websiteName.trim();
+  const reviewDate = form.reviewDate.trim();
+  if (recordNumber) filing.recordNumber = recordNumber;
+  if (entityName) filing.entityName = entityName;
+  if (websiteName) filing.websiteName = websiteName;
+  if (reviewDate) filing.reviewDate = reviewDate;
+  return filing;
+}
+
+export interface DomainZonePoliceFilingForm {
+  recordNumber: string;
+  recordUrl: string;
+}
+
+export function isValidHttpUrl(value: string): boolean {
+  if (!/^https?:\/\//iu.test(value)) {
+    return false;
+  }
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+export function validateZonePoliceFilingForm(
+  form: DomainZonePoliceFilingForm,
+): DomainFieldErrors {
+  const errors: DomainFieldErrors = {};
+  if (form.recordNumber.trim().length > 64) {
+    errors.recordNumber = validationKey('policeFilingRecordNumberTooLong');
+  }
+  const recordUrl = form.recordUrl.trim();
+  if (recordUrl.length > 2048) {
+    errors.recordUrl = validationKey('policeFilingRecordUrlTooLong');
+  } else if (recordUrl && !isValidHttpUrl(recordUrl)) {
+    errors.recordUrl = validationKey('invalidPoliceFilingRecordUrl');
+  }
+  return errors;
+}
+
+export function toZonePoliceFilingInput(form: DomainZonePoliceFilingForm): DomainZonePoliceFiling {
+  const filing: DomainZonePoliceFiling = {};
+  const recordNumber = form.recordNumber.trim();
+  const recordUrl = form.recordUrl.trim();
+  if (recordNumber) filing.recordNumber = recordNumber;
+  if (recordUrl) filing.recordUrl = recordUrl;
+  return filing;
 }
 
 export interface DomainDnsRecordForm {

@@ -1,29 +1,26 @@
 import 'package:sdkwork_common_flutter/sdkwork_common_flutter.dart';
 import 'src/http/client.dart';
-import 'src/api/system.dart';
 import 'src/api/ai.dart';
-import 'src/api/chat.dart';
 import 'src/api/iam.dart';
+import 'src/api/system.dart';
 import 'src/api/notification.dart';
 import 'src/api/runtime.dart';
 
 class SdkworkAppClient {
   final HttpClient _httpClient;
 
-  late final SystemApi system;
   late final AiApi ai;
-  late final ChatApi chat;
   late final IamApi iam;
+  late final SystemApi system;
   late final NotificationApi notification;
   late final RuntimeApi runtime;
 
   SdkworkAppClient({
     required SdkConfig config,
   }) : _httpClient = HttpClient(config: config) {
-    system = SystemApi(_httpClient);
     ai = AiApi(_httpClient);
-    chat = ChatApi(_httpClient);
     iam = IamApi(_httpClient);
+    system = SystemApi(_httpClient);
     notification = NotificationApi(_httpClient);
     runtime = RuntimeApi(_httpClient);
   }

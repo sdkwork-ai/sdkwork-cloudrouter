@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   BadgeCheck,
+  ClipboardList,
   FileCheck2,
   Pencil,
   Plus,
@@ -34,6 +35,7 @@ import {
   DomainTableRefreshingBar,
   DomainTextInput,
 } from '../components/domainUi';
+import { DomainZoneFilingDialog } from '../components/DomainZoneFilingDialog';
 import { VerificationFilesDialog } from '../components/VerificationFilesDialog';
 import { domainCenterService } from '../domainService';
 import {
@@ -84,6 +86,7 @@ export function DomainZonesPage({
   const [scopeFilter, setScopeFilter] = useState<'USER' | 'ALL'>('USER');
   const [statusFilter, setStatusFilter] = useState<DomainZoneStatus | 'ALL'>('ALL');
   const [formState, setFormState] = useState<ZoneFormState | null>(null);
+  const [filingZone, setFilingZone] = useState<DomainZone | null>(null);
   const [verificationZone, setVerificationZone] = useState<DomainZone | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DomainZone | null>(null);
   const [busyZoneId, setBusyZoneId] = useState<string | null>(null);
@@ -269,7 +272,7 @@ export function DomainZonesPage({
           />
         }
       >
-        <table className="w-full min-w-[1180px] whitespace-nowrap text-left text-sm">
+        <table className="w-full min-w-[1320px] whitespace-nowrap text-left text-sm">
           <DomainTableHead
             columns={[
               t('admin.domainCenter.columns.apexHostname', 'Root domain'),
@@ -277,6 +280,7 @@ export function DomainZonesPage({
               t('admin.domainCenter.columns.hostnames', 'Hostnames'),
               t('admin.domainCenter.columns.certificates', 'Certificates'),
               t('admin.domainCenter.columns.bindings', 'Bindings'),
+              t('admin.domainCenter.columns.filing', 'Filing information'),
               t('admin.domainCenter.columns.status', 'Status'),
               t('admin.domainCenter.columns.updatedAt', 'Updated'),
               t('admin.domainCenter.columns.actions', 'Actions'),
@@ -285,13 +289,13 @@ export function DomainZonesPage({
           <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:divide-white/5 dark:text-slate-300">
             {zones.status === 'loading' ? (
               <DomainStateRows
-                colSpan={8}
+                colSpan={9}
                 kind="loading"
                 title={t('admin.domainCenter.zones.loading', 'Loading root domains...')}
               />
             ) : zones.status === 'error' ? (
               <DomainStateRows
-                colSpan={8}
+                colSpan={9}
                 kind="error"
                 title={t('admin.domainCenter.zones.loadError', 'Root domains could not be loaded')}
                 description={resolveProblemMessage(zones.error, t, t('admin.domainCenter.errors.load', 'Request failed'))}
@@ -300,7 +304,7 @@ export function DomainZonesPage({
               />
             ) : zones.items.length === 0 ? (
               <DomainStateRows
-                colSpan={8}
+                colSpan={9}
                 kind="empty"
                 title={filtersActive
                   ? t('admin.domainCenter.zones.emptyFiltered', 'No root domain matches these filters')
@@ -369,6 +373,45 @@ export function DomainZonesPage({
                     <td className="px-4 py-3 tabular-nums">{formatDomainCount(zone.certificateCount)}</td>
                     <td className="px-4 py-3 tabular-nums">{formatDomainCount(zone.bindingCount)}</td>
                     <td className="px-4 py-3">
+                      {zone.filing || zone.policeFiling ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-[88px_minmax(0,1fr)] items-baseline gap-x-2">
+                            <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
+                              {t('admin.domainCenter.zones.filing.icpShort', 'ICP')}
+                            </span>
+                            <span className="truncate font-mono text-[12px] text-slate-800 dark:text-slate-200">
+                              {zone.filing?.recordNumber || '—'}
+                            </span>
+                            {zone.filing?.entityName || zone.filing?.websiteName ? (
+                              <div className="col-start-2 mt-0.5 max-w-[220px] truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                {zone.filing.entityName || zone.filing.websiteName}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="grid grid-cols-[88px_minmax(0,1fr)] items-baseline gap-x-2">
+                            <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
+                              {t('admin.domainCenter.zones.filing.policeShort', 'Public security')}
+                            </span>
+                            <span className="truncate font-mono text-[12px] text-slate-800 dark:text-slate-200">
+                              {zone.policeFiling?.recordNumber || '—'}
+                            </span>
+                            {zone.policeFiling?.recordUrl ? (
+                              <div
+                                title={zone.policeFiling.recordUrl}
+                                className="col-start-2 mt-0.5 max-w-[220px] truncate text-[11px] text-slate-500 dark:text-slate-400"
+                              >
+                                {zone.policeFiling.recordUrl}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-500">
+                          {t('admin.domainCenter.zones.filing.empty', 'Not filed')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       <DomainStatusPill
                         label={translateDomainLabel(t, zoneStatusLabel(zone.status))}
                         tone={zoneStatusTone(zone.status)}
@@ -396,6 +439,12 @@ export function DomainZonesPage({
                           onClick={() => setVerificationZone(zone)}
                         >
                           <ShieldCheck className="h-4 w-4" />
+                        </DomainIconButton>
+                        <DomainIconButton
+                          label={t('admin.domainCenter.zones.actions.filing', 'Filing information')}
+                          onClick={() => setFilingZone(zone)}
+                        >
+                          <ClipboardList className="h-4 w-4" />
                         </DomainIconButton>
                         <DomainIconButton
                           label={t('admin.domainCenter.actions.edit', 'Edit')}
@@ -449,6 +498,17 @@ export function DomainZonesPage({
               zones.goToPage(1);
             }
             zones.reload();
+          }}
+        />
+      ) : null}
+
+      {filingZone ? (
+        <DomainZoneFilingDialog
+          zone={filingZone}
+          onClose={() => setFilingZone(null)}
+          onSaved={(updated) => {
+            setFilingZone(null);
+            zones.updateItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
           }}
         />
       ) : null}

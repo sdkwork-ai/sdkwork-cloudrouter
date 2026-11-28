@@ -457,7 +457,7 @@ packages:
     source: path
     version: "0.1.0"
   sdkwork_iam_app_sdk:
-    dependency: transitive
+    dependency: "direct main"
     description:
       path: "../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/sdkwork-iam-app-sdk-flutter/generated/server-openapi"
       relative: true

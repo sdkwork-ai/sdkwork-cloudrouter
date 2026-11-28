@@ -11,117 +11,180 @@ class AiApi {
 
   AiApi(this._client);
 
-  /// List
-  Future<ChannelGroupsListResult?> channelGroupsList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/channel_groups'));
+  /// Resolve console hardware agents
+  Future<AgentsListResult?> agentsList() async {
+    final response = await _client.get(ApiPaths.appPath('/ai/agents'));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : ChannelGroupsListResult.fromJson(map);
+      return map == null ? null : AgentsListResult.fromJson(map);
     })();
   }
 
-  /// Retrieve
-  Future<DashboardOverviewRetrieveResult?> dashboardOverviewRetrieve() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/dashboard/overview'));
+  /// List dashboard overview
+  Future<DashboardOverviewRetrieveResult?> dashboardOverviewRetrieve([String? timeRange, String? startTime, String? endTime]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('time_range', timeRange, 'form', true, false, null),
+      QueryParameterSpec('start_time', startTime, 'form', true, false, null),
+      QueryParameterSpec('end_time', endTime, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/dashboard/overview'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : DashboardOverviewRetrieveResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<GatewayTracesListResult?> gatewayTracesList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/gateway/traces'));
+  /// List traces
+  Future<GatewayTracesListResult?> gatewayTracesList([String? cursor, int? pageSize, String? q]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('cursor', cursor, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('q', q, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/gateway/traces'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GatewayTracesListResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<ModelRankingsListResult?> modelRankingsList([String? rankScope, String? vendorCode, String? modality, String? q, int? pageSize]) async {
+  /// List official pricing rates
+  Future<PricingRatesListResult?> pricingRatesList([String? category, String? q, String? vendorCode, String? regionCode, String? meterCode, String? currencyCode, int? page, int? pageSize]) async {
     final query = buildQueryString([
-      QueryParameterSpec('rank_scope', rankScope, 'form', true, false, null),
-      QueryParameterSpec('vendor_code', vendorCode, 'form', true, false, null),
-      QueryParameterSpec('modality', modality, 'form', true, false, null),
+      QueryParameterSpec('category', category, 'form', true, false, null),
       QueryParameterSpec('q', q, 'form', true, false, null),
+      QueryParameterSpec('vendor_code', vendorCode, 'form', true, false, null),
+      QueryParameterSpec('region_code', regionCode, 'form', true, false, null),
+      QueryParameterSpec('meter_code', meterCode, 'form', true, false, null),
+      QueryParameterSpec('currency_code', currencyCode, 'form', true, false, null),
+      QueryParameterSpec('page', page, 'form', true, false, null),
       QueryParameterSpec('page_size', pageSize, 'form', true, false, null)
     ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/model_rankings'), query));
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/pricing/rates'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : ModelRankingsListResult.fromJson(map);
+      return map == null ? null : PricingRatesListResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<ModelVendorsListResult?> modelVendorsList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/model_vendors'));
-    return (() {
-      final map = sdkworkResponseAsMap(response);
-      return map == null ? null : ModelVendorsListResult.fromJson(map);
-    })();
-  }
-
-  /// List
-  Future<ModelsListResult?> modelsList([int? page, int? pageSize, String? q, String? billingMeter, List<String>? vendorCodes, List<String>? modalities, List<String>? capabilities, List<String>? categories, List<String>? groups]) async {
+  /// List routing account groups
+  Future<RoutingAccountGroupsListResult?> routingAccountGroupsList([int? page, int? pageSize, String? q]) async {
     final query = buildQueryString([
       QueryParameterSpec('page', page, 'form', true, false, null),
       QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
-      QueryParameterSpec('q', q, 'form', true, false, null),
-      QueryParameterSpec('billing_meter', billingMeter, 'form', true, false, null),
-      QueryParameterSpec('vendor_codes', vendorCodes, 'form', false, false, null),
-      QueryParameterSpec('modalities', modalities, 'form', false, false, null),
-      QueryParameterSpec('capabilities', capabilities, 'form', false, false, null),
-      QueryParameterSpec('categories', categories, 'form', false, false, null),
-      QueryParameterSpec('groups', groups, 'form', false, false, null)
+      QueryParameterSpec('q', q, 'form', true, false, null)
     ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/models'), query));
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/routing/account_groups'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : ModelsListResult.fromJson(map);
+      return map == null ? null : RoutingAccountGroupsListResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<RoutingApiKeysListResult?> routingApiKeysList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/routing/api_keys'));
+  /// List routing API keys
+  Future<RoutingApiKeysListResult?> routingApiKeysList([int? page, int? pageSize, String? q]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('page', page, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('q', q, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/routing/api_keys'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RoutingApiKeysListResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<RoutingChannelsListResult?> routingChannelsList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/routing/channels'));
+  /// List model group catalog
+  Future<RoutingModelGroupCatalogRetrieveResult?> routingModelGroupCatalogRetrieve([String? modality, String? vendorCode]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('modality', modality, 'form', true, false, null),
+      QueryParameterSpec('vendor_code', vendorCode, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/routing/model_group_catalog'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : RoutingChannelsListResult.fromJson(map);
+      return map == null ? null : RoutingModelGroupCatalogRetrieveResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<RoutingRequestTracesListResult?> routingRequestTracesList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/routing/request_traces'));
+  /// List model group defaults
+  Future<RoutingModelGroupDefaultsRetrieveResult?> routingModelGroupDefaultsRetrieve() async {
+    final response = await _client.get(ApiPaths.appPath('/ai/routing/model_group_defaults'));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : RoutingModelGroupDefaultsRetrieveResult.fromJson(map);
+    })();
+  }
+
+  /// Set model group default
+  Future<RoutingModelGroupDefaultsUpdateResult?> routingModelGroupDefaultsUpdate(AppRoutingModelGroupDefaultRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.put(ApiPaths.appPath('/ai/routing/model_group_defaults'), body: payload, contentType: 'application/json');
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : RoutingModelGroupDefaultsUpdateResult.fromJson(map);
+    })();
+  }
+
+  /// List model groups
+  Future<RoutingModelGroupsRetrieveResult?> routingModelGroupsRetrieve(String model) async {
+    final query = buildQueryString([
+      QueryParameterSpec('model', model, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/routing/model_groups'), query));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : RoutingModelGroupsRetrieveResult.fromJson(map);
+    })();
+  }
+
+  /// List routing request traces
+  Future<RoutingRequestTracesListResult?> routingRequestTracesList([String? cursor, int? pageSize, String? q]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('cursor', cursor, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('q', q, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/routing/request_traces'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : RoutingRequestTracesListResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<RoutingUsageListResult?> routingUsageList() async {
+  /// List routing usage
+  Future<RoutingUsageRetrieveResult?> routingUsageRetrieve() async {
     final response = await _client.get(ApiPaths.appPath('/ai/routing/usage'));
     return (() {
       final map = sdkworkResponseAsMap(response);
-      return map == null ? null : RoutingUsageListResult.fromJson(map);
+      return map == null ? null : RoutingUsageRetrieveResult.fromJson(map);
     })();
   }
 
-  /// List
-  Future<UsageLogsListResult?> usageLogsList() async {
-    final response = await _client.get(ApiPaths.appPath('/ai/usage/logs'));
+  /// List settlements dashboard
+  Future<SettlementsDashboardRetrieveResult?> settlementsDashboardRetrieve([String? year]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('year', year, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/settlements/dashboard'), query));
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : SettlementsDashboardRetrieveResult.fromJson(map);
+    })();
+  }
+
+  /// List logs
+  Future<UsageLogsListResult?> usageLogsList([String? cursor, int? pageSize, String? q, String? status, String? startTime, String? endTime]) async {
+    final query = buildQueryString([
+      QueryParameterSpec('cursor', cursor, 'form', true, false, null),
+      QueryParameterSpec('page_size', pageSize, 'form', true, false, null),
+      QueryParameterSpec('q', q, 'form', true, false, null),
+      QueryParameterSpec('status', status, 'form', true, false, null),
+      QueryParameterSpec('start_time', startTime, 'form', true, false, null),
+      QueryParameterSpec('end_time', endTime, 'form', true, false, null)
+    ]);
+    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.appPath('/ai/usage/logs'), query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : UsageLogsListResult.fromJson(map);

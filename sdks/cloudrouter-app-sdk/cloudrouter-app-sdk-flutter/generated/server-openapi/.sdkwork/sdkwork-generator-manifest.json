@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "6c2553df857f332f1a19e552f24b3320632d898eea5bd7a75fa5dc13a84b141b"
     },
     {
       "path": "bin/publish.ps1",
@@ -28,7 +28,7 @@
     },
     {
       "path": "lib/app_client.dart",
-      "sha256": "27e9cdb6033248c49eef6388e87c3e1d92a834ec900f0379b6a88a98b0833dcf"
+      "sha256": "62c90979d47fb6ddcd40bc85943bc3cbb8747bb0f51ab94c4bc982ae5c245ad7"
     },
     {
       "path": "lib/cloudrouter_app_sdk.dart",
@@ -36,23 +36,19 @@
     },
     {
       "path": "lib/src/api/ai.dart",
-      "sha256": "3821c116f1860190546688585ef6edb2d75cee91024a839c96daaeae2e1771da"
+      "sha256": "736921e35e769557fc2320c07456bf574aa80c2e4970141d8cb28cc5bc5161f5"
     },
     {
       "path": "lib/src/api/api.dart",
-      "sha256": "67be11feb11d42dab3ffd904e354b745ad9cec14c6d7fc8c71cb347bb6a6d714"
-    },
-    {
-      "path": "lib/src/api/chat.dart",
-      "sha256": "197474c73edfa383a2b3b114579ba863ef2e6c35783f18ac9f2f1a0e4a4c0d24"
+      "sha256": "27c66da2ff740f65d86792bb908a4daf1ba34fafd9032d1327df88a6142398ee"
     },
     {
       "path": "lib/src/api/iam.dart",
-      "sha256": "d071e3ebd3bd1787678b855c38486a5660db9bb8e53454c398877aa7fdc4d313"
+      "sha256": "d64b8c364f8dd76ec4fafcbbc028f378004780d0d2dd6f7b0b89af2e4d3d9152"
     },
     {
       "path": "lib/src/api/notification.dart",
-      "sha256": "bab679f8bcc06a6083ecb18e5d469c8ab34131370e193251bc073932c351e69e"
+      "sha256": "8c8547ba073512865c1fc7ff59aac55f8bb808e63cb0eafffffacb3792c7bcad"
     },
     {
       "path": "lib/src/api/paths.dart",
@@ -64,19 +60,19 @@
     },
     {
       "path": "lib/src/api/runtime.dart",
-      "sha256": "e81d290fd3625b66e25102ec0ddaa828980046b027462e593902211e3bcf87b0"
+      "sha256": "1935388989d0f9a47709042dcb51dba41f72bf5e3631070101a3f1d83d793ff7"
     },
     {
       "path": "lib/src/api/system.dart",
-      "sha256": "f0590b936d72bfb83270ae82bb664c228d17c01f83a3b335606486d06a92d10a"
+      "sha256": "c06b2d38dc33ea6882e5d8c5c0f4c8e70343ebae901b0cea2e14f5f765376a2b"
     },
     {
       "path": "lib/src/http/client.dart",
-      "sha256": "c28278decf2c7456a2332dd12d708c8fc4f2bcf2b5843631d983d0dca581fcf9"
+      "sha256": "ea2b776af28f97c0efbdac5f943217b7fb3884c595f805a91e1629a6784ee721"
     },
     {
       "path": "lib/src/models.dart",
-      "sha256": "04bd3dca17fd95b546af7181dcac4c197c1ff9dc0127e22f20dba4bba8176664"
+      "sha256": "cacbd8d165805bf9c0723b6278bb769a37034134b33425cfb8a3971f54d0a2c2"
     },
     {
       "path": "LICENSE",
@@ -88,15 +84,15 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "f5840cd3ecd203941f0dbb2af03c7331d0639dff378f8c160797243603853ecc"
+      "sha256": "9000054678e339d1684dd20e15ca7349dd622aff797b4346034227c37f3488a7"
     },
     {
       "path": "README.md",
-      "sha256": "e8988d4e624e07773c23d88547d66a495d638235d2b1a1c200dc740a1e49ec19"
+      "sha256": "60e006f40b4130a3ee88515b752d5e0558f64a096c3e5781669f13fef7870e4d"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "7a921a62dac3da6a5494aab6dd3749b0dcbc9de027149f849e280e985472488b"
+      "sha256": "d0a91729326c665a4ad746373315a2fd98eaf4a019b76cc4e4f433b76399b4ca"
     }
   ],
   "scaffoldFiles": [
